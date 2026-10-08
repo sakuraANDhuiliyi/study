@@ -43,9 +43,13 @@ test('专业记录导出：独立PostgreSQL与真实HTTP验收', { timeout: 180_
   assert.match(name, /^academic_exports_it_[a-f0-9]{16}$/);
   const isolatedUrl = new URL(adminUrl);
   isolatedUrl.pathname = `/${name}`;
+  // Keep the API pool smaller than the concurrent export batch. Transactions must never
+  // borrow a second connection while holding the user lock, even on small CI runners.
+  const apiUrl = new URL(isolatedUrl);
+  apiUrl.searchParams.set('connection_limit', '3');
   const password = `Fixture-${randomBytes(20).toString('hex')}!`;
   const safe = (text: string) =>
-    [password, configured, isolatedUrl.href, decodeURIComponent(adminUrl.password)]
+    [password, configured, isolatedUrl.href, apiUrl.href, decodeURIComponent(adminUrl.password)]
       .filter(Boolean)
       .reduce((value, secret) => value.split(secret).join('[redacted]'), text)
       .replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, '[database redacted]');
@@ -63,7 +67,7 @@ test('专业记录导出：独立PostgreSQL与真实HTTP验收', { timeout: 180_
   const origin = `http://127.0.0.1:${port}`;
   const env = {
     ...process.env,
-    DATABASE_URL: isolatedUrl.href,
+    DATABASE_URL: apiUrl.href,
     NODE_ENV: 'test',
     PORT: String(port),
     BIND_HOST: '127.0.0.1',
@@ -493,7 +497,7 @@ test('专业记录导出：独立PostgreSQL与真实HTTP验收', { timeout: 180_
       );
     });
 
-    await t.test('成功导出每分钟5次的并发限制，不借用机构敏感导出授权', async () => {
+    await t.test('三连接池处理六并发导出：五次成功一次限流，不借用机构敏感导出授权', async () => {
       const limited = await register('limited');
       assert.ok(!limited.user.permissions.includes('data.export'));
       const responses = await Promise.all(
@@ -560,6 +564,55 @@ test('专业记录导出：独立PostgreSQL与真实HTTP验收', { timeout: 180_
         { timeout: 10000 },
       );
       await pending!;
+    });
+
+    await t.test('等待用户锁期间撤销learning权限或关闭practice，事务连接重验拒绝导出', async () => {
+      for (const change of ['permission', 'feature'] as const) {
+        const waiting = await login(student.user.username);
+        let pending: ReturnType<typeof exportFile> | undefined;
+        try {
+          await db!.$transaction(
+            async (tx) => {
+              await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${student.user.id} FOR UPDATE`;
+              const [{ pid }] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`;
+              pending = exportFile(waiting, {}, 403);
+              let blocked = false;
+              for (let attempt = 0; attempt < 100; attempt++) {
+                const [state] = await owner.$queryRaw<
+                  { blocked: boolean }[]
+                >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE ${pid} = ANY(pg_blocking_pids(pid))) AS blocked`;
+                if (state.blocked) {
+                  blocked = true;
+                  break;
+                }
+                await wait(20);
+              }
+              assert.ok(blocked, `导出必须先通过初始授权并等待用户锁：${change}`);
+              if (change === 'permission')
+                await tx.rolePermission.delete({
+                  where: { roleId_permissionId: { roleId: 'STUDENT', permissionId: 'learning.use' } },
+                });
+              else
+                await tx.systemSetting.create({
+                  data: { organizationId: institution.id, key: 'features', value: { practice: false } },
+                });
+            },
+            { timeout: 10000 },
+          );
+          await pending!;
+        } finally {
+          if (change === 'permission')
+            await db!.rolePermission.upsert({
+              where: { roleId_permissionId: { roleId: 'STUDENT', permissionId: 'learning.use' } },
+              create: { roleId: 'STUDENT', permissionId: 'learning.use' },
+              update: {},
+            });
+          else
+            await db!.systemSetting.deleteMany({
+              where: { organizationId: institution.id, key: 'features' },
+            });
+        }
+      }
     });
 
     await t.test('加入机构和回个人空间只导出当前空间历史，旧会话与旧空间均不可混入', async () => {

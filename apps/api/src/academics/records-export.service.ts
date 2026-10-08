@@ -46,12 +46,46 @@ export class AcademicRecordExportService {
     if (!verified) throw new UnauthorizedException('登录已失效，请重新登录');
     await lockSecurityUser(tx, actor, verified);
     const user = await tx.user.findUniqueOrThrow({ where: { id: actor.id }, include: { roles: true } });
-    if (!user.roles.some((role) => role.roleId === 'STUDENT'))
+    if (actor.role !== 'STUDENT' || !user.roles.some((role) => role.roleId === 'STUDENT'))
       throw new UnauthorizedException('账号身份已变化');
     const session = await tx.session.findFirst({
-      where: { id: actor.sessionId, userId: actor.id, role: 'STUDENT', expiresAt: { gt: new Date() } },
+      where: {
+        id: actor.sessionId,
+        userId: actor.id,
+        role: 'STUDENT',
+        authVersion: user.authVersion,
+        expiresAt: { gt: new Date() },
+      },
     });
     if (!session) throw new UnauthorizedException('当前学习身份已失效');
+    const organization = await tx.organization.findUnique({
+      where: { id: actor.organizationId },
+      select: { id: true, active: true, kind: true },
+    });
+    if (!organization?.active) throw new ForbiddenException('机构已停用');
+    if (
+      (user.accountMode === 'PERSONAL' &&
+        (organization.kind !== 'PERSONAL' || user.personalOrganizationId !== organization.id)) ||
+      (user.accountMode === 'ORGANIZATION' && organization.kind !== 'INSTITUTION')
+    )
+      throw new UnauthorizedException('当前学习空间已变化，请重新登录');
+    const permission = await tx.rolePermission.findUnique({
+      where: { roleId_permissionId: { roleId: 'STUDENT', permissionId: 'learning.use' } },
+      include: { permission: true },
+    });
+    if (
+      !permission ||
+      (permission.permission.sensitive &&
+        !(await tx.sensitiveGrant.findFirst({
+          where: {
+            userId: actor.id,
+            organizationId: actor.organizationId,
+            permissionId: 'learning.use',
+            expiresAt: { gt: new Date() },
+          },
+        })))
+    )
+      throw new ForbiddenException('没有执行此操作的权限');
     const feature = await tx.systemSetting.findUnique({
       where: { organizationId_key: { organizationId: actor.organizationId, key: 'features' } },
     });
@@ -65,8 +99,9 @@ export class AcademicRecordExportService {
     const limit = input.limit ?? (input.format === 'csv' ? 5000 : 20);
     const output = await this.db.$transaction(
       async (tx) => {
+        // All checks while holding the user lock must use this transaction's connection.
+        // Calling AuthService here would borrow another connection and deadlock a small pool.
         await this.current(tx, actor);
-        await this.fresh(actor);
         const [{ recent }] = await tx.$queryRaw<{ recent: number }[]>`
         SELECT COUNT(*)::integer AS recent FROM "AuditLog"
         WHERE "organizationId" = ${actor.organizationId} AND "userId" = ${actor.id}
@@ -115,7 +150,6 @@ export class AcademicRecordExportService {
         }
         const rendered = renderer.finish();
         await this.current(tx, actor);
-        await this.fresh(actor);
         const [{ createdAt }] = await tx.$queryRaw<
           { createdAt: Date }[]
         >`SELECT clock_timestamp()::timestamptz(3) AS "createdAt"`;

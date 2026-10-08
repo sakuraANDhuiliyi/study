@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ForbiddenException, PayloadTooLargeException } from '@nestjs/common';
+import { ForbiddenException, PayloadTooLargeException, UnauthorizedException } from '@nestjs/common';
 import { academicRecordExportInput } from '../apps/api/src/academics/records-export.schemas';
 import {
   AcademicExportRenderer,
@@ -134,4 +134,134 @@ test('导出服务在数据库访问前拒绝非学生、无learning.use和pract
     throw new ForbiddenException('停用');
   };
   await assert.rejects(service.export(actor, {}), ForbiddenException);
+});
+
+function transactionFixture(revoke?: (state: ReturnType<typeof transactionState>) => void) {
+  const state = transactionState();
+  const actor: Actor = {
+    id: state.user.id,
+    organizationId: state.user.organizationId,
+    name: '学生',
+    role: 'STUDENT',
+    permissions: ['learning.use'],
+    sessionId: 'session',
+  };
+  let inTransaction = false;
+  let audits = 0;
+  let externalResolves = 0;
+  let permissionChecks = 0;
+  const tx = {
+    user: {
+      findUnique: async () => state.user,
+      findUniqueOrThrow: async () => state.user,
+    },
+    session: {
+      findFirst: async ({ where }: any) =>
+        where.id === actor.sessionId &&
+        where.userId === actor.id &&
+        where.authVersion === state.session.authVersion &&
+        (!where.role || where.role === state.session.role) &&
+        state.session.expiresAt > where.expiresAt.gt
+          ? state.session
+          : null,
+    },
+    organization: { findUnique: async () => state.organization },
+    rolePermission: {
+      findUnique: async ({ where }: any) => {
+        assert.deepEqual(where.roleId_permissionId, { roleId: 'STUDENT', permissionId: 'learning.use' });
+        permissionChecks++;
+        return state.permission;
+      },
+    },
+    sensitiveGrant: { findFirst: async () => null },
+    systemSetting: { findUnique: async () => ({ value: { practice: state.practice } }) },
+    auditLog: {
+      create: async () => {
+        audits++;
+      },
+    },
+    $queryRaw: async (query: any) => {
+      const sql = (Array.isArray(query) ? query : query.strings).join('');
+      if (sql.includes('FROM "User"')) return [state.user];
+      if (sql.includes('FROM "AuditLog"')) return [{ recent: 0 }];
+      if (sql.includes('WITH selected AS')) {
+        revoke?.(state);
+        return [{ ...context, matchedCount: 0, recordCount: 0, minimumBytes: 0n }];
+      }
+      if (sql.includes('clock_timestamp()::timestamptz(3)')) return [{ createdAt: context.generatedAt }];
+      throw new Error('Unexpected transaction query');
+    },
+  };
+  const db = {
+    $transaction: async (callback: (client: unknown) => Promise<unknown>) => {
+      inTransaction = true;
+      try {
+        return await callback(tx);
+      } finally {
+        inTransaction = false;
+      }
+    },
+  } as unknown as PrismaService;
+  const auth = {
+    require: AuthService.prototype.require,
+    checkFeature: async () => {
+      assert.equal(inTransaction, false, '事务内不能借用AuthService全局连接');
+    },
+    resolveSessionId: async () => {
+      assert.equal(inTransaction, false, '事务内不能借用AuthService全局连接');
+      externalResolves++;
+      return actor;
+    },
+  } as unknown as AuthService;
+  return {
+    run: () => new AcademicRecordExportService(db, auth).export(actor, {}),
+    counts: () => ({ audits, externalResolves, permissionChecks }),
+  };
+}
+
+function transactionState() {
+  return {
+    user: {
+      id: 'student',
+      organizationId: 'space',
+      accountMode: 'ORGANIZATION',
+      personalOrganizationId: null as string | null,
+      active: true,
+      authVersion: 1,
+      passwordHash: 'hash',
+      roles: [{ roleId: 'STUDENT' }],
+    },
+    session: { authVersion: 1, role: 'STUDENT', expiresAt: new Date(Date.now() + 60000) },
+    organization: { id: 'space', active: true, kind: 'INSTITUTION' },
+    permission: { permission: { sensitive: false } } as { permission: { sensitive: boolean } } | null,
+    practice: true,
+  };
+}
+
+test('导出事务的两轮安全复查只使用事务连接，提交后才使用全局会话查询', async () => {
+  const fixture = transactionFixture();
+  const output = await fixture.run();
+  assert.equal(output.recordCount, 0);
+  assert.deepEqual(fixture.counts(), { audits: 1, externalResolves: 1, permissionChecks: 2 });
+});
+
+test('生成文件期间权限、身份、空间和功能发生变化时，事务内末次复查仍拒绝导出', async () => {
+  const cases: [string, Parameters<typeof transactionFixture>[0], typeof ForbiddenException][] = [
+    ['权限撤销', (state) => (state.permission = null), ForbiddenException],
+    ['权限变为需要敏感授权', (state) => (state.permission!.permission.sensitive = true), ForbiddenException],
+    ['功能停用', (state) => (state.practice = false), ForbiddenException],
+    ['学生角色撤销', (state) => (state.user.roles = []), UnauthorizedException],
+    ['会话角色变更', (state) => (state.session.role = 'TEACHER'), UnauthorizedException],
+    ['安全版本更新', (state) => state.user.authVersion++, UnauthorizedException],
+    ['会话过期', (state) => (state.session.expiresAt = new Date(0)), UnauthorizedException],
+    ['机构停用', (state) => (state.organization.active = false), ForbiddenException],
+    ['空间类型变化', (state) => (state.organization.kind = 'PERSONAL'), UnauthorizedException],
+    ['个人空间不匹配', (state) => (state.user.accountMode = 'PERSONAL'), UnauthorizedException],
+  ];
+  for (const [label, revoke, ErrorType] of cases) {
+    const fixture = transactionFixture(revoke);
+    await assert.rejects(fixture.run(), ErrorType, label);
+    assert.equal(fixture.counts().audits, 0, label);
+    assert.equal(fixture.counts().externalResolves, 0, label);
+  }
 });
