@@ -46,7 +46,8 @@ const probe = (candidates, flag) =>
   });
 const javaHome = '/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin';
 const runtimes = {
-  python: probe(['/usr/bin/python3', 'python3'], '--version'),
+  // Honor the verifier's configured toolchain before Apple's Xcode selector shim.
+  python: probe(['python3', '/usr/bin/python3'], '--version'),
   javascript: process.execPath,
   cpp: probe(['/usr/bin/clang++', 'clang++', 'g++'], '--version'),
   java: probe([join(javaHome, 'java'), 'java'], '-version'),

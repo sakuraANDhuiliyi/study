@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Circle,
   Code2,
+  Columns2,
   History,
   Play,
   RotateCcw,
@@ -28,6 +29,7 @@ import { Editorial } from '../components/algorithms/Editorial';
 import { LearningBookmark, LearningNotes } from '../components/algorithms/LearningState';
 import { LearningOverview } from '../components/algorithms/LearningOverview';
 import { OutputDiff } from '../components/algorithms/OutputDiff';
+import { CodeComparison, type CodeComparisonSnapshot } from '../components/algorithms/CodeComparison';
 import '../algorithms.css';
 
 type Language = 'cpp' | 'python' | 'javascript' | 'java';
@@ -422,6 +424,10 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const problemQuery = useData<Problem>(`/algorithms/problems/${id}`);
   const service = useData<ServiceStatus>('/algorithms/status');
   const problem = problemQuery.data;
+  const scope = [user?.organizationId, user?.id, user?.role].join(':');
+  const workspaceIdentity = `${scope}:${id}`;
+  const activeWorkspace = useRef(workspaceIdentity);
+  activeWorkspace.current = workspaceIdentity;
   const [language, setLanguage] = useState<Language>('cpp');
   const [code, setCode] = useState('');
   const [initialized, setInitialized] = useState(false);
@@ -438,6 +444,13 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const [expectedOutput, setExpectedOutput] = useState('');
   const [selfTest, setSelfTest] = useState<{ submissionId: string; expected: string } | null>(null);
   const [result, setResult] = useState<Submission | null>(null);
+  const [comparison, setComparison] = useState<CodeComparisonSnapshot | null>(null);
+  const [inspection, setInspection] = useState<{ item: Submission; loading: boolean; error?: string } | null>(
+    null,
+  );
+  const inspectSequence = useRef(0);
+  const executionSequence = useRef<number | null>(null);
+  const inspectController = useRef<AbortController | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const [analysisBusy, setAnalysisBusy] = useState<AnalysisMode | null>(null);
   const [analysisError, setAnalysisError] = useState('');
@@ -477,8 +490,19 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   }, [backupKey]);
   useEffect(() => {
     mounted.current = true;
+    const expire = () => {
+      inspectSequence.current++;
+      inspectController.current?.abort();
+      inspectController.current = null;
+      setComparison(null);
+    };
+    window.addEventListener('auth-expired', expire);
     return () => {
       mounted.current = false;
+      inspectSequence.current++;
+      inspectController.current?.abort();
+      inspectController.current = null;
+      window.removeEventListener('auth-expired', expire);
     };
   }, []);
   useUnsavedWarning(dirty && localFailed);
@@ -610,6 +634,16 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   async function execute(mode: 'run' | 'submit') {
     if (operationLock.current || result?.status === 'running' || !canJudge || !initialized || !code.trim())
       return;
+    const sequence = ++inspectSequence.current;
+    executionSequence.current = sequence;
+    const expectedWorkspace = workspaceIdentity;
+    const isSelected = () =>
+      mounted.current &&
+      activeWorkspace.current === expectedWorkspace &&
+      inspectSequence.current === sequence;
+    inspectController.current?.abort();
+    inspectController.current = null;
+    setInspection(null);
     operationLock.current = true;
     setBusy(mode);
     setError('');
@@ -623,16 +657,18 @@ function AlgorithmWorkspace({ id }: { id: string }) {
         ...(mode === 'run' && inputMode === 'custom' ? { stdin } : {}),
       })) as Submission;
       if (!mounted.current) return;
-      setResult(submitted);
-      setSelfTest(
-        mode === 'run' && inputMode === 'custom' && expectedOutput !== ''
-          ? { submissionId: submitted.id, expected: expectedOutput }
-          : null,
-      );
-      setHistoryPage(1);
+      if (isSelected()) {
+        setResult(submitted);
+        setSelfTest(
+          mode === 'run' && inputMode === 'custom' && expectedOutput !== ''
+            ? { submissionId: submitted.id, expected: expectedOutput }
+            : null,
+        );
+        setHistoryPage(1);
+      }
       await refreshRecords();
     } catch (err) {
-      if (mounted.current) setError((err as Error).message);
+      if (isSelected()) setError((err as Error).message);
     } finally {
       operationLock.current = false;
       if (mounted.current) setBusy(null);
@@ -667,15 +703,92 @@ function AlgorithmWorkspace({ id }: { id: string }) {
     }
   }
   async function inspectSubmission(item: Submission) {
+    const sequence = ++inspectSequence.current;
+    inspectController.current?.abort();
+    const controller = new AbortController();
+    inspectController.current = controller;
+    const expectedWorkspace = workspaceIdentity;
+    const current = () =>
+      mounted.current &&
+      activeWorkspace.current === expectedWorkspace &&
+      inspectSequence.current === sequence &&
+      !controller.signal.aborted;
+    setResult(null);
+    setSelfTest(null);
+    setError('');
+    setComparison(null);
+    setInspection({ item, loading: true });
+    setConsoleTab('result');
     try {
-      const full = await api<Submission>(`/algorithms/submissions/${item.id}`);
-      if (mounted.current) {
+      if (item.problemId !== id) throw new Error('这条提交不属于当前题目，无法查看。');
+      const full = await api<Submission>(`/algorithms/submissions/${encodeURIComponent(item.id)}`, {
+        signal: controller.signal,
+      });
+      if (!current()) return;
+      if (
+        full.id !== item.id ||
+        full.problemId !== id ||
+        !languages.some((entry) => entry.value === full.language) ||
+        typeof full.code !== 'string'
+      )
+        throw new Error('提交记录与当前题目不匹配，请刷新提交记录后重试。');
+      if (current()) {
         setResult(full);
-        setConsoleTab('result');
+        setInspection({ item: full, loading: false });
       }
     } catch (err) {
-      message.error((err as Error).message);
+      if (current())
+        setInspection({
+          item,
+          loading: false,
+          error: (err as Error).message || '提交记录暂时无法读取，请重试。',
+        });
+    } finally {
+      if (current()) inspectController.current = null;
     }
+  }
+  function compareSubmission() {
+    if (!initialized || !result || result.problemId !== id || !mounted.current) return;
+    const current = { ...latestDraft.current };
+    const withinLimit = (value: string) =>
+      value.length <= 16000 && new TextEncoder().encode(value).length <= 48000;
+    if (!withinLimit(current.code) || !withinLimit(result.code)) {
+      message.error('代码对比支持每份最多16000字符、48000字节，请先缩短当前代码。');
+      return;
+    }
+    const capturedAt = new Date().toISOString();
+    setComparison({
+      id: crypto.randomUUID(),
+      scope,
+      problemId: id,
+      history: {
+        id: result.id,
+        language: result.language,
+        code: result.code,
+        createdAt: result.createdAt,
+        source: result.mode === 'submit' ? '正式提交' : result.customInput ? '自定义运行' : '样例运行',
+        verdict:
+          result.status === 'accepted' && result.mode === 'run'
+            ? result.customInput
+              ? '运行完成'
+              : '样例通过'
+            : verdicts[result.status],
+      },
+      current: {
+        ...current,
+        capturedAt,
+        unsynced:
+          dirty || saveInFlight.current || fingerprint(current.language, current.code) !== lastSaved.current,
+      },
+      ...(codeRef.current?.preferences() || { theme: 'vs', fontSize: 14 }),
+    });
+  }
+  function restoreComparison() {
+    if (!comparison || !mounted.current || comparison.scope !== scope || comparison.problemId !== id) return;
+    edit(comparison.history.code, comparison.history.language);
+    setComparison(null);
+    message.success('已将历史代码恢复到编辑器');
+    codeRef.current?.focus();
   }
   function restoreSubmission() {
     if (!result) return;
@@ -696,6 +809,7 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const canJudge =
     !!service.data?.judge.available && service.data.judge.languages.some((item) => item.id === language);
   const isExecuting = !!busy || result?.status === 'running';
+  const showExecutionProgress = !!busy && executionSequence.current === inspectSequence.current;
   return (
     <div className="algo-page algo-detail">
       <Link className="algo-back" to="/algorithms">
@@ -843,6 +957,7 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                                     type="button"
                                     className={`algo-history-item ${result?.id === item.id ? 'is-active' : ''}`}
                                     key={item.id}
+                                    data-testid={`algorithm-submission-${item.id}`}
                                     onClick={() => void inspectSubmission(item)}
                                   >
                                     <div>
@@ -1166,11 +1281,29 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                             {error && (
                               <Alert type="error" showIcon message="请求未完成" description={error} />
                             )}
-                            {busy ? (
+                            {inspection?.error && (
+                              <Alert
+                                type="error"
+                                showIcon
+                                message="提交记录读取失败"
+                                description={inspection.error}
+                                action={
+                                  <Button onClick={() => void inspectSubmission(inspection.item)}>
+                                    重试读取提交
+                                  </Button>
+                                }
+                              />
+                            )}
+                            {showExecutionProgress ? (
                               <div className="algo-running">
                                 <Spin />
                                 <strong>{busy === 'run' ? '正在编译并运行…' : '正在编译并评测…'}</strong>
                                 <p>执行时间受语言和用例数量影响，请稍候。</p>
+                              </div>
+                            ) : inspection?.loading ? (
+                              <div className="algo-running">
+                                <Spin />
+                                <strong>正在读取提交记录…</strong>
                               </div>
                             ) : result ? (
                               <>
@@ -1203,15 +1336,24 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                                       children: (
                                         <>
                                           <pre className="algo-code-block">{result.code}</pre>
-                                          <Popconfirm
-                                            title="将此代码恢复到编辑器？"
-                                            description="当前编辑器内容会被替换。"
-                                            onConfirm={restoreSubmission}
-                                            okText="恢复代码"
-                                            cancelText="取消"
-                                          >
-                                            <Button icon={<RotateCcw size={14} />}>恢复这份代码</Button>
-                                          </Popconfirm>
+                                          <div className="algo-submitted-code-actions">
+                                            <Button
+                                              icon={<Columns2 size={14} />}
+                                              onClick={compareSubmission}
+                                              disabled={!initialized}
+                                            >
+                                              与当前代码对比
+                                            </Button>
+                                            <Popconfirm
+                                              title="将此代码恢复到编辑器？"
+                                              description="当前编辑器内容会被替换。"
+                                              onConfirm={restoreSubmission}
+                                              okText="恢复代码"
+                                              cancelText="取消"
+                                            >
+                                              <Button icon={<RotateCcw size={14} />}>恢复这份代码</Button>
+                                            </Popconfirm>
+                                          </div>
                                         </>
                                       ),
                                     },
@@ -1219,7 +1361,10 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                                 />
                               </>
                             ) : (
-                              !error && <EmptyState description="运行代码或提交后，在这里查看结果" />
+                              !error &&
+                              !inspection?.error && (
+                                <EmptyState description="运行代码或提交后，在这里查看结果" />
+                              )
                             )}
                           </div>
                         ),
@@ -1232,6 +1377,14 @@ function AlgorithmWorkspace({ id }: { id: string }) {
           </>
         )}
       </QueryState>
+      {comparison && (
+        <CodeComparison
+          key={comparison.id}
+          snapshot={comparison}
+          onClose={() => setComparison(null)}
+          onRestore={restoreComparison}
+        />
+      )}
     </div>
   );
 }

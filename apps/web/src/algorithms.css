@@ -612,6 +612,156 @@
   margin-top: 16px;
   font-size: 12px;
 }
+.algo-submitted-code-actions,
+.algo-comparison-footer,
+.algo-comparison-toolbar,
+.algo-comparison-toolbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.algo-comparison-modal {
+  top: 28px;
+  max-width: calc(100vw - 32px);
+  padding-bottom: 28px;
+}
+.algo-comparison-modal .ant-modal-body {
+  max-height: calc(100dvh - 185px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.algo-code-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 12px;
+  min-width: 0;
+}
+.algo-comparison-footer {
+  justify-content: space-between;
+}
+.algo-comparison-metadata,
+.algo-comparison-texts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.algo-comparison-metadata section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid #e4e9ef;
+  border-radius: 7px;
+  background: #f8fafc;
+  overflow-wrap: anywhere;
+}
+.algo-comparison-metadata h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.algo-comparison-metadata section > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.algo-comparison-metadata time,
+.algo-comparison-metadata small {
+  font-size: 11px;
+  color: #63778f;
+}
+.algo-code-comparison > p {
+  margin: 0;
+}
+.algo-comparison-toolbar {
+  justify-content: space-between;
+}
+.algo-comparison-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: #425673;
+  min-height: 24px;
+}
+.algo-monaco-diff {
+  width: 100%;
+  height: clamp(300px, 48vh, 560px);
+  flex: 0 0 auto;
+  min-width: 0;
+  border: 1px solid #e4e9ef;
+  overflow: hidden;
+}
+.algo-comparison-texts label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 8px;
+  font-size: 13px;
+}
+.algo-comparison-texts textarea {
+  width: 100%;
+  height: 390px;
+  min-height: 180px;
+  min-width: 0;
+  padding: 12px;
+  resize: vertical;
+  overflow: auto;
+  white-space: pre;
+  tab-size: 4;
+  font:
+    12px/1.75 'SFMono-Regular',
+    Consolas,
+    'Liberation Mono',
+    monospace;
+  color: #344256;
+  background: #f8fafc;
+  border: 1px solid #d6e0ea;
+  border-radius: 5px;
+}
+.algo-code-comparison.is-dark .algo-comparison-texts textarea {
+  color: #d4d4d4;
+  background: #1e1e1e;
+  border-color: #444;
+}
+.algo-comparison-texts textarea:focus-visible {
+  outline: 2px solid #206bc4;
+  outline-offset: -2px;
+}
+.algo-comparison-help {
+  color: #63778f;
+  font-size: 11px;
+  line-height: 1.7;
+}
+@media (max-width: 600px) {
+  .algo-comparison-modal {
+    top: 16px;
+    max-width: calc(100vw - 16px);
+    padding-bottom: 16px;
+  }
+  .algo-comparison-modal .ant-modal-body {
+    max-height: calc(100dvh - 176px);
+  }
+  .algo-comparison-metadata,
+  .algo-comparison-texts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .algo-comparison-metadata section {
+    padding: 10px 12px;
+  }
+  .algo-comparison-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .algo-comparison-texts textarea {
+    height: 260px;
+  }
+}
 .algo-ai-intro {
   display: flex;
   align-items: center;

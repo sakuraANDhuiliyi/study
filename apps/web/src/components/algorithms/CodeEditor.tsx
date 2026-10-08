@@ -15,7 +15,10 @@ import { Maximize2, Minimize2, Search, WrapText } from 'lucide-react';
 import { useAuth } from '../../auth';
 import type { Language } from './types';
 const MonacoSurface = lazy(() => import('./MonacoSurface'));
-export type CodeEditorHandle = { focus: () => void };
+export type CodeEditorHandle = {
+  focus: () => void;
+  preferences: () => { theme: string; fontSize: number };
+};
 type Props = {
   problemId: string;
   language: Language;
@@ -61,8 +64,11 @@ export const CodeEditor = forwardRef<CodeEditorHandle, Props>(function CodeEdito
   const gutter = useRef<HTMLDivElement>(null);
   useImperativeHandle(
     ref,
-    () => ({ focus: () => (simple ? textarea.current?.focus() : instance.current?.focus()) }),
-    [simple],
+    () => ({
+      focus: () => (simple ? textarea.current?.focus() : instance.current?.focus()),
+      preferences: () => ({ theme, fontSize }),
+    }),
+    [simple, theme, fontSize],
   );
   useEffect(() => {
     if (!fullscreen) return;
