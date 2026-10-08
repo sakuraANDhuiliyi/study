@@ -203,11 +203,13 @@ export const engineeringModules: StudyModule[] = [
     kind: 'calculator',
     subjectIds: engineering,
     tags: ['数字逻辑', '布尔代数'],
-    description: '解析A至D变量组成的逻辑表达式，逐行生成真值表，检查运算优先级与德摩根关系。',
+    description:
+      '生成逻辑表达式的真值表，或比较两条表达式是否等价，用实际反例检查德摩根律、吸收律与运算优先级。',
     learningObjectives: [
       '区分非、与、异或、或',
       '按变量组合枚举所有输入',
       '用两条表达式的真值表比较逻辑等价',
+      '用具体输入反例解释不等价，而不是仅凭表达式外观判断',
     ],
     concepts: [
       {
@@ -216,12 +218,77 @@ export const engineeringModules: StudyModule[] = [
           '变量只用A、B、C、D，!表示非，&&表示与，^表示异或，||表示或，可用括号。优先级从高到低为!、&&、^、||。不执行JavaScript代码。',
       },
       {
-        title: '真值枚举',
-        content: '有n个出现的变量就有2ⁿ种输入。两个表达式在全部输入上结果相同，才说明在这些变量上逻辑等价。',
+        title: '完整枚举与变量并集',
+        content:
+          '单表达式枚举其中出现的变量；比较时取两条表达式出现变量的并集，按A至D排序。有n个变量就检查2ⁿ种输入，最多4个变量、16种组合。即使某个变量只出现在一边，也必须一起枚举，不能把两张不同输入范围的表直接比较。',
+      },
+      {
+        title: '等价、反例与德摩根律',
+        content:
+          '两条表达式在全部输入组合上输出相同，才是逻辑等价；找到一条输出不同的赋值就足以否定等价。例如!(A && B)等价于!A || !B，取反时既要分别取反，也要交换与、或。结果中的首个反例便于手算复核，全部反例表保留每一种差异输入。',
+      },
+      {
+        title: '记录你的判断依据',
+        content:
+          '先预测哪些输入可能产生差异，再用真值表核对。等价结论来自本语法范围内的全部布尔赋值，不是随机抽样或AI评分。不等价也是有效实验；保存后用笔记解释运算顺序、反例以及修改后的规律，学习记录的完成状态不代表表达式等价。',
       },
     ],
-    fields: [t('expression', '逻辑表达式', '例如 !(A && B) || C', 'text')],
-    defaultValues: { expression: '!(A && B) || C' },
+    instructions: [
+      '先阅读语法与优先级，预测表达式输出；若填写对照表达式，先写下是否等价的判断。',
+      '运行并保存结果。对照栏留空时生成单表达式真值表，填写后枚举两边变量的并集。',
+      '核对全部真值行；不等价时手算首个反例，再检查全部反例表中的差异组合。',
+      '修改一个运算符或一对括号后重新运行，比较前后结论；载入示例会替换当前输入。',
+      '在结果页的学习笔记中解释判断依据、反例和修改原因；需要继续推敲时可标为继续研究。',
+    ],
+    fields: [
+      {
+        ...t('expression', '逻辑表达式', '例如 !(A && B) || C。最多200字符。', 'text'),
+        max: 200,
+        placeholder: '例如 !(A && B) || C',
+      },
+      {
+        ...t(
+          'compareExpression',
+          '对照表达式（可选）',
+          '留空只生成第一条表达式的真值表；填写后逐项验证两者是否等价。最多200字符。',
+          'text',
+        ),
+        required: false,
+        max: 200,
+        placeholder: '例如 !A || !B || C',
+      },
+    ],
+    defaultValues: { expression: '!(A && B) || C', compareExpression: '' },
+    examples: [
+      {
+        title: '起步单表达式',
+        values: { expression: '!(A && B) || C', compareExpression: '' },
+        explanation: '清空对照栏，只检查A、B、C的8种输入：7行输出1，1行输出0；唯一的0出现在A=1、B=1、C=0。',
+      },
+      {
+        title: '德摩根律：等价',
+        values: { expression: '!(A && B)', compareExpression: '!A || !B' },
+        explanation: 'A、B的4种输入全部一致，差异为0。思考整体取反时为什么必须同时交换与、或。',
+      },
+      {
+        title: '与或误写：找反例',
+        values: { expression: '!(A && B)', compareExpression: '!A && !B' },
+        explanation:
+          '4种输入中有2种不同。按A、B从0开始枚举，首个反例是A=0、B=1：原表达式输出1，对照表达式输出0。',
+      },
+      {
+        title: '吸收律：不同变量集合',
+        values: { expression: 'A || (A && B)', compareExpression: 'A' },
+        explanation:
+          '虽然对照表达式没有B，仍按变量并集A、B检查4种输入；全部一致，差异为0。B的变化不影响最终输出。',
+      },
+      {
+        title: '优先级：括号改变逻辑',
+        values: { expression: 'A || B && C', compareExpression: '(A || B) && C' },
+        explanation:
+          '8种输入中有2种不同。首个反例A=1、B=0、C=0时，原表达式输出1，对照表达式输出0；&&优先于||。',
+      },
+    ],
   }),
   m({
     id: 'mechanics-lab',

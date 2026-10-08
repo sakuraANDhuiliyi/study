@@ -302,56 +302,72 @@ function circuit(v: Inputs): StudyResult {
   );
 }
 function logic(v: Inputs): StudyResult {
-  const expression = str(v, 'expression', 200),
-    compact = expression.replace(/\s+/g, '');
-  const tokens = compact.match(/&&|\|\||[!^()A-D]/g) || [];
-  if (tokens.join('') !== compact) fail('只允许A至D、!、&&、^、||和括号');
+  const expression = str(v, 'expression', 200);
+  let compareExpression = '';
+  if (v.compareExpression !== undefined && v.compareExpression !== null) {
+    if (
+      typeof v.compareExpression !== 'string' ||
+      v.compareExpression.length > 200 ||
+      v.compareExpression.includes('\0')
+    )
+      fail('对照表达式必须是文本，最多200字符');
+    compareExpression = v.compareExpression.trim();
+  }
   type Node =
     | { type: 'var'; name: string }
     | { type: 'not'; child: Node }
     | { type: 'and' | 'xor' | 'or'; left: Node; right: Node };
-  let pos = 0,
-    depth = 0;
-  const unary = (): Node => {
-    if (++depth > 20) fail('表达式嵌套过深');
-    let node: Node;
-    const token = tokens[pos++];
-    if (token === '!') node = { type: 'not', child: unary() };
-    else if (token === '(') {
-      node = or();
-      if (tokens[pos++] !== ')') fail('括号不匹配');
-    } else if (token && /^[A-D]$/.test(token)) node = { type: 'var', name: token };
-    else fail('表达式缺少变量或子表达式');
-    depth--;
-    return node;
+  const parse = (source: string, comparison = false) => {
+    const invalid = (message: string): never => fail(`${comparison ? '对照表达式：' : ''}${message}`);
+    const compact = source.replace(/\s+/g, '');
+    const tokens = compact.match(/&&|\|\||[!^()A-D]/g) || [];
+    if (tokens.join('') !== compact) invalid('只允许A至D、!、&&、^、||和括号');
+    let pos = 0,
+      depth = 0;
+    const unary = (): Node => {
+      if (++depth > 20) invalid('表达式嵌套过深');
+      let node: Node;
+      const token = tokens[pos++];
+      if (token === '!') node = { type: 'not', child: unary() };
+      else if (token === '(') {
+        node = or();
+        if (tokens[pos++] !== ')') invalid('括号不匹配');
+      } else if (token && /^[A-D]$/.test(token)) node = { type: 'var', name: token };
+      else return invalid('表达式缺少变量或子表达式');
+      depth--;
+      return node;
+    };
+    const and = (): Node => {
+      let node = unary();
+      while (tokens[pos] === '&&') {
+        pos++;
+        node = { type: 'and', left: node, right: unary() };
+      }
+      return node;
+    };
+    const xor = (): Node => {
+      let node = and();
+      while (tokens[pos] === '^') {
+        pos++;
+        node = { type: 'xor', left: node, right: and() };
+      }
+      return node;
+    };
+    const or = (): Node => {
+      let node = xor();
+      while (tokens[pos] === '||') {
+        pos++;
+        node = { type: 'or', left: node, right: xor() };
+      }
+      return node;
+    };
+    const tree = or();
+    if (pos !== tokens.length) invalid('表达式包含未连接的项');
+    return { tree, variables: [...new Set(tokens.filter((x) => /^[A-D]$/.test(x)))].sort() };
   };
-  const and = (): Node => {
-    let node = unary();
-    while (tokens[pos] === '&&') {
-      pos++;
-      node = { type: 'and', left: node, right: unary() };
-    }
-    return node;
-  };
-  const xor = (): Node => {
-    let node = and();
-    while (tokens[pos] === '^') {
-      pos++;
-      node = { type: 'xor', left: node, right: and() };
-    }
-    return node;
-  };
-  const or = (): Node => {
-    let node = xor();
-    while (tokens[pos] === '||') {
-      pos++;
-      node = { type: 'or', left: node, right: xor() };
-    }
-    return node;
-  };
-  const tree = or();
-  if (pos !== tokens.length) fail('表达式包含未连接的项');
-  const variables = [...new Set(tokens.filter((x) => /^[A-D]$/.test(x)))].sort();
+  const original = parse(expression),
+    comparison = compareExpression ? parse(compareExpression, true) : null,
+    variables = [...new Set([...original.variables, ...(comparison?.variables ?? [])])].sort();
   const evaluate = (node: Node, input: Record<string, boolean>): boolean =>
     node.type === 'var'
       ? input[node.name]
@@ -362,15 +378,68 @@ function logic(v: Inputs): StudyResult {
           : node.type === 'or'
             ? evaluate(node.left, input) || evaluate(node.right, input)
             : evaluate(node.left, input) !== evaluate(node.right, input);
-  const rows = Array.from({ length: 2 ** variables.length }, (_, mask) => {
-    const input = Object.fromEntries(
-      variables.map((name, i) => [name, !!(mask & (1 << (variables.length - i - 1)))]),
+  const rows: StudyResult['tables'][number]['rows'] = Array.from(
+    { length: 2 ** variables.length },
+    (_, mask) => {
+      const input = Object.fromEntries(
+        variables.map((name, i) => [name, !!(mask & (1 << (variables.length - i - 1)))]),
+      );
+      const output = evaluate(original.tree, input) ? 1 : 0;
+      const row = {
+        ...Object.fromEntries(variables.map((name) => [name, input[name] ? 1 : 0])),
+        output,
+      };
+      if (!comparison) return row;
+      const comparisonOutput = evaluate(comparison.tree, input) ? 1 : 0;
+      return { ...row, comparisonOutput, matches: output === comparisonOutput ? '一致' : '不同' };
+    },
+  );
+  if (comparison) {
+    const counterexamples = rows.filter((row) => row.matches === '不同');
+    const equivalent = counterexamples.length === 0;
+    const summary = equivalent
+      ? `逻辑等价：已检查全部${rows.length}组输入组合，差异组合数为0。`
+      : `逻辑不等价：已检查全部${rows.length}组输入组合，发现${counterexamples.length}组差异。`;
+    const columns: [string, string][] = [
+      ...variables.map((name) => [name, name] as [string, string]),
+      ['output', '原表达式输出'],
+      ['comparisonOutput', '对照表达式输出'],
+      ['matches', '结果比较'],
+    ];
+    const sections: StudyResult['sections'] = [
+      { title: '原表达式', content: expression },
+      { title: '对照表达式', content: compareExpression },
+      {
+        title: '等价判断',
+        content: equivalent
+          ? '在两个表达式所含变量的全部输入组合上，输出均相同，因此逻辑等价。'
+          : '两个表达式存在输出不同的输入组合，因此逻辑不等价；下表完整列出全部反例。',
+        status: equivalent ? 'success' : 'warning',
+      },
+    ];
+    if (counterexamples.length) {
+      const first = counterexamples[0];
+      sections.push({
+        title: '首个反例',
+        content: `当${variables.map((name) => `${name}=${first[name]}`).join('，')}时，原表达式输出为${first.output}，对照表达式输出为${first.comparisonOutput}。这一组输入已足以说明两者不等价。`,
+        status: 'warning',
+      });
+    }
+    return result(
+      summary,
+      [
+        metric('输入变量', variables.length),
+        metric('检查组合数', rows.length),
+        metric('一致组合数', rows.length - counterexamples.length),
+        metric('差异组合数', counterexamples.length),
+      ],
+      sections,
+      [
+        table('真值表', columns, rows),
+        ...(counterexamples.length ? [table('全部反例', columns, counterexamples)] : []),
+      ],
     );
-    return {
-      ...Object.fromEntries(variables.map((name) => [name, input[name] ? 1 : 0])),
-      output: evaluate(tree, input) ? 1 : 0,
-    };
-  });
+  }
   return result(
     '表达式通过专用布尔语法解析，无代码执行。',
     [

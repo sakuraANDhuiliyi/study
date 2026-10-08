@@ -1,6 +1,6 @@
 {
-  "iteration": 2,
-  "feature": "private academic record and notebook exports",
+  "iteration": 3,
+  "feature": "exact digital logic equivalence with complete counterexamples",
   "date": "2026-10-09",
   "local": {
     "version": 1,
@@ -12,8 +12,8 @@
       "java"
     ],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-08T18:59:43.138Z",
-    "finishedAt": "2026-10-08T19:04:01.847Z",
+    "startedAt": "2026-10-08T19:29:55.125Z",
+    "finishedAt": "2026-10-08T19:34:34.859Z",
     "passed": true,
     "apiPort": 3002,
     "previewPort": 3003,
@@ -21,52 +21,52 @@
       {
         "id": "generate",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:43.145Z",
-        "durationMs": 499,
+        "startedAt": "2026-10-08T19:29:55.131Z",
+        "durationMs": 493,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "migrate",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:43.644Z",
-        "durationMs": 311,
+        "startedAt": "2026-10-08T19:29:55.624Z",
+        "durationMs": 316,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "seed",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:43.955Z",
-        "durationMs": 1226,
+        "startedAt": "2026-10-08T19:29:55.941Z",
+        "durationMs": 1214,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "typecheck",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:45.181Z",
-        "durationMs": 3977,
+        "startedAt": "2026-10-08T19:29:57.155Z",
+        "durationMs": 3841,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "lint",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:49.158Z",
-        "durationMs": 1637,
+        "startedAt": "2026-10-08T19:30:00.997Z",
+        "durationMs": 1539,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "unit",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:50.796Z",
-        "durationMs": 8242,
+        "startedAt": "2026-10-08T19:30:02.536Z",
+        "durationMs": 8390,
         "exitCode": 0,
         "summary": {
-          "tests": 270,
-          "pass": 270,
+          "tests": 282,
+          "pass": 282,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -76,16 +76,16 @@
       {
         "id": "build",
         "status": "passed",
-        "startedAt": "2026-10-08T18:59:59.038Z",
-        "durationMs": 21122,
+        "startedAt": "2026-10-08T19:30:10.926Z",
+        "durationMs": 21053,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "audit",
         "status": "passed",
-        "startedAt": "2026-10-08T19:00:20.161Z",
-        "durationMs": 956,
+        "startedAt": "2026-10-08T19:30:31.980Z",
+        "durationMs": 1172,
         "exitCode": 0,
         "summary": {
           "info": 0,
@@ -99,8 +99,8 @@
       {
         "id": "trusted-references",
         "status": "passed",
-        "startedAt": "2026-10-08T19:00:21.118Z",
-        "durationMs": 31972,
+        "startedAt": "2026-10-08T19:30:33.152Z",
+        "durationMs": 31993,
         "exitCode": 0,
         "summary": {
           "programsPassed": 72,
@@ -117,15 +117,15 @@
       {
         "id": "servers",
         "status": "passed",
-        "startedAt": "2026-10-08T19:00:53.091Z",
-        "durationMs": 1655,
+        "startedAt": "2026-10-08T19:31:05.145Z",
+        "durationMs": 1653,
         "exitCode": 0
       },
       {
         "id": "e2e",
         "status": "passed",
-        "startedAt": "2026-10-08T19:00:54.746Z",
-        "durationMs": 9901,
+        "startedAt": "2026-10-08T19:31:06.799Z",
+        "durationMs": 9897,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -139,8 +139,8 @@
       {
         "id": "integration:academic-goals.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:04.647Z",
-        "durationMs": 4752,
+        "startedAt": "2026-10-08T19:31:16.697Z",
+        "durationMs": 4754,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -154,8 +154,8 @@
       {
         "id": "integration:academic-records-export.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:09.400Z",
-        "durationMs": 7370,
+        "startedAt": "2026-10-08T19:31:21.452Z",
+        "durationMs": 7054,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -169,8 +169,8 @@
       {
         "id": "integration:academics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:16.771Z",
-        "durationMs": 5042,
+        "startedAt": "2026-10-08T19:31:28.507Z",
+        "durationMs": 5041,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -184,8 +184,8 @@
       {
         "id": "integration:accounts.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:21.814Z",
-        "durationMs": 4445,
+        "startedAt": "2026-10-08T19:31:33.549Z",
+        "durationMs": 4444,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -199,8 +199,8 @@
       {
         "id": "integration:ai-authoring.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:26.260Z",
-        "durationMs": 4070,
+        "startedAt": "2026-10-08T19:31:37.994Z",
+        "durationMs": 4062,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -214,8 +214,8 @@
       {
         "id": "integration:ai-study.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:30.331Z",
-        "durationMs": 3999,
+        "startedAt": "2026-10-08T19:31:42.056Z",
+        "durationMs": 4004,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -229,8 +229,8 @@
       {
         "id": "integration:algorithms.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:34.330Z",
-        "durationMs": 4247,
+        "startedAt": "2026-10-08T19:31:46.061Z",
+        "durationMs": 4227,
         "exitCode": 0,
         "summary": {
           "tests": 14,
@@ -244,8 +244,8 @@
       {
         "id": "integration:analytics.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:38.577Z",
-        "durationMs": 339,
+        "startedAt": "2026-10-08T19:31:50.288Z",
+        "durationMs": 322,
         "exitCode": 0,
         "summary": {
           "tests": 2,
@@ -259,8 +259,8 @@
       {
         "id": "integration:assessment.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:38.916Z",
-        "durationMs": 1290,
+        "startedAt": "2026-10-08T19:31:50.610Z",
+        "durationMs": 1297,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -274,8 +274,8 @@
       {
         "id": "integration:assessment.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:40.206Z",
-        "durationMs": 1192,
+        "startedAt": "2026-10-08T19:31:51.907Z",
+        "durationMs": 1195,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -289,8 +289,8 @@
       {
         "id": "integration:auth-fixes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:41.398Z",
-        "durationMs": 940,
+        "startedAt": "2026-10-08T19:31:53.102Z",
+        "durationMs": 938,
         "exitCode": 0,
         "summary": {
           "tests": 3,
@@ -304,8 +304,8 @@
       {
         "id": "integration:auth.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:42.338Z",
-        "durationMs": 922,
+        "startedAt": "2026-10-08T19:31:54.041Z",
+        "durationMs": 887,
         "exitCode": 0,
         "summary": {
           "tests": 4,
@@ -319,8 +319,8 @@
       {
         "id": "integration:communication.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:43.260Z",
-        "durationMs": 15803,
+        "startedAt": "2026-10-08T19:31:54.928Z",
+        "durationMs": 15799,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -334,8 +334,8 @@
       {
         "id": "integration:communication.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:59.063Z",
-        "durationMs": 694,
+        "startedAt": "2026-10-08T19:32:10.727Z",
+        "durationMs": 697,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -347,10 +347,25 @@
         }
       },
       {
+        "id": "integration:digital-logic.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-08T19:32:11.424Z",
+        "durationMs": 4348,
+        "exitCode": 0,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
         "id": "integration:exam-insights.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:01:59.757Z",
-        "durationMs": 586,
+        "startedAt": "2026-10-08T19:32:15.773Z",
+        "durationMs": 607,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -364,8 +379,8 @@
       {
         "id": "integration:notes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:02:00.343Z",
-        "durationMs": 459,
+        "startedAt": "2026-10-08T19:32:16.381Z",
+        "durationMs": 458,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -379,8 +394,8 @@
       {
         "id": "integration:planner.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:02:00.802Z",
-        "durationMs": 350,
+        "startedAt": "2026-10-08T19:32:16.839Z",
+        "durationMs": 347,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -394,8 +409,8 @@
       {
         "id": "integration:upload-security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T19:02:01.152Z",
-        "durationMs": 930,
+        "startedAt": "2026-10-08T19:32:17.186Z",
+        "durationMs": 933,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -409,16 +424,16 @@
       {
         "id": "clean-start",
         "status": "passed",
-        "startedAt": "2026-10-08T19:02:02.082Z",
-        "durationMs": 7281,
+        "startedAt": "2026-10-08T19:32:18.120Z",
+        "durationMs": 7311,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "performance",
         "status": "passed",
-        "startedAt": "2026-10-08T19:02:09.364Z",
-        "durationMs": 182,
+        "startedAt": "2026-10-08T19:32:25.432Z",
+        "durationMs": 181,
         "exitCode": 0,
         "summary": {
           "requests": 100,
@@ -426,20 +441,20 @@
           "concurrency": 10,
           "latencyMs": {
             "p50": 8,
-            "p95": 14,
-            "max": 16
+            "p95": 15,
+            "max": 15
           }
         }
       },
       {
         "id": "browser",
         "status": "passed",
-        "startedAt": "2026-10-08T19:02:09.546Z",
-        "durationMs": 112290,
+        "startedAt": "2026-10-08T19:32:25.613Z",
+        "durationMs": 129233,
         "exitCode": 0,
         "summary": {
-          "total": 63,
-          "passed": 63,
+          "total": 71,
+          "passed": 71,
           "skipped": 0,
           "failedOrIncomplete": []
         }
@@ -447,37 +462,29 @@
     ],
     "fullPassed": true,
     "testCounts": {
-      "total": 508,
-      "passed": 508,
+      "total": 536,
+      "passed": 536,
       "failedOrIncomplete": 0,
       "skipped": 0
     }
   },
-  "initialVerification": {
-    "passed": false,
-    "testCounts": {
-      "total": 504,
-      "passed": 503,
-      "failedOrIncomplete": 1,
-      "skipped": 0
-    },
-    "failedStages": [
-      "browser"
-    ],
-    "cause": "Runner inherited NODE_ENV=test into Vite build, compiling fixed test IDs; live dropdown helper also included previous hidden popup",
-    "resolution": "Production NODE_ENV only for build child process; real Vite flags regression test; visible popup and closing-animation synchronization; full flow repeated"
-  },
   "contentVerification": {
-    "csv": "Independent RFC4180 parsing of actual downloaded bytes, UTF8 BOM, escaped quotes and formula prefixes, exact order and fields across pagination",
-    "markdown": "Independent dynamic-fence parsing and comparison to persisted complete values/result/notes, including tables and chart data",
-    "liveFixtures": "Random private student accounts and records cleaned after validation; other spaces and other accounts excluded",
-    "scope": "CSV at most 5000 records; Markdown defaults latest20, at most50; full file8MiB; per-space successful exports5/minute"
+    "oracle": "Independent Cartesian-product Boolean oracle covers every output and counterexample, algebra laws, operator precedence, variable union and all16 input combinations",
+    "compatibility": "Omitted/null/blank comparison preserves the complete legacy single-expression result. Old persisted snapshots remain unchanged and old drafts restore an empty comparison. All successful calculations retain existing COMPLETED status; it denotes a completed experiment, not equivalent expressions or proficiency.",
+    "inputBoundary": "A–D variables; !, &&, ^, || and parentheses; each raw expression at most200 characters; parser depth at most20 including the variable leaf; invalid comparison returns400 and saves no record",
+    "persistence": "Real database/API and browser validate both inputs, exact truth tables, all counterexamples, notes, own-account/current-space access, and actual CSV/Markdown downloads",
+    "targetedCases": {
+      "newUnitTests": 12,
+      "newApiTests": 8,
+      "newMockBrowserTests": 7,
+      "newLiveBrowserTests": 1
+    }
   },
   "screenshots": {
-    "kind": "mocked browser fixtures at390px; real API downloads validated separately",
+    "kind": "mocked browser fixtures at390px; real database/API browser flows verified independently",
     "files": [
-      "docs/screenshots/academic-records-mobile.png",
-      "docs/screenshots/academic-records-export-mobile.png"
+      "docs/screenshots/digital-logic-input-mobile.png",
+      "docs/screenshots/digital-logic-truth-mobile.png"
     ]
   },
   "externalServices": {
@@ -485,48 +492,6 @@
     "aiLiveRequests": "not tested; providers disabled during automated verification"
   },
   "remoteCI": {
-    "commit": "abc51cc8eb4cb7ab85fffd01c1b2592631df9acc",
-    "runId": 37829300556,
-    "conclusion": "success",
-    "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37829300556",
-    "completedAt": "2026-10-08T19:14:58Z",
-    "coverage": "Node22 on Ubuntu/PostgreSQL17; build, audit, unit, references, all database integration and browser stages passed",
-    "previousFailure": {
-      "commit": "eee0222f2eb9843fc4703e39dca625e092a22382",
-      "runId": 37826680836,
-      "conclusion": "failure",
-      "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37826680836",
-      "stage": "Start application and run real database integration",
-      "failedTest": "successful export5/minute concurrency",
-      "failure": "HTTP500 after approximately5seconds",
-      "reproduced": "Isolated local API with connection_limit=3 and6 simultaneous exports reproduced HTTP500 after5037ms",
-      "cause": "Global AuthService queries borrowed another Prisma connection from inside active transactions; small pool exhausted while transactions waited on the same user lock",
-      "repairStatus": "fixed; complete508-test verification and repair commit abc51cc remote CI passed"
-    }
-  },
-  "beforeCIFixVerification": {
-    "finishedAt": "2026-10-08T18:42:37.252Z",
-    "testCounts": {
-      "total": 505,
-      "passed": 505,
-      "failedOrIncomplete": 0,
-      "skipped": 0
-    },
-    "passed": true
-  },
-  "postCIFix": {
-    "transactionSafety": "All user, session, role, permission, organization/accountMode and feature checks share the transaction connection; final post-commit authentication retained",
-    "smallPoolRegression": {
-      "connectionLimit": 3,
-      "simultaneousRequests": 6,
-      "result": "five200 and one429; zero500",
-      "targetedAfterFixMs": 57
-    },
-    "permissionRegression": "Actual lock-wait tests revoke learning.use and disable practice; unit cases also revoke roles, authVersion, expiry, organization and personal-space consistency",
-    "tests": {
-      "unit": 270,
-      "api": 175,
-      "browser": 63
-    }
+    "status": "pending after push"
   }
 }
