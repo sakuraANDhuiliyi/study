@@ -56,6 +56,8 @@ export const password = z.string().min(12).max(128);
 export const safeUser = {
   id: true,
   organizationId: true,
+  accountMode: true,
+  majorId: true,
   username: true,
   name: true,
   studentNo: true,

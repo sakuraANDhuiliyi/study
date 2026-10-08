@@ -90,16 +90,75 @@ test('Planner personal tasks use Beijing time, persist completion, recover confl
       dialog.getByText('你的输入仍然保留。请刷新版本并核对后重试。', { exact: true }),
     ).toBeVisible();
     await expect(dialog.getByLabel('待办标题', { exact: true })).toHaveValue(editedTitle);
-    await dialog.getByRole('button', { name: '保留输入并刷新版本', exact: true }).click();
-    await expect(dialog.getByRole('button', { name: '保留输入并刷新版本', exact: true })).toHaveCount(0);
-    await expect(dialog.getByLabel('待办标题', { exact: true })).toHaveValue(editedTitle);
-    await expect(dialog.getByLabel('计划时间（北京时间）', { exact: true })).toHaveValue(localDue);
-    await dialog.getByRole('button', { name: '保存修改', exact: true }).click();
+    // Delay only the list refresh, preserving real API responses. Fetching the
+    // task's current revision must make the editor usable before that list returns.
+    let releaseCalendar!: () => void;
+    const calendarGate = new Promise<void>((resolve) => {
+      releaseCalendar = resolve;
+    });
+    let reportCalendarRequest!: () => void;
+    const calendarRequested = new Promise<void>((resolve) => {
+      reportCalendarRequest = resolve;
+    });
+    let reportCalendarHandled!: () => void;
+    const calendarHandled = new Promise<void>((resolve) => {
+      reportCalendarHandled = resolve;
+    });
+    let calendarStarted = false;
+    const calendarPath = /\/api\/planner\?/;
+    await page.route(
+      calendarPath,
+      async (route) => {
+        calendarStarted = true;
+        reportCalendarRequest();
+        await calendarGate;
+        try {
+          await route.continue();
+        } finally {
+          reportCalendarHandled();
+        }
+      },
+      { times: 1 },
+    );
+    let refreshedRevision: number;
+    const saveButton = dialog.getByRole('button', { name: '保存修改', exact: true });
+    try {
+      const versionResponse = page.waitForResponse(
+        (response) =>
+          response.url().endsWith(`/api/planner/tasks/${id}`) && response.request().method() === 'GET',
+      );
+      await dialog.getByRole('button', { name: '保留输入并刷新版本', exact: true }).click();
+      const version = await versionResponse;
+      expect(version.ok()).toBeTruthy();
+      refreshedRevision = (await version.json()).revision;
+      await calendarRequested;
+      await expect(dialog.getByRole('button', { name: '保留输入并刷新版本', exact: true })).toHaveCount(0);
+      await expect(saveButton).toHaveAttribute('aria-busy', 'false');
+      await expect(saveButton).toBeEnabled();
+      await expect(dialog.getByLabel('待办标题', { exact: true })).toBeEnabled();
+      await expect(dialog.getByLabel('待办标题', { exact: true })).toHaveValue(editedTitle);
+      await expect(dialog.getByLabel('计划时间（北京时间）', { exact: true })).toHaveValue(localDue);
+    } finally {
+      releaseCalendar();
+      // Do not unregister an active route: Playwright may otherwise complete it
+      // while this handler is still resuming from the deferred gate.
+      if (calendarStarted) await calendarHandled;
+      await page.unroute(calendarPath);
+    }
+    const retriedSave = page.waitForResponse(
+      (response) =>
+        response.url().endsWith(`/api/planner/tasks/${id}`) && response.request().method() === 'PATCH',
+    );
+    await saveButton.click();
+    const savedAgain = await retriedSave;
+    expect(savedAgain.ok(), await savedAgain.text()).toBeTruthy();
+    expect(savedAgain.request().postDataJSON().revision).toBe(refreshedRevision);
     await expect(dialog).not.toBeVisible();
     await expect(card.getByRole('button', { name: editedTitle, exact: true })).toBeVisible();
     const persisted = await (await second.api.get(`/api/planner/tasks/${id}`)).json();
     expect(persisted.title).toBe(editedTitle);
     expect(persisted.dueAt).toBe(new Date(`${localDue}:00+08:00`).toISOString());
+    expect(persisted.revision).toBe(refreshedRevision + 1);
     await card.getByRole('button', { name: editedTitle, exact: true }).click();
     await dialog.getByRole('button', { name: '删除待办', exact: true }).click();
     await page.getByRole('button', { name: /^删\s*除$/, exact: true }).click();

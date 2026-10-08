@@ -1,11 +1,16 @@
 {
-  "verifiedAt": "2026-10-08T04:10:37.173Z",
+  "verifiedAt": "2026-10-08T17:03:50.773Z",
   "emptyDatabaseMigration": true,
   "repeatableSeed": true,
   "preservesRevokedPermissions": true,
   "controlledProductionBootstrap": true,
   "health": true,
-  "roleLogins": ["student", "teacher", "admin", "superadmin"],
+  "roleLogins": [
+    "student",
+    "teacher",
+    "admin",
+    "superadmin"
+  ],
   "counts": {
     "users": 7,
     "courses": 4,

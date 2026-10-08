@@ -74,5 +74,91 @@
     "Docker and Linux CI not executed locally",
     "No claim of production-scale capacity",
     "TAP totals include parent scenarios"
-  ]
+  ],
+  "securityFixes": {
+    "verifiedAt": "2026-10-08T15:03:34.917Z",
+    "environment": {
+      "node": "v24.19.0",
+      "isolatedDatabase": true,
+      "apiPort": 3003
+    },
+    "results": [
+      {
+        "name": "securityFixScopeUnit",
+        "tests": 141,
+        "passed": 141,
+        "failed": 0,
+        "skipped": 0,
+        "exclusions": [
+          "algorithm-catalog.unit.test.ts",
+          "algorithms.unit.test.ts: parallel algorithm feature development in progress"
+        ]
+      },
+      {
+        "name": "coreCommunicationIntegration",
+        "tests": 28,
+        "passed": 28,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "assessmentIntegration",
+        "tests": 20,
+        "passed": 20,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "authSecurityRegression",
+        "tests": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "authUploadFixIntegration",
+        "tests": 13,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "passwordRecoveryBrowser",
+        "tests": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "checks": {
+      "fixScopeApiTypecheck": true,
+      "fixScopeWebTypecheck": true,
+      "eslintErrors": 0,
+      "fullDependencyAuditVulnerabilities": 0,
+      "securityMigrationsApplied": true
+    },
+    "fullProjectChecks": {
+      "passed": false,
+      "reason": "Parallel algorithm feature development is still adding editorials and Monaco modules; current full typecheck/build and algorithm unit checks cannot pass until those files/dependencies and tests are complete."
+    },
+    "migrationNames": [
+      "202610080010_auth_security",
+      "202610080011_upload_security",
+      "202610080012_file_deletion_outbox",
+      "202610080013_file_cleanup_retries"
+    ],
+    "limitations": [
+      "Docker and Linux CI were not executed locally",
+      "TAP totals include parent scenarios",
+      "Only disposable review database was migrated; deployment still requires migration and restricted runtime credentials"
+    ],
+    "dependencyFix": {
+      "package": "dompurify",
+      "from": "3.4.15",
+      "to": "3.4.16",
+      "parent": "monaco-editor@0.57.0",
+      "method": "targeted override",
+      "fullAuditVulnerabilities": 0
+    }
+  }
 }

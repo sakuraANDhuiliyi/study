@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-09",
+  "timezone": "Asia/Shanghai",
+  "node": "24.19.0",
+  "feature": "Judge0 YAML configuration, academic majors and personal learning spaces",
+  "catalog": {
+    "subjects": 15,
+    "majorTemplates": 76,
+    "modules": 52,
+    "calculators": 30,
+    "workspaces": 18,
+    "quizzes": 2,
+    "sqlLab": 1,
+    "algorithmWorkbenchEntry": 1,
+    "note": "Original extensible teaching templates, not an official exhaustive university degree catalog."
+  },
+  "checks": {
+    "typecheck": "passed",
+    "eslint": "passed, zero warnings",
+    "productionBuild": "passed",
+    "npmAudit": { "vulnerabilities": 0 },
+    "unitTests": { "passed": 249, "failed": 0, "skipped": 0 },
+    "httpAndDatabaseIntegration": {
+      "passed": 155,
+      "failed": 0,
+      "skipped": 0,
+      "newAccountsAndAcademics": 20,
+      "existingBusinessAndSecurity": 135,
+      "database": "local isolated PostgreSQL review and randomly created disposable test databases"
+    },
+    "browser": {
+      "verifiedUniqueTests": 45,
+      "unresolvedFailures": 0,
+      "skipped": 0,
+      "method": "Final full browser run passed 44 tests. Its remaining Planner interception cleanup race was fixed; both Planner tests then passed three consecutive runs (6/6).",
+      "monacoIsolationRepeat": { "passed": 10, "failed": 0 },
+      "servedFrom": "compiled static assets served by API with Helmet CSP",
+      "viewports": ["1440x1000", "390x844", "320x800"],
+      "note": "Interface contract tests use explicit fixtures. Personal registration, SQL/circuit execution, note persistence, organization approval/return, existing LMS workflows and editor loading also run against real APIs."
+    },
+    "freshDatabase": {
+      "migrations": 17,
+      "migrationAndIdempotentSeed": "passed",
+      "productionBootstrapAndRoleLogins": "passed"
+    },
+    "gitStaging": "Actual config.yaml, .env, .data and private Judge0 deployment credentials excluded; no credential patterns detected."
+  },
+  "verifiedBehavior": [
+    "Personal student registration, password recovery and server-persisted module selection without teachers or institutional management menus",
+    "Administrator student creation/edit/import with scoped majors and major filtering",
+    "Invitation code admission, administrator approval with major assignment, session revocation, institutional read-only major, return to the original personal space",
+    "Original personal records/preferences retained separately while inside an institution and restored on return",
+    "Scoped custom subject/major creation, copying read-only global templates, optimistic revisions, archive/reactivation and foreign institution rejection",
+    "Profile major changes advance preference revisions to prevent stale preference dialogs overwriting the new major",
+    "Actual deterministic calculations with independent formula/boundary oracles across all 30 calculator modules",
+    "All published module defaults/examples execute through the actual dispatcher; 14 JSON/matrix forms match its input contract",
+    "Structured original workspaces with explicit checks, area/time/budget/chronology/terminology computations and private free study notes",
+    "Quiz answer/explanation redaction in GET, scored original exercises and explanations after submission",
+    "Read-only SQLite WASM workers with bounded grammar, concurrency, timeout, rows and result bytes; no real LMS data in the teaching database",
+    "500-observation statistics results larger than 96 KiB persist; compact inputs exceeding the actual JSONB budget return 400 without a record",
+    "Record ownership, institution isolation, note CAS conflicts and current session/permission recheck after SQL execution",
+    "Live desktop/mobile registration, circuit, SQL, cleared-browser-storage note persistence, approval/relogin and personal-space restoration",
+    "Judge0 YAML hot reload, legacy per-field environment overrides, strict configuration parsing, safe diagnostics and dedicated-VM deployment scripts"
+  ],
+  "resolvedDuringVerification": [
+    "Prisma could not deserialize the advisory-lock void column during custom directory creation; lock queries now select an integer and real CRUD/archive tests pass.",
+    "Expanded PostgreSQL JSONB size can exceed compact JSON size; actual storage budgets are checked before record creation.",
+    "Planner version reload waited on an unrelated calendar query; editing is available after the current version is fetched, with stable accessible busy labels.",
+    "Monaco isolation test now waits for the new language model and verifies entered/saved drafts; original intermittent data loss was not reproduced.",
+    "An exam browser fixture rejected the wrong review API port; the final run used its supported port without weakening the safety gate.",
+    "Planner's test-only delayed route now waits for its handler before removal; final three repeats pass without bypassing real responses."
+  ],
+  "notVerified": [
+    "Real Judge0 compiler toolchains and execution isolation: the local Mac has no Docker/Linux execution environment and no service endpoint has been supplied.",
+    "Real external DeepSeek/Tavily credentials or answer quality; provider protocol integration uses local HTTP fixtures.",
+    "Production Linux Docker image, remote hosting, HTTPS and GitHub CI execution; these must be verified in the target deployment environment."
+  ],
+  "buildNotes": [
+    "The lazy Monaco editor chunk still produces the documented bundle-size warning; the editor and workers use local assets."
+  ],
+  "screenshots": [
+    "docs/screenshots/academics-center-desktop.png",
+    "docs/screenshots/academics-center-mobile.png",
+    "docs/screenshots/academics-circuit-mobile.png"
+  ]
+}

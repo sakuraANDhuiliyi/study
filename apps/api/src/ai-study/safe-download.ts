@@ -12,6 +12,7 @@ import https from 'node:https';
 import { isIP, type LookupFunction } from 'node:net';
 import { performance } from 'node:perf_hooks';
 import sanitizeHtml from 'sanitize-html';
+import { assertSafePdf } from '../common/pdf-security';
 
 const MAX_URL_LENGTH = 2048;
 const MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024;
@@ -454,13 +455,10 @@ export async function downloadStudySource(
       let buffer = result.buffer;
       const pdf = /^application\/pdf(?:\s*;|\s*$)/i.test(result.contentType);
       if (pdf) {
-        if (
-          !/^%PDF-[12]\.\d(?:\r\n|\r|\n)/.test(buffer.subarray(0, 12).toString('latin1')) ||
-          !buffer.subarray(-1024).includes(Buffer.from('%%EOF'))
-        )
-          throw typeError();
-        if (/\/(?:JavaScript|JS|Launch|EmbeddedFile|RichMedia)\b/.test(buffer.toString('latin1')))
-          throw typeError();
+        await assertSafePdf(buffer, {
+          timeoutMs: Math.max(1, Math.floor(deadline - performance.now())),
+          signal: controller.signal,
+        });
       } else buffer = toPlainText(buffer, result.contentType);
       if (!buffer.length) throw typeError();
       if (buffer.length > options.maxBytes) throw sizeError();

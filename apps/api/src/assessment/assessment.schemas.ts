@@ -100,9 +100,23 @@ export const assignmentSchema = z.object({
 export const assignmentPatchSchema = assignmentSchema
   .partial()
   .extend({ revision: z.number().int().min(0), reason: text(1000).optional() });
+const answerLeaf = z.union([
+  z.string().max(500000),
+  z.boolean(),
+  // Choice count and blank count are enforced against the question snapshot;
+  // total serialized answers retain the existing 500 KB service limit.
+  z.array(z.string().max(500000)),
+  z.null(),
+]);
+// Composite questions submit a map of child IDs to ordinary answers; arbitrary
+// JSON objects and further nesting have no supported answer representation.
+const answerValue = z.union([
+  answerLeaf,
+  z.record(id, answerLeaf).refine((value) => Object.keys(value).length <= 30, '综合题答案过多'),
+]);
 export const answerSchema = z.object({
   questionVersionId: id,
-  value: z.unknown().refine((value) => value !== undefined, '答案不可为 undefined'),
+  value: answerValue,
 });
 export const submissionSchema = z.object({
   answers: z.array(answerSchema).max(200),

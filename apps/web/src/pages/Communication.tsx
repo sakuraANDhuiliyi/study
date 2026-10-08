@@ -31,7 +31,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth';
 import { RemoteSelect } from '../components/RemoteSelect';
-import { api, date, isTeacher, queryString, send, useAction, useData } from '../api';
+import { ApiError, api, date, isTeacher, queryString, send, useAction, useData } from '../api';
 import { EmptyState, PageTitle, Panel, QueryState } from '../components/shared';
 export function Communication() {
   const [params] = useSearchParams();
@@ -100,10 +100,20 @@ function AttachmentUploader({
     <Upload
       disabled={disabled}
       fileList={files}
-      onRemove={(file) => {
+      onRemove={async (file) => {
+        try {
+          await api(`/attachments/${file.uid}`, { method: 'DELETE' });
+        } catch (error) {
+          // Removing a selection must not delete a file retained by existing business history.
+          if (!(error instanceof ApiError && error.status === 409)) {
+            message.error((error as Error).message);
+            return false;
+          }
+        }
         const next = files.filter((f) => f.uid !== file.uid);
         setFiles(next);
         onChange(next.map((f) => f.id));
+        return true;
       }}
       customRequest={async (options) => {
         try {

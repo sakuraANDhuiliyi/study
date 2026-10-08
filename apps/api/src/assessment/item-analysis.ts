@@ -40,15 +40,20 @@ export function itemAccumulator(question: QuestionData, participantCount: number
       if (hasResponse(answer.value)) {
         answeredCount++;
         if (options.length) {
+          const values =
+            question.type === 'multiple' ? (Array.isArray(answer.value) ? answer.value : []) : [answer.value];
+          const validValue = (value: unknown): value is string | boolean =>
+            typeof value === 'string' || (question.type === 'boolean' && typeof value === 'boolean');
           const selected = new Set(
-            (question.type === 'multiple'
-              ? Array.isArray(answer.value)
-                ? answer.value
-                : []
-              : [answer.value]
-            ).map(String),
+            values
+              .filter(validValue)
+              .map((value) => (typeof value === 'string' ? value : value ? 'true' : 'false')),
           );
-          if (!selected.size || [...selected].some((id) => !options.some((o) => o.id === id)))
+          if (
+            values.some((value) => !validValue(value)) ||
+            !selected.size ||
+            [...selected].some((id) => !options.some((o) => o.id === id))
+          )
             invalidResponseCount++;
           for (const option of options) if (selected.has(option.id)) option.count++;
         }

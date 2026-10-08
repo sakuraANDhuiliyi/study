@@ -188,7 +188,7 @@ export function Planner() {
     } else setEditing(null);
   }
   async function save(values: FormValues) {
-    if (!editing) return;
+    if (!editing || busy) return;
     setBusy(true);
     setFormError(undefined);
     try {
@@ -219,7 +219,7 @@ export function Planner() {
     }
   }
   async function reloadVersion() {
-    if (!editing || editing === 'new') return;
+    if (!editing || editing === 'new' || busy) return;
     setBusy(true);
     try {
       const task = await api<PersonalTask>(`/planner/tasks/${editing.id}`);
@@ -227,7 +227,9 @@ export function Planner() {
       setConflict(false);
       setFormError(undefined);
       message.info('已获取最新版本，保留了你的输入。请核对后再次保存。');
-      await refresh();
+      // The editor is ready once its revision is current; a slow calendar query
+      // must not keep the preserved input locked or block the next save.
+      void refresh();
     } catch (e) {
       setFormError(e instanceof Error ? e.message : '刷新失败，请稍后重试');
     } finally {
@@ -254,7 +256,7 @@ export function Planner() {
     }
   }
   async function removeTask() {
-    if (!editing || editing === 'new') return;
+    if (!editing || editing === 'new' || busy) return;
     setBusy(true);
     try {
       await send(`/planner/tasks/${editing.id}`, { revision: editing.revision }, 'DELETE');
@@ -537,7 +539,14 @@ export function Planner() {
               <Button onClick={closeEditor} disabled={busy}>
                 取消
               </Button>
-              <Button type="primary" loading={busy} onClick={() => form.submit()}>
+              <Button
+                type="primary"
+                aria-label={editing === 'new' ? '创建待办' : '保存修改'}
+                aria-busy={busy}
+                loading={busy}
+                disabled={busy}
+                onClick={() => form.submit()}
+              >
                 {editing === 'new' ? '创建待办' : '保存修改'}
               </Button>
             </div>
@@ -552,7 +561,14 @@ export function Planner() {
             description={conflict ? '你的输入仍然保留。请刷新版本并核对后重试。' : undefined}
             action={
               conflict && (
-                <Button size="small" loading={busy} onClick={() => void reloadVersion()}>
+                <Button
+                  size="small"
+                  aria-label="保留输入并刷新版本"
+                  aria-busy={busy}
+                  loading={busy}
+                  disabled={busy}
+                  onClick={() => void reloadVersion()}
+                >
                   保留输入并刷新版本
                 </Button>
               )

@@ -16,8 +16,45 @@ export interface QuestionData {
   children: QuestionData[];
 }
 
+/** Validate against the immutable task snapshot, including composite child IDs. */
+export function validAnswerValue(question: QuestionData, value: unknown): boolean {
+  if (value === null) return true; // Explicitly clearing an answer is allowed.
+  if (question.type === 'single')
+    return (
+      typeof value === 'string' && (value === '' || question.options.some((option) => option.id === value))
+    );
+  if (question.type === 'boolean') return [true, false, 'true', 'false', ''].includes(value as boolean);
+  if (question.type === 'multiple')
+    return (
+      Array.isArray(value) &&
+      value.length <= question.options.length &&
+      new Set(value).size === value.length &&
+      value.every(
+        (option) => typeof option === 'string' && question.options.some((item) => item.id === option),
+      )
+    );
+  if (question.type === 'blank')
+    return (
+      Array.isArray(value) &&
+      Array.isArray(question.answer) &&
+      value.length <= question.answer.length &&
+      value.every((answer) => typeof answer === 'string')
+    );
+  if (question.type === 'short') return typeof value === 'string';
+  if (question.type === 'composite')
+    return (
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.entries(value as Record<string, unknown>).every(([id, answer]) => {
+        const child = question.children.find((item) => item.id === id);
+        return child !== undefined && child.type !== 'composite' && validAnswerValue(child, answer);
+      })
+    );
+  return false;
+}
+
 export function normalizeBlank(value: unknown, rules: QuestionData['rules'] = {}): string {
-  let result = String(value ?? '').normalize('NFKC');
+  let result = (typeof value === 'string' ? value : '').normalize('NFKC');
   if (rules.trim !== false) result = result.trim();
   if (rules.collapseWhitespace !== false) result = result.replace(/\s+/g, ' ');
   return rules.caseSensitive ? result : result.toLocaleLowerCase('en-US');
@@ -27,19 +64,66 @@ export function normalizeBlank(value: unknown, rules: QuestionData['rules'] = {}
 export function autoScore(question: QuestionData, value: unknown): number | null {
   const maximum = question.scoreCents;
   if (question.type === 'short' || question.type === 'composite') return null;
-  if (question.type === 'single' || question.type === 'boolean') {
-    return value !== undefined && value !== null && String(value) === String(question.answer) ? maximum : 0;
+  if (
+    !Number.isSafeInteger(maximum) ||
+    maximum < 0 ||
+    !question.rules ||
+    typeof question.rules !== 'object' ||
+    Array.isArray(question.rules)
+  )
+    return null;
+  const optionIds = Array.isArray(question.options) ? question.options.map((option) => option?.id) : [];
+  const validOptions =
+    optionIds.length >= 2 &&
+    optionIds.every((id) => typeof id === 'string' && id.length > 0) &&
+    new Set(optionIds).size === optionIds.length;
+  if (question.type === 'single') {
+    if (!validOptions || typeof question.answer !== 'string' || !optionIds.includes(question.answer))
+      return null;
+    return typeof value === 'string' && value === question.answer ? maximum : 0;
+  }
+  if (question.type === 'boolean') {
+    const expected =
+      question.answer === true || question.answer === 'true'
+        ? true
+        : question.answer === false || question.answer === 'false'
+          ? false
+          : undefined;
+    if (expected === undefined) return null;
+    const given =
+      value === true || value === 'true' ? true : value === false || value === 'false' ? false : undefined;
+    return given !== undefined && given === expected ? maximum : 0;
   }
   if (question.type === 'multiple') {
-    const expected = new Set((question.answer as unknown[]).map(String));
-    const given = new Set(Array.isArray(value) ? value.map(String) : []);
+    if (
+      !Array.isArray(question.answer) ||
+      !question.answer.length ||
+      !validOptions ||
+      question.answer.some((answer) => typeof answer !== 'string' || !optionIds.includes(answer)) ||
+      new Set(question.answer).size !== question.answer.length
+    )
+      return null;
+    const expected = new Set(question.answer as string[]);
+    if (!Array.isArray(value) || value.some((answer) => typeof answer !== 'string')) return 0;
+    const given = new Set(value as string[]);
     if (!given.size || [...given].some((option) => !expected.has(option))) return 0;
     if (given.size === expected.size) return maximum;
     return question.rules.partialCredit ? Math.floor((maximum * given.size) / expected.size) : 0;
   }
   if (question.type === 'blank') {
+    if (
+      !Array.isArray(question.answer) ||
+      !question.answer.length ||
+      question.answer.some(
+        (answers) =>
+          !Array.isArray(answers) || !answers.length || answers.some((answer) => typeof answer !== 'string'),
+      )
+    )
+      return null;
     const accepted = question.answer as string[][];
+    if (accepted.some((answers) => answers.some((answer) => !answer.trim()))) return null;
     const given = Array.isArray(value) ? value : [value];
+    if (given.some((answer) => typeof answer !== 'string')) return 0;
     if (given.length !== accepted.length) return 0;
     const correct = accepted.filter((answers, index) =>
       answers.some(
@@ -48,7 +132,7 @@ export function autoScore(question: QuestionData, value: unknown): number | null
     ).length;
     return Math.floor((maximum * correct) / accepted.length);
   }
-  throw new Error(`Unsupported question type: ${question.type}`);
+  return null; // Damaged historical snapshots need human marking, never a released zero.
 }
 
 /** This explicit whitelist is also applied recursively to composite questions. */

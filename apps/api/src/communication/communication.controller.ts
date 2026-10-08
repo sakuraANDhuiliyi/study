@@ -8,19 +8,19 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { memoryStorage } from 'multer';
 import { type Response } from 'express';
 import { z } from 'zod';
 import { AuthGuard, CurrentActor, type Actor } from '../auth/auth.guard';
 import { CommunicationService } from './communication.service';
+import { UploadAdmissionInterceptor } from './upload-admission.interceptor';
 import {
   attachmentSchema,
   directSchema,
@@ -236,18 +236,19 @@ export class AttachmentsController {
       required: ['file'],
     },
   })
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: 50 * 1024 * 1024, files: 1, fields: 3, parts: 4 },
-    }),
-  )
+  @UseInterceptors(UploadAdmissionInterceptor)
   upload(
     @CurrentActor() actor: Actor,
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: unknown,
+    @Req() request: any,
   ) {
-    return this.service.upload(actor, file, parse(attachmentSchema, body));
+    return this.service.upload(actor, file, parse(attachmentSchema, body), request.uploadLease);
+  }
+  @Delete(':id')
+  @ApiOperation({ summary: '删除本人尚未被业务记录引用的附件' })
+  remove(@CurrentActor() actor: Actor, @Param('id') id: string) {
+    return this.service.removeAttachment(actor, id);
   }
   @Get(':id/download')
   @ApiOperation({ summary: '每次下载重新校验当前业务权限，不提供公开永久链接' })

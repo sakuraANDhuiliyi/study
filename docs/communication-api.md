@@ -64,8 +64,15 @@ Socket.IO namespace `/notifications`，同源 Cookie，握手 `auth:{csrfToken}`
 - 返回 `{id,name,mime,size}`，不返回存储键或公开 URL。
 - `GET /attachments/:id/download`：重新校验当前业务范围，返回 `Content-Disposition: attachment` 和 `Cache-Control: private,no-store`。
 - `GET /attachments/:id/preview`：同样的即时授权，图片/PDF/MP4 支持 `inline` 预览；其余类型须下载。预览增加 `nosniff` 与沙箱 CSP。
+- `DELETE /attachments/:id`：仅本人可删除当前未被讨论、消息、课时、作业或提交版本引用的普通附件。已引用附件和归档导出文件返回 409。
 
 运行时上限为 `min(MAX_UPLOAD_MB, 机构 maxUploadMB, 50)` MB，未指定环境变量时默认 10 MB。机构 `allowedFileTypes` 能进一步限制类型。字节、扩展名与 MIME 必须匹配，支持 PNG/JPEG/GIF/WebP、PDF、无宏 DOCX/XLSX/PPTX、UTF-8 TXT/CSV、MP4。SVG、HTML、执行文件、含脚本 PDF、可疑/含宏 Office 均不支持。文件名清理路径与控制字符；文件实际以服务端随机 UUID 存储，目录不是静态资源目录。
+
+接收 multipart 数据前执行权限、容量预留和并发检查，并按当前机构单文件上限设置解析器限制；请求体接收最多 60 秒。默认累计配额为用户 1 GiB/1000 个文件、机构 10 GiB/20000 个文件；用户最多 2 个、整个平台最多 8 个在途上传/导出，每用户每分钟 20 次。配额、速率和并发租约存储在 PostgreSQL，多个实例共享同一限制；导出也计入累计容量。环境变量为 `MAX_USER_UPLOAD_MB`、`MAX_ORG_UPLOAD_MB`、`MAX_USER_UPLOAD_FILES`、`MAX_ORG_UPLOAD_FILES`、`MAX_UPLOADS_PER_USER`、`MAX_UPLOADS_TOTAL`、`UPLOADS_PER_MINUTE`。
+
+普通上传按当前单文件上限预留容量，完成后按实际大小计费；剩余容量不足以预留上限时会返回 413。失败或进程中断的文件在移除后释放预留；一分钟一次的后台维护回收过期租约。未被任何业务引用过的文件默认 24 小时回收（`UNUSED_UPLOAD_TTL_HOURS`），已经用于业务的文件保留历史，删除前重新检查所有引用。数据库触发器在业务写入事务中标记引用并锁定附件，避免新引用与回收竞态。
+
+PDF 上传和 AI 来源下载共用独立进程内的成熟解析器，检查解码名称、引用和压缩对象流；拒绝活动内容、加密、损坏、未知过滤器及资源超限，不能仅用原始关键词判定。解析限制为 5 秒、2 并发、128 MiB 堆、16 MiB 单流解压、64 MiB 累计解压分配，并有对象、深度和输出上限；未知情况拒绝文件。
 
 课程文件必须关联当前开放课时、已发布作业说明或未隐藏讨论后才允许其他学生下载。尚未被任何业务引用的文件仍只属于上传者，授课教师不能仅凭课程权限下载其他人的未发送草稿。课程管理权限允许读取已绑定的未来课时资源；隐藏讨论附件要求该课程教师的治理权限或机构内容治理权限。课时主附件与图文内容中经过服务端验证的内联图片使用同一开放时间规则；移除最后一个有效引用后，旧图片链接也会重新拒绝访问。会话文件必须关联仍有效消息，撤回/隐藏后其他人不能继续使用旧链接，关闭交流功能后旧会话文件链接也不可访问。
 

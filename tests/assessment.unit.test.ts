@@ -8,6 +8,7 @@ import {
   publicQuestion,
   type QuestionData,
   shuffled,
+  validAnswerValue,
 } from '../apps/api/src/assessment/scoring';
 import {
   questionSchema,
@@ -15,6 +16,7 @@ import {
   submissionSchema,
   practiceProgressSchema,
   examGradeSchema,
+  answerSchema,
 } from '../apps/api/src/assessment/assessment.schemas';
 const question = (override: Partial<QuestionData> = {}): QuestionData => ({
   id: 'v1',
@@ -65,6 +67,7 @@ describe('客观评分：整数分值、漏选与标准化规则', () => {
         question({
           type: 'multiple',
           answer: ['A', 'B', 'C'],
+          options: ['A', 'B', 'C'].map((id) => ({ id, text: id })),
           scoreCents: 100,
           rules: { partialCredit: true },
         }),
@@ -89,6 +92,34 @@ describe('客观评分：整数分值、漏选与标准化规则', () => {
   it('主观题和综合题返回待人工评分，而非临时零分', () => {
     assert.equal(autoScore(question({ type: 'short' }), '回答'), null);
     assert.equal(autoScore(question({ type: 'composite', children: [question()] }), null), null);
+  });
+  it('历史对象答案和嵌套对象不会执行隐式转换或阻塞交卷', () => {
+    const poison = JSON.parse('{"toString":{}}');
+    for (const q of [
+      question(),
+      question({ type: 'boolean', answer: false }),
+      question({ type: 'multiple', answer: ['A', 'B'] }),
+      question({ type: 'blank', answer: [['A']] }),
+    ]) {
+      for (const value of [poison, [poison]]) assert.equal(autoScore(q, value), 0);
+    }
+    assert.equal(normalizeBlank(poison), '');
+    assert.equal(autoScore(question({ type: 'short' }), poison), null);
+  });
+  it('损坏的历史标准答案转人工处理，不能作为已自动评分的零分发布', () => {
+    for (const type of ['single', 'boolean', 'multiple', 'blank', 'unknown'])
+      assert.equal(autoScore(question({ type, answer: { toString: {} } }), 'A'), null);
+    for (const q of [
+      question({ answer: '' }),
+      question({ answer: 'unknown' }),
+      question({ type: 'multiple', answer: ['A', 'A'] }),
+      question({ type: 'multiple', answer: ['unknown'] }),
+      question({ type: 'blank', answer: [['  ']] }),
+      question({ rules: null as never }),
+      question({ scoreCents: -1 }),
+      question({ scoreCents: Infinity }),
+    ])
+      assert.equal(autoScore(q, ''), null);
   });
 });
 
@@ -151,6 +182,61 @@ describe('字段白名单和时间权威', () => {
 });
 
 describe('输入边界', () => {
+  it('答案DTO只接受实际支持的标量、字符串数组和综合题子题映射', () => {
+    for (const value of [null, false, '', 'A', ['A'], { child: ['first', 'second'] }])
+      assert.equal(answerSchema.safeParse({ questionVersionId: 'v1', value }).success, true);
+    for (const value of [undefined, 1, { toString: {} }, { child: { nested: 'A' } }, [['A']], [false]])
+      assert.equal(answerSchema.safeParse({ questionVersionId: 'v1', value }).success, false);
+    const manyBlanks = Array.from({ length: 31 }, () => '答案');
+    assert.equal(answerSchema.safeParse({ questionVersionId: 'v1', value: manyBlanks }).success, true);
+    assert.equal(
+      validAnswerValue(question({ type: 'blank', answer: manyBlanks.map((value) => [value]) }), manyBlanks),
+      true,
+    );
+  });
+  it('题型、选项与填空数量来自任务快照，保留草稿空答和分步作答', () => {
+    assert.equal(validAnswerValue(question(), 'A'), true);
+    assert.equal(validAnswerValue(question(), 'X'), false);
+    assert.equal(validAnswerValue(question(), { toString: 'A' }), false);
+    assert.equal(validAnswerValue(question({ type: 'boolean' }), false), true);
+    assert.equal(validAnswerValue(question({ type: 'boolean' }), 'false'), true);
+    assert.equal(validAnswerValue(question({ type: 'boolean' }), 'A'), false);
+    const multiple = question({ type: 'multiple', answer: ['A', 'B'] });
+    assert.equal(validAnswerValue(multiple, []), true);
+    assert.equal(validAnswerValue(multiple, ['A', 'B']), true);
+    assert.equal(validAnswerValue(multiple, ['A', 'A']), false);
+    assert.equal(validAnswerValue(multiple, ['X']), false);
+    const blank = question({ type: 'blank', answer: [['first'], ['second']] });
+    assert.equal(validAnswerValue(blank, ['first']), true);
+    assert.equal(validAnswerValue(blank, ['first', 'second', 'third']), false);
+    assert.equal(validAnswerValue(blank, 'first'), false);
+    assert.equal(validAnswerValue(question({ type: 'short' }), '文字作答'), true);
+    assert.equal(validAnswerValue(question({ type: 'short' }), ['文字作答']), false);
+    for (const type of ['single', 'multiple', 'boolean', 'blank', 'short', 'composite'])
+      assert.equal(validAnswerValue(question({ type }), null), true);
+  });
+  it('综合题递归检查真实子题，拒绝未知子题、错误类型和额外嵌套', () => {
+    const composite = question({
+      type: 'composite',
+      children: [
+        question({ id: 'choice' }),
+        question({ id: 'essay', type: 'short' }),
+        question({ id: 'blanks', type: 'blank', answer: [['one']] }),
+      ],
+    });
+    assert.equal(validAnswerValue(composite, {}), true);
+    assert.equal(validAnswerValue(composite, { choice: 'A', essay: '步骤', blanks: ['one'] }), true);
+    assert.equal(validAnswerValue(composite, { choice: null }), true);
+    for (const value of [
+      { unknown: 'A' },
+      { choice: ['A'] },
+      { essay: { toString: {} } },
+      { blanks: ['one', 'two'] },
+      'A',
+      [],
+    ])
+      assert.equal(validAnswerValue(composite, value), false);
+  });
   it('考试保存必须提供非负版本号', () => {
     assert.equal(saveSchema.safeParse({ answers: [] }).success, false);
     assert.equal(saveSchema.safeParse({ revision: -1, answers: [] }).success, false);

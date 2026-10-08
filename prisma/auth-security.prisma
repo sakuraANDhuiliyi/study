@@ -1,0 +1,18 @@
+// Shared request reservations survive process restarts and apply across API replicas.
+model AuthAttemptWindow {
+  key String @id
+  count Int
+  expiresAt DateTime @db.Timestamptz(3)
+  @@index([expiresAt])
+}
+
+// The administrator never receives the recovery secret or the replacement password.
+model PasswordRecovery {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash String @unique
+  pendingUntil DateTime? @db.Timestamptz(3)
+  requestedAuthVersion Int?
+  requestedBy String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}

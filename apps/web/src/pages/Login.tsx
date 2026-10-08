@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Form, Input } from 'antd';
+import { Alert, Button, Form, Input, Segmented } from 'antd';
 import { BookOpen, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,12 +14,33 @@ export function Login() {
   const [form] = Form.useForm();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [recovering, setRecovering] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [notice, setNotice] = useState('');
   if (user) return <Navigate to="/" replace />;
   async function login(values: any) {
     setBusy(true);
     setError('');
+    setNotice('');
     try {
-      const result = await send('/auth/login', values);
+      if (recovering) {
+        await send('/auth/recover', {
+          username: values.username,
+          code: values.code?.trim(),
+          newPassword: values.newPassword,
+        });
+        setRecovering(false);
+        form.resetFields(['code', 'newPassword', 'confirm', 'password']);
+        setNotice('密码已恢复，请用新密码登录，并在个人中心重新生成恢复码。');
+        return;
+      }
+      const result = registering
+        ? await send('/auth/register', {
+            username: values.username,
+            password: values.password,
+            name: values.name,
+          })
+        : await send('/auth/login', { username: values.username, password: values.password });
       client.setQueryData(['auth'], result);
       await refresh();
       navigate('/');
@@ -45,10 +66,38 @@ export function Login() {
         <section className="signin-card" aria-labelledby="signin-title">
           <div className="signin-card-body">
             <div className="signin-heading">
-              <h2 id="signin-title">登录你的账号</h2>
-              <p>继续今天的学习与教学。</p>
+              <h2 id="signin-title">
+                {recovering ? '恢复你的账号' : registering ? '开启你的自主学习空间' : '登录你的账号'}
+              </h2>
+              <p>
+                {recovering
+                  ? '个人账号可直接使用本人预留的恢复码；组织账号需先由管理员开启恢复许可。'
+                  : registering
+                    ? '无需加入组织，注册后自由选择专业与学习模块。'
+                    : '继续今天的学习与教学。'}
+              </p>
             </div>
+            {!recovering && (
+              <Segmented
+                block
+                aria-label="登录或注册"
+                value={registering ? 'register' : 'login'}
+                options={[
+                  { value: 'login', label: '账号登录' },
+                  { value: 'register', label: '个人注册' },
+                ]}
+                disabled={busy}
+                style={{ marginBottom: 24 }}
+                onChange={(value) => {
+                  setRegistering(value === 'register');
+                  setError('');
+                  setNotice('');
+                  form.resetFields(['password', 'confirm', 'name']);
+                }}
+              />
+            )}
             {error && <Alert className="signin-error" type="error" showIcon message={error} />}
+            {notice && <Alert className="signin-error" type="success" showIcon message={notice} />}
             <Form
               form={form}
               layout="vertical"
@@ -57,17 +106,91 @@ export function Login() {
               requiredMark={false}
               disabled={busy}
             >
+              {registering && !recovering && (
+                <Form.Item
+                  name="name"
+                  label="姓名或昵称"
+                  rules={[{ required: true, message: '请输入姓名或昵称' }, { max: 60 }]}
+                >
+                  <Input autoComplete="name" maxLength={60} placeholder="你希望我们如何称呼你" />
+                </Form.Item>
+              )}
               <Form.Item name="username" label="账号" rules={[{ required: true, message: '请输入账号' }]}>
                 <Input
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder="学校或机构分配的账号"
+                  placeholder={registering ? '设置你的登录账号' : '个人账号或机构分配的账号'}
                 />
               </Form.Item>
-              <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
-                <Input.Password autoComplete="current-password" placeholder="请输入密码" />
-              </Form.Item>
+              {recovering ? (
+                <>
+                  <Form.Item
+                    name="code"
+                    label="本人预留的恢复码"
+                    rules={[{ required: true, message: '请输入恢复码' }]}
+                  >
+                    <Input.Password autoComplete="off" placeholder="lmsr_ 开头的恢复码" />
+                  </Form.Item>
+                  <Form.Item
+                    name="newPassword"
+                    label="新密码"
+                    rules={[{ required: true }, { min: 12, max: 128, message: '密码须为 12 至 128 个字符' }]}
+                  >
+                    <Input.Password autoComplete="new-password" />
+                  </Form.Item>
+                  <Form.Item
+                    name="confirm"
+                    label="确认新密码"
+                    dependencies={['newPassword']}
+                    rules={[
+                      { required: true },
+                      ({ getFieldValue }) => ({
+                        validator: (_, value) =>
+                          !value || value === getFieldValue('newPassword')
+                            ? Promise.resolve()
+                            : Promise.reject(new Error('两次输入的密码不一致')),
+                      }),
+                    ]}
+                  >
+                    <Input.Password autoComplete="new-password" />
+                  </Form.Item>
+                </>
+              ) : (
+                <>
+                  <Form.Item
+                    name="password"
+                    label="密码"
+                    rules={[
+                      { required: true, message: '请输入密码' },
+                      ...(registering ? [{ min: 12, max: 128, message: '密码须为 12 至 128 个字符' }] : []),
+                    ]}
+                  >
+                    <Input.Password
+                      autoComplete={registering ? 'new-password' : 'current-password'}
+                      placeholder={registering ? '至少 12 个字符' : '请输入密码'}
+                    />
+                  </Form.Item>
+                  {registering && (
+                    <Form.Item
+                      name="confirm"
+                      label="确认密码"
+                      dependencies={['password']}
+                      rules={[
+                        { required: true, message: '请再次输入密码' },
+                        ({ getFieldValue }) => ({
+                          validator: (_, value) =>
+                            !value || value === getFieldValue('password')
+                              ? Promise.resolve()
+                              : Promise.reject(new Error('两次输入的密码不一致')),
+                        }),
+                      ]}
+                    >
+                      <Input.Password autoComplete="new-password" />
+                    </Form.Item>
+                  )}
+                </>
+              )}
               <Button
                 type="primary"
                 htmlType="submit"
@@ -76,10 +199,28 @@ export function Login() {
                 icon={<ArrowRight size={16} />}
                 iconPosition="end"
               >
-                登录学习平台
+                {recovering ? '使用恢复码设置新密码' : registering ? '注册并开始学习' : '登录学习平台'}
               </Button>
             </Form>
-            <p className="signin-help">无法登录？请联系所在机构的管理员。</p>
+            <p className="signin-help">
+              {registering
+                ? '个人账号可使用学习工具；之后也可通过邀请码申请加入组织。'
+                : '忘记密码时可使用本人预留的恢复码。'}
+            </p>
+            <Button
+              type="link"
+              block
+              disabled={busy}
+              onClick={() => {
+                setRecovering(!recovering);
+                setRegistering(false);
+                setError('');
+                setNotice('');
+                form.resetFields(['password', 'code', 'newPassword', 'confirm']);
+              }}
+            >
+              {recovering ? '返回账号登录' : '使用预留恢复码恢复账号'}
+            </Button>
           </div>
 
           {import.meta.env.DEV && (

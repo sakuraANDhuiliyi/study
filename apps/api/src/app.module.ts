@@ -18,6 +18,8 @@ import {
 import { CommunicationService } from './communication/communication.service';
 import { CommunicationGateway } from './communication/communication.gateway';
 import { LocalPrivateStorage } from './communication/storage';
+import { UploadSafetyService } from './communication/upload-safety.service';
+import { UploadAdmissionInterceptor } from './communication/upload-admission.interceptor';
 import { PlannerController } from './planner/planner.controller';
 import { NotesController } from './notes/notes.controller';
 import { AiStudyController } from './ai-study/ai-study.controller';
@@ -27,6 +29,14 @@ import { AiGateway } from './ai-study/ai.gateway';
 import { AiAuthoringController } from './ai-authoring/ai-authoring.controller';
 import { AiAuthoringService } from './ai-authoring/ai-authoring.service';
 import { AiAuthoringGateway } from './ai-authoring/ai-authoring.gateway';
+import { AlgorithmsController } from './algorithms/algorithms.controller';
+import { AlgorithmsService } from './algorithms/algorithms.service';
+import { AlgorithmAiGateway } from './algorithms/algorithm-ai.gateway';
+import { JudgeGateway } from './algorithms/judge.gateway';
+import { AccountController, AdminAccountController } from './accounts/accounts.controller';
+import { AccountsService } from './accounts/accounts.service';
+import { AcademicsController } from './academics/academics.controller';
+import { AcademicsService } from './academics/academics.service';
 @Controller('health')
 class HealthController {
   constructor(private db: PrismaService) {}
@@ -42,6 +52,7 @@ class PlatformController {
     const org = await this.db.organization.findFirst({
       where: {
         active: true,
+        kind: 'INSTITUTION',
         ...(process.env.PUBLIC_ORGANIZATION_ID ? { id: process.env.PUBLIC_ORGANIZATION_ID } : {}),
       },
       orderBy: { createdAt: 'asc' },
@@ -101,6 +112,10 @@ class CatalogController {
     NotesController,
     AiStudyController,
     AiAuthoringController,
+    AlgorithmsController,
+    AccountController,
+    AdminAccountController,
+    AcademicsController,
   ],
   providers: [
     PrismaService,
@@ -112,11 +127,18 @@ class CatalogController {
     CommunicationService,
     CommunicationGateway,
     LocalPrivateStorage,
+    UploadSafetyService,
+    UploadAdmissionInterceptor,
     AiConfiguration,
     AiGateway,
     AiStudyService,
     AiAuthoringService,
     AiAuthoringGateway,
+    AlgorithmsService,
+    AlgorithmAiGateway,
+    JudgeGateway,
+    AccountsService,
+    AcademicsService,
   ],
 })
 export class AppModule {}

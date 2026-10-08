@@ -6,6 +6,8 @@ node_modules
 .env.*.local
 config.yaml
 config.local.yaml
+deploy/judge0/judge0.conf
+deploy/judge0/.env
 .data
 uploads
 test-results

@@ -25,7 +25,9 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/platform": {
@@ -52,7 +54,9 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["Platform"]
+        "tags": [
+          "Platform"
+        ]
       }
     },
     "/api/catalog": {
@@ -79,7 +83,88 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["Catalog"]
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "summary": "注册个人学习账号，仅创建学生身份及独立个人数据空间",
+        "tags": [
+          "认证与个人资料"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 64,
+                    "pattern": "^[a-zA-Z0-9_.@-]+$"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "username",
+                  "password",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/api/auth/login": {
@@ -106,8 +191,10 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "summary": "登录；同源 Cookie 会话，失败限流",
-        "tags": ["认证与个人资料"],
+        "summary": "登录；同源 Cookie 会话，共享请求限流",
+        "tags": [
+          "认证与个人资料"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -122,7 +209,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["username", "password"],
+                "required": [
+                  "username",
+                  "password"
+                ],
                 "additionalProperties": false
               }
             }
@@ -159,7 +249,9 @@
             "cookie": []
           }
         ],
-        "tags": ["认证与个人资料"]
+        "tags": [
+          "认证与个人资料"
+        ]
       }
     },
     "/api/auth/logout": {
@@ -195,7 +287,9 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["认证与个人资料"]
+        "tags": [
+          "认证与个人资料"
+        ]
       }
     },
     "/api/auth/role": {
@@ -231,7 +325,9 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["认证与个人资料"],
+        "tags": [
+          "认证与个人资料"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -241,10 +337,17 @@
                 "properties": {
                   "role": {
                     "type": "string",
-                    "enum": ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]
+                    "enum": [
+                      "STUDENT",
+                      "TEACHER",
+                      "ADMIN",
+                      "SUPER_ADMIN"
+                    ]
                   }
                 },
-                "required": ["role"],
+                "required": [
+                  "role"
+                ],
                 "additionalProperties": false
               }
             }
@@ -285,7 +388,9 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["认证与个人资料"],
+        "tags": [
+          "认证与个人资料"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -297,9 +402,15 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 80
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
                   }
                 },
-                "required": ["name"],
+                "required": [],
                 "additionalProperties": false
               }
             }
@@ -340,7 +451,9 @@
             "description": "版本冲突或重复约束"
           }
         },
-        "tags": ["认证与个人资料"],
+        "tags": [
+          "认证与个人资料"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -357,7 +470,160 @@
                     "maxLength": 128
                   }
                 },
-                "required": ["oldPassword", "newPassword"],
+                "required": [
+                  "oldPassword",
+                  "newPassword"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/recovery": {
+      "get": {
+        "operationId": "AuthController_recoveryStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "tags": [
+          "认证与个人资料"
+        ]
+      }
+    },
+    "/api/auth/recovery-code": {
+      "post": {
+        "operationId": "AuthController_recoveryCode",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "tags": [
+          "认证与个人资料"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "oldPassword": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "oldPassword"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/recover": {
+      "post": {
+        "operationId": "AuthController_recover",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "tags": [
+          "认证与个人资料"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 64
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "username",
+                  "code",
+                  "newPassword"
+                ],
                 "additionalProperties": false
               }
             }
@@ -414,7 +680,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       },
       "post": {
         "operationId": "CoursesController_create",
@@ -453,7 +721,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -490,10 +760,17 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"]
+                    "enum": [
+                      "DRAFT",
+                      "PUBLISHED",
+                      "UNPUBLISHED",
+                      "ARCHIVED"
+                    ]
                   }
                 },
-                "required": ["title"],
+                "required": [
+                  "title"
+                ],
                 "additionalProperties": false
               }
             }
@@ -539,7 +816,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       },
       "patch": {
         "operationId": "CoursesController_update",
@@ -586,7 +865,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -623,7 +904,12 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"]
+                    "enum": [
+                      "DRAFT",
+                      "PUBLISHED",
+                      "UNPUBLISHED",
+                      "ARCHIVED"
+                    ]
                   }
                 },
                 "required": [],
@@ -680,7 +966,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -695,7 +983,9 @@
                     "type": "number"
                   }
                 },
-                "required": ["title"],
+                "required": [
+                  "title"
+                ],
                 "additionalProperties": false
               }
             }
@@ -749,7 +1039,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       }
     },
     "/api/chapters/{id}/lessons": {
@@ -798,7 +1090,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -818,7 +1112,13 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["TEXT", "VIDEO", "PDF", "DOCUMENT", "LINK"],
+                    "enum": [
+                      "TEXT",
+                      "VIDEO",
+                      "PDF",
+                      "DOCUMENT",
+                      "LINK"
+                    ],
                     "default": "TEXT"
                   },
                   "resourceUrl": {
@@ -847,21 +1147,30 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["practice", "assignment", "exam"]
+                          "enum": [
+                            "practice",
+                            "assignment",
+                            "exam"
+                          ]
                         },
                         "id": {
                           "type": "string",
                           "minLength": 1
                         }
                       },
-                      "required": ["type", "id"],
+                      "required": [
+                        "type",
+                        "id"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 20,
                     "default": []
                   }
                 },
-                "required": ["title"],
+                "required": [
+                  "title"
+                ],
                 "additionalProperties": false
               }
             }
@@ -915,7 +1224,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -935,7 +1246,13 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["TEXT", "VIDEO", "PDF", "DOCUMENT", "LINK"],
+                    "enum": [
+                      "TEXT",
+                      "VIDEO",
+                      "PDF",
+                      "DOCUMENT",
+                      "LINK"
+                    ],
                     "default": "TEXT"
                   },
                   "resourceUrl": {
@@ -964,14 +1281,21 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["practice", "assignment", "exam"]
+                          "enum": [
+                            "practice",
+                            "assignment",
+                            "exam"
+                          ]
                         },
                         "id": {
                           "type": "string",
                           "minLength": 1
                         }
                       },
-                      "required": ["type", "id"],
+                      "required": [
+                        "type",
+                        "id"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 20,
@@ -1032,7 +1356,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1048,7 +1374,9 @@
                     "minimum": 0
                   }
                 },
-                "required": ["completed"],
+                "required": [
+                  "completed"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1113,7 +1441,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       },
       "post": {
         "operationId": "CoursesController_addMember",
@@ -1160,7 +1490,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"],
+        "tags": [
+          "课程与学习"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1173,10 +1505,16 @@
                   },
                   "kind": {
                     "type": "string",
-                    "enum": ["teacher", "student"]
+                    "enum": [
+                      "teacher",
+                      "student"
+                    ]
                   }
                 },
-                "required": ["userId", "kind"],
+                "required": [
+                  "userId",
+                  "kind"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1238,7 +1576,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       }
     },
     "/api/announcements": {
@@ -1270,7 +1610,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       },
       "post": {
         "operationId": "CoursesController_announcement",
@@ -1309,7 +1651,9 @@
             "cookie": []
           }
         ],
-        "tags": ["课程与学习"]
+        "tags": [
+          "课程与学习"
+        ]
       }
     },
     "/api/admin/users": {
@@ -1361,7 +1705,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       },
       "post": {
         "operationId": "AdminController_create",
@@ -1400,7 +1746,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"],
+        "tags": [
+          "机构与后台管理"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1433,13 +1781,29 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]
+                      "enum": [
+                        "STUDENT",
+                        "TEACHER",
+                        "ADMIN",
+                        "SUPER_ADMIN"
+                      ]
                     },
                     "minItems": 1,
                     "maxItems": 4
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
                   }
                 },
-                "required": ["username", "name", "password", "roles"],
+                "required": [
+                  "username",
+                  "name",
+                  "password",
+                  "roles"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1476,7 +1840,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/users/{id}": {
@@ -1525,7 +1891,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"],
+        "tags": [
+          "机构与后台管理"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1538,11 +1906,6 @@
                     "minLength": 1,
                     "maxLength": 80
                   },
-                  "password": {
-                    "type": "string",
-                    "minLength": 12,
-                    "maxLength": 128
-                  },
                   "studentNo": {
                     "type": "string",
                     "maxLength": 64,
@@ -1552,10 +1915,21 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]
+                      "enum": [
+                        "STUDENT",
+                        "TEACHER",
+                        "ADMIN",
+                        "SUPER_ADMIN"
+                      ]
                     },
                     "minItems": 1,
                     "maxItems": 4
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
                   },
                   "active": {
                     "type": "boolean"
@@ -1567,6 +1941,57 @@
             }
           }
         }
+      }
+    },
+    "/api/admin/users/{id}/recovery": {
+      "post": {
+        "operationId": "AdminController_recovery",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/users/template": {
@@ -1598,7 +2023,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/users/import": {
@@ -1639,7 +2066,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"],
+        "tags": [
+          "机构与后台管理"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1677,13 +2106,29 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["STUDENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]
+                            "enum": [
+                              "STUDENT",
+                              "TEACHER",
+                              "ADMIN",
+                              "SUPER_ADMIN"
+                            ]
                           },
                           "minItems": 1,
                           "maxItems": 4
+                        },
+                        "majorId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100,
+                          "nullable": true
                         }
                       },
-                      "required": ["username", "name", "password", "roles"],
+                      "required": [
+                        "username",
+                        "name",
+                        "password",
+                        "roles"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -1692,7 +2137,9 @@
                     "default": false
                   }
                 },
-                "required": ["rows"],
+                "required": [
+                  "rows"
+                ],
                 "additionalProperties": false
               }
             }
@@ -1738,7 +2185,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/users/export": {
@@ -1770,7 +2219,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/terms": {
@@ -1822,7 +2273,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       },
       "post": {
         "operationId": "AdminController_termCreate",
@@ -1861,7 +2314,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/classes": {
@@ -1913,7 +2368,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       },
       "post": {
         "operationId": "AdminController_classCreate",
@@ -1952,7 +2409,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/classes/{id}": {
@@ -2001,7 +2460,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/classes/{id}/members": {
@@ -2042,7 +2503,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       },
       "post": {
         "operationId": "AdminController_classMember",
@@ -2089,7 +2552,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/classes/{id}/courses": {
@@ -2138,7 +2603,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/organizations": {
@@ -2170,7 +2637,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       },
       "post": {
         "operationId": "AdminController_organization",
@@ -2209,7 +2678,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/organizations/{id}": {
@@ -2258,7 +2729,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/organizations/{id}/admins": {
@@ -2307,7 +2780,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/roles": {
@@ -2339,7 +2814,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/roles/{id}": {
@@ -2388,7 +2865,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/grants": {
@@ -2429,7 +2908,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"],
+        "tags": [
+          "机构与后台管理"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2452,7 +2933,12 @@
                     "minLength": 5
                   }
                 },
-                "required": ["userId", "permissionId", "expiresAt", "reason"],
+                "required": [
+                  "userId",
+                  "permissionId",
+                  "expiresAt",
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -2487,7 +2973,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/grants/{id}": {
@@ -2536,7 +3024,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/settings": {
@@ -2568,7 +3058,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       },
       "patch": {
         "operationId": "AdminController_settingsUpdate",
@@ -2607,7 +3099,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/audit": {
@@ -2659,7 +3153,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/admin/jobs": {
@@ -2711,7 +3207,9 @@
             "cookie": []
           }
         ],
-        "tags": ["机构与后台管理"]
+        "tags": [
+          "机构与后台管理"
+        ]
       }
     },
     "/api/dashboard": {
@@ -2743,7 +3241,9 @@
             "cookie": []
           }
         ],
-        "tags": ["工作台与学习分析"]
+        "tags": [
+          "工作台与学习分析"
+        ]
       }
     },
     "/api/analytics": {
@@ -2775,7 +3275,9 @@
             "cookie": []
           }
         ],
-        "tags": ["工作台与学习分析"]
+        "tags": [
+          "工作台与学习分析"
+        ]
       }
     },
     "/api/analytics/export": {
@@ -2807,7 +3309,9 @@
             "cookie": []
           }
         ],
-        "tags": ["工作台与学习分析"]
+        "tags": [
+          "工作台与学习分析"
+        ]
       }
     },
     "/api/questions": {
@@ -2860,7 +3364,9 @@
           }
         ],
         "summary": "question.manage：分页查询授权题库",
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "post": {
         "operationId": "AssessmentController_createQuestion",
@@ -2899,7 +3405,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2909,7 +3417,14 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["single", "multiple", "boolean", "blank", "short", "composite"]
+                    "enum": [
+                      "single",
+                      "multiple",
+                      "boolean",
+                      "blank",
+                      "short",
+                      "composite"
+                    ]
                   },
                   "stem": {
                     "type": "string",
@@ -2930,7 +3445,10 @@
                           "maxLength": 4000
                         }
                       },
-                      "required": ["id", "text"],
+                      "required": [
+                        "id",
+                        "text"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 30,
@@ -3008,7 +3526,10 @@
                   },
                   "scope": {
                     "type": "string",
-                    "enum": ["private", "shared"],
+                    "enum": [
+                      "private",
+                      "shared"
+                    ],
                     "default": "private"
                   },
                   "practiceEnabled": {
@@ -3022,7 +3543,14 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["single", "multiple", "boolean", "blank", "short", "composite"]
+                          "enum": [
+                            "single",
+                            "multiple",
+                            "boolean",
+                            "blank",
+                            "short",
+                            "composite"
+                          ]
                         },
                         "stem": {
                           "type": "string",
@@ -3043,7 +3571,10 @@
                                 "maxLength": 4000
                               }
                             },
-                            "required": ["id", "text"],
+                            "required": [
+                              "id",
+                              "text"
+                            ],
                             "additionalProperties": false
                           },
                           "maxItems": 30,
@@ -3114,14 +3645,26 @@
                           "maxLength": 100
                         }
                       },
-                      "required": ["type", "stem", "answer", "scoreCents", "id"],
+                      "required": [
+                        "type",
+                        "stem",
+                        "answer",
+                        "scoreCents",
+                        "id"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 30,
                     "default": []
                   }
                 },
-                "required": ["type", "stem", "answer", "scoreCents", "courseId"],
+                "required": [
+                  "type",
+                  "stem",
+                  "answer",
+                  "scoreCents",
+                  "courseId"
+                ],
                 "additionalProperties": false
               }
             }
@@ -3168,7 +3711,9 @@
           }
         ],
         "summary": "题库 JSON 导入：commit=false 验证预览，commit=true 完整验证后写入",
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3183,7 +3728,14 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["single", "multiple", "boolean", "blank", "short", "composite"]
+                          "enum": [
+                            "single",
+                            "multiple",
+                            "boolean",
+                            "blank",
+                            "short",
+                            "composite"
+                          ]
                         },
                         "stem": {
                           "type": "string",
@@ -3204,7 +3756,10 @@
                                 "maxLength": 4000
                               }
                             },
-                            "required": ["id", "text"],
+                            "required": [
+                              "id",
+                              "text"
+                            ],
                             "additionalProperties": false
                           },
                           "maxItems": 30,
@@ -3282,7 +3837,10 @@
                         },
                         "scope": {
                           "type": "string",
-                          "enum": ["private", "shared"],
+                          "enum": [
+                            "private",
+                            "shared"
+                          ],
                           "default": "private"
                         },
                         "practiceEnabled": {
@@ -3296,7 +3854,14 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["single", "multiple", "boolean", "blank", "short", "composite"]
+                                "enum": [
+                                  "single",
+                                  "multiple",
+                                  "boolean",
+                                  "blank",
+                                  "short",
+                                  "composite"
+                                ]
                               },
                               "stem": {
                                 "type": "string",
@@ -3317,7 +3882,10 @@
                                       "maxLength": 4000
                                     }
                                   },
-                                  "required": ["id", "text"],
+                                  "required": [
+                                    "id",
+                                    "text"
+                                  ],
                                   "additionalProperties": false
                                 },
                                 "maxItems": 30,
@@ -3388,14 +3956,26 @@
                                 "maxLength": 100
                               }
                             },
-                            "required": ["type", "stem", "answer", "scoreCents", "id"],
+                            "required": [
+                              "type",
+                              "stem",
+                              "answer",
+                              "scoreCents",
+                              "id"
+                            ],
                             "additionalProperties": false
                           },
                           "maxItems": 30,
                           "default": []
                         }
                       },
-                      "required": ["type", "stem", "answer", "scoreCents", "courseId"],
+                      "required": [
+                        "type",
+                        "stem",
+                        "answer",
+                        "scoreCents",
+                        "courseId"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -3404,7 +3984,9 @@
                     "default": false
                   }
                 },
-                "required": ["rows"],
+                "required": [
+                  "rows"
+                ],
                 "additionalProperties": false
               }
             }
@@ -3441,7 +4023,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/questions/template": {
@@ -3473,7 +4057,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/questions/{id}": {
@@ -3514,7 +4100,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "patch": {
         "operationId": "AssessmentController_updateQuestion",
@@ -3561,7 +4149,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3571,7 +4161,14 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["single", "multiple", "boolean", "blank", "short", "composite"]
+                    "enum": [
+                      "single",
+                      "multiple",
+                      "boolean",
+                      "blank",
+                      "short",
+                      "composite"
+                    ]
                   },
                   "stem": {
                     "type": "string",
@@ -3592,7 +4189,10 @@
                           "maxLength": 4000
                         }
                       },
-                      "required": ["id", "text"],
+                      "required": [
+                        "id",
+                        "text"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 30,
@@ -3670,7 +4270,10 @@
                   },
                   "scope": {
                     "type": "string",
-                    "enum": ["private", "shared"],
+                    "enum": [
+                      "private",
+                      "shared"
+                    ],
                     "default": "private"
                   },
                   "practiceEnabled": {
@@ -3684,7 +4287,14 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["single", "multiple", "boolean", "blank", "short", "composite"]
+                          "enum": [
+                            "single",
+                            "multiple",
+                            "boolean",
+                            "blank",
+                            "short",
+                            "composite"
+                          ]
                         },
                         "stem": {
                           "type": "string",
@@ -3705,7 +4315,10 @@
                                 "maxLength": 4000
                               }
                             },
-                            "required": ["id", "text"],
+                            "required": [
+                              "id",
+                              "text"
+                            ],
                             "additionalProperties": false
                           },
                           "maxItems": 30,
@@ -3776,7 +4389,13 @@
                           "maxLength": 100
                         }
                       },
-                      "required": ["type", "stem", "answer", "scoreCents", "id"],
+                      "required": [
+                        "type",
+                        "stem",
+                        "answer",
+                        "scoreCents",
+                        "id"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 30,
@@ -3790,7 +4409,9 @@
                     "minimum": 1
                   }
                 },
-                "required": ["expectedVersion"],
+                "required": [
+                  "expectedVersion"
+                ],
                 "additionalProperties": false
               }
             }
@@ -3836,7 +4457,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/questions/{id}/copy": {
@@ -3885,7 +4508,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/questions/{id}/favorite": {
@@ -3934,7 +4559,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/papers": {
@@ -3986,7 +4613,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "post": {
         "operationId": "AssessmentController_createPaper",
@@ -4025,7 +4654,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4073,11 +4704,16 @@
                         "type": "boolean"
                       }
                     },
-                    "required": ["count"],
+                    "required": [
+                      "count"
+                    ],
                     "additionalProperties": false
                   }
                 },
-                "required": ["courseId", "title"],
+                "required": [
+                  "courseId",
+                  "title"
+                ],
                 "additionalProperties": false
               }
             }
@@ -4134,7 +4770,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "post": {
         "operationId": "AssessmentController_createAssignment",
@@ -4173,7 +4811,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4241,7 +4881,13 @@
                     "default": []
                   }
                 },
-                "required": ["courseId", "title", "opensAt", "dueAt", "questionVersionIds"],
+                "required": [
+                  "courseId",
+                  "title",
+                  "opensAt",
+                  "dueAt",
+                  "questionVersionIds"
+                ],
                 "additionalProperties": false
               }
             }
@@ -4287,7 +4933,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "patch": {
         "operationId": "AssessmentController_updateAssignment",
@@ -4334,7 +4982,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4410,7 +5060,9 @@
                     "maxLength": 1000
                   }
                 },
-                "required": ["revision"],
+                "required": [
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -4464,7 +5116,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/assignments/{id}/draft": {
@@ -4513,7 +5167,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4533,7 +5189,10 @@
                         },
                         "value": {}
                       },
-                      "required": ["questionVersionId", "value"],
+                      "required": [
+                        "questionVersionId",
+                        "value"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 200
@@ -4553,7 +5212,10 @@
                     "minimum": 0
                   }
                 },
-                "required": ["answers", "revision"],
+                "required": [
+                  "answers",
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -4607,7 +5269,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4627,7 +5291,10 @@
                         },
                         "value": {}
                       },
-                      "required": ["questionVersionId", "value"],
+                      "required": [
+                        "questionVersionId",
+                        "value"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 200
@@ -4648,7 +5315,10 @@
                     "maxLength": 128
                   }
                 },
-                "required": ["answers", "idempotencyKey"],
+                "required": [
+                  "answers",
+                  "idempotencyKey"
+                ],
                 "additionalProperties": false
               }
             }
@@ -4694,7 +5364,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/assignments/{id}/roster": {
@@ -4735,7 +5407,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/assignments/{id}/release": {
@@ -4784,7 +5458,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/assignments/{id}/exceptions": {
@@ -4833,7 +5509,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4862,7 +5540,10 @@
                     "default": false
                   }
                 },
-                "required": ["userId", "reason"],
+                "required": [
+                  "userId",
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -4916,7 +5597,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4949,7 +5632,10 @@
                           "default": ""
                         }
                       },
-                      "required": ["questionVersionId", "scoreCents"],
+                      "required": [
+                        "questionVersionId",
+                        "scoreCents"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 200
@@ -4964,7 +5650,10 @@
                     "default": true
                   }
                 },
-                "required": ["revision", "items"],
+                "required": [
+                  "revision",
+                  "items"
+                ],
                 "additionalProperties": false
               }
             }
@@ -5018,7 +5707,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5028,7 +5719,9 @@
                 "properties": {
                   "reason": {}
                 },
-                "required": ["reason"],
+                "required": [
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -5085,7 +5778,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "post": {
         "operationId": "AssessmentController_createPractice",
@@ -5124,7 +5819,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5144,7 +5841,11 @@
                   },
                   "mode": {
                     "type": "string",
-                    "enum": ["random", "mistakes", "favorites"],
+                    "enum": [
+                      "random",
+                      "mistakes",
+                      "favorites"
+                    ],
                     "default": "random"
                   },
                   "questionIds": {
@@ -5175,7 +5876,9 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["courseId"],
+                "required": [
+                  "courseId"
+                ],
                 "additionalProperties": false
               }
             }
@@ -5221,7 +5924,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/practice/{id}/progress": {
@@ -5270,7 +5975,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5297,7 +6004,11 @@
                     "maximum": 99
                   }
                 },
-                "required": ["revision", "flags", "currentPosition"],
+                "required": [
+                  "revision",
+                  "flags",
+                  "currentPosition"
+                ],
                 "additionalProperties": false
               }
             }
@@ -5351,7 +6062,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5366,7 +6079,10 @@
                   },
                   "value": {}
                 },
-                "required": ["questionVersionId", "value"],
+                "required": [
+                  "questionVersionId",
+                  "value"
+                ],
                 "additionalProperties": false
               }
             }
@@ -5423,7 +6139,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/mistakes/{id}": {
@@ -5472,7 +6190,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/favorites": {
@@ -5524,7 +6244,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams": {
@@ -5576,7 +6298,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "post": {
         "operationId": "AssessmentController_createExam",
@@ -5615,7 +6339,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5785,7 +6511,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       },
       "patch": {
         "operationId": "AssessmentController_updateExam",
@@ -5832,7 +6560,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5951,7 +6681,9 @@
                     "minimum": 0
                   }
                 },
-                "required": ["revision"],
+                "required": [
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6005,7 +6737,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/cancel": {
@@ -6054,7 +6788,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/start": {
@@ -6104,7 +6840,9 @@
           }
         ],
         "summary": "开始/恢复考试；服务器计算个人 deadlineAt 并冻结随机顺序",
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/attempts": {
@@ -6145,7 +6883,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/roster": {
@@ -6186,7 +6926,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/item-analysis": {
@@ -6228,7 +6970,9 @@
           }
         ],
         "summary": "教师考试题目分析：每人最近一次有效交卷，分页聚合，无个人答卷信息",
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/questions/{questionVersionId}/answers": {
@@ -6296,7 +7040,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/release": {
@@ -6345,7 +7091,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/exams/{id}/extensions": {
@@ -6394,7 +7142,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6419,7 +7169,11 @@
                     "default": 0
                   }
                 },
-                "required": ["userId", "reason", "deadlineAt"],
+                "required": [
+                  "userId",
+                  "reason",
+                  "deadlineAt"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6473,7 +7227,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6491,7 +7247,11 @@
                   },
                   "reason": {}
                 },
-                "required": ["userId", "eligible", "reason"],
+                "required": [
+                  "userId",
+                  "eligible",
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6537,7 +7297,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/attempts/{id}/answers": {
@@ -6587,7 +7349,9 @@
           }
         ],
         "summary": "CAS 自动保存；revision 冲突返回 409，过期请求拒绝并服务端交卷",
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6611,7 +7375,10 @@
                         },
                         "value": {}
                       },
-                      "required": ["questionVersionId", "value"],
+                      "required": [
+                        "questionVersionId",
+                        "value"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 200
@@ -6631,7 +7398,10 @@
                     "maximum": 199
                   }
                 },
-                "required": ["revision", "answers"],
+                "required": [
+                  "revision",
+                  "answers"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6685,7 +7455,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6699,7 +7471,9 @@
                     "maxLength": 128
                   }
                 },
-                "required": ["idempotencyKey"],
+                "required": [
+                  "idempotencyKey"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6753,7 +7527,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6786,7 +7562,10 @@
                           "default": ""
                         }
                       },
-                      "required": ["questionVersionId", "scoreCents"],
+                      "required": [
+                        "questionVersionId",
+                        "scoreCents"
+                      ],
                       "additionalProperties": false
                     },
                     "maxItems": 200
@@ -6800,7 +7579,10 @@
                     "default": true
                   }
                 },
-                "required": ["revision", "items"],
+                "required": [
+                  "revision",
+                  "items"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6854,7 +7636,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6864,7 +7648,9 @@
                 "properties": {
                   "reason": {}
                 },
-                "required": ["reason"],
+                "required": [
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -6910,7 +7696,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/appeals": {
@@ -6942,7 +7730,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"]
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ]
       }
     },
     "/api/appeals/{id}/resolve": {
@@ -6991,7 +7781,9 @@
             "cookie": []
           }
         ],
-        "tags": ["题库、作业、练习、考试与成绩"],
+        "tags": [
+          "题库、作业、练习、考试与成绩"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7006,7 +7798,9 @@
                     "maximum": 100000000
                   }
                 },
-                "required": ["resolution"],
+                "required": [
+                  "resolution"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7064,7 +7858,9 @@
           }
         ],
         "summary": "当前课程范围内讨论，分页、关键词、作者、创建时间范围筛选",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       },
       "post": {
         "operationId": "CommunicationController_createPost",
@@ -7104,7 +7900,9 @@
           }
         ],
         "summary": "课程发帖，校验课程与附件归属",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7139,7 +7937,11 @@
                   },
                   "linkType": {
                     "type": "string",
-                    "enum": ["chapter", "assignment", "question"]
+                    "enum": [
+                      "chapter",
+                      "assignment",
+                      "question"
+                    ]
                   },
                   "linkId": {
                     "type": "string",
@@ -7147,7 +7949,11 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["courseId", "title", "body"],
+                "required": [
+                  "courseId",
+                  "title",
+                  "body"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7194,7 +8000,9 @@
           }
         ],
         "summary": "讨论详情与分页回复；默认第一页20条",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       },
       "patch": {
         "operationId": "CommunicationController_updatePost",
@@ -7242,7 +8050,9 @@
           }
         ],
         "summary": "置顶、精华、关闭讨论；作者可标记解决",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7318,7 +8128,9 @@
           }
         ],
         "summary": "回复或引用同一讨论中的回复",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7347,7 +8159,9 @@
                     "default": []
                   }
                 },
-                "required": ["body"],
+                "required": [
+                  "body"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7385,7 +8199,9 @@
           }
         ],
         "summary": "当前同课程的师生联系人，管理员不返回私人联系人",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/classes": {
@@ -7418,7 +8234,9 @@
           }
         ],
         "summary": "当前允许访问交流区的班级",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/classes/{classId}/conversation": {
@@ -7468,7 +8286,9 @@
           }
         ],
         "summary": "进入当前授权班级的交流会话",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/conversations": {
@@ -7521,7 +8341,9 @@
           }
         ],
         "summary": "会话列表、最后消息、准确未读数；重新校验当前成员资格",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       },
       "post": {
         "operationId": "CommunicationController_directConversation",
@@ -7561,7 +8383,9 @@
           }
         ],
         "summary": "建立或恢复同课程师生私人会话",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7575,7 +8399,9 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["userId"],
+                "required": [
+                  "userId"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7622,7 +8448,9 @@
           }
         ],
         "summary": "消息历史；afterId补取断线期间消息，稳定游标排序",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       },
       "post": {
         "operationId": "CommunicationController_send",
@@ -7670,7 +8498,9 @@
           }
         ],
         "summary": "幂等发送消息；相同clientId不同正文返回409",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7700,7 +8530,9 @@
                     "default": []
                   }
                 },
-                "required": ["clientId"],
+                "required": [
+                  "clientId"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7755,7 +8587,9 @@
           }
         ],
         "summary": "推进已读位置，禁止游标回退",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7769,7 +8603,9 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["messageId"],
+                "required": [
+                  "messageId"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7824,7 +8660,9 @@
           }
         ],
         "summary": "两分钟内撤回本人消息",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/reports": {
@@ -7866,7 +8704,9 @@
           }
         ],
         "summary": "举报当前可访问的内容",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7876,7 +8716,11 @@
                 "properties": {
                   "targetType": {
                     "type": "string",
-                    "enum": ["post", "reply", "message"]
+                    "enum": [
+                      "post",
+                      "reply",
+                      "message"
+                    ]
                   },
                   "targetId": {
                     "type": "string",
@@ -7889,7 +8733,11 @@
                     "maxLength": 1000
                   }
                 },
-                "required": ["targetType", "targetId", "reason"],
+                "required": [
+                  "targetType",
+                  "targetId",
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -7925,7 +8773,9 @@
           }
         ],
         "summary": "授权治理范围内举报元数据；不会暴露私人会话正文",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/reports/{id}/resolve": {
@@ -7975,7 +8825,9 @@
           }
         ],
         "summary": "隐藏公开内容或记录举报处理结论，事务内保留审计",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7985,7 +8837,10 @@
                 "properties": {
                   "action": {
                     "type": "string",
-                    "enum": ["hide", "dismiss"]
+                    "enum": [
+                      "hide",
+                      "dismiss"
+                    ]
                   },
                   "reason": {
                     "type": "string",
@@ -7993,7 +8848,10 @@
                     "maxLength": 1000
                   }
                 },
-                "required": ["action", "reason"],
+                "required": [
+                  "action",
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -8031,7 +8889,9 @@
           }
         ],
         "summary": "本人屏蔽列表",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       },
       "post": {
         "operationId": "CommunicationController_block",
@@ -8071,7 +8931,9 @@
           }
         ],
         "summary": "屏蔽对方私信",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/blocks/{userId}": {
@@ -8121,7 +8983,9 @@
           }
         ],
         "summary": "解除本人设置的屏蔽",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/communication/mutes": {
@@ -8154,7 +9018,9 @@
           }
         ],
         "summary": "当前治理范围的有效禁言列表",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       },
       "post": {
         "operationId": "CommunicationController_mute",
@@ -8194,7 +9060,9 @@
           }
         ],
         "summary": "有原因与有效期的禁言；教师只能禁言当前教学范围学生",
-        "tags": ["交流"],
+        "tags": [
+          "交流"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -8227,7 +9095,11 @@
                     "maxLength": 1000
                   }
                 },
-                "required": ["userId", "expiresAt", "reason"],
+                "required": [
+                  "userId",
+                  "expiresAt",
+                  "reason"
+                ],
                 "additionalProperties": false
               }
             }
@@ -8282,7 +9154,9 @@
           }
         ],
         "summary": "解除授权范围内的禁言，保留原始记录",
-        "tags": ["交流"]
+        "tags": [
+          "交流"
+        ]
       }
     },
     "/api/notifications": {
@@ -8335,7 +9209,9 @@
           }
         ],
         "summary": "本人通知与未读计数，类型筛选和分页",
-        "tags": ["通知"]
+        "tags": [
+          "通知"
+        ]
       }
     },
     "/api/notifications/read-all": {
@@ -8377,7 +9253,9 @@
           }
         ],
         "summary": "本人通知全部标记已读",
-        "tags": ["通知"]
+        "tags": [
+          "通知"
+        ]
       }
     },
     "/api/notifications/{id}/read": {
@@ -8427,7 +9305,9 @@
           }
         ],
         "summary": "本人单条通知标记已读",
-        "tags": ["通知"]
+        "tags": [
+          "通知"
+        ]
       }
     },
     "/api/attachments/assignments/{id}/export": {
@@ -8477,7 +9357,9 @@
           }
         ],
         "summary": "提交作业版本/附件归档任务；需要独立data.export与assessment.grade权限",
-        "tags": ["私有附件"]
+        "tags": [
+          "私有附件"
+        ]
       }
     },
     "/api/attachments/exports/{id}": {
@@ -8519,7 +9401,9 @@
           }
         ],
         "summary": "导出申请人查询任务状态；成功返回私有attachmentId，当前权限仍须有效",
-        "tags": ["私有附件"]
+        "tags": [
+          "私有附件"
+        ]
       }
     },
     "/api/attachments": {
@@ -8556,7 +9440,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["file"]
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -8587,7 +9473,61 @@
           }
         ],
         "summary": "上传私有文件，courseId、conversationId、assignmentId最多选择一种业务范围",
-        "tags": ["私有附件"]
+        "tags": [
+          "私有附件"
+        ]
+      }
+    },
+    "/api/attachments/{id}": {
+      "delete": {
+        "operationId": "AttachmentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "删除本人尚未被业务记录引用的附件",
+        "tags": [
+          "私有附件"
+        ]
       }
     },
     "/api/attachments/{id}/download": {
@@ -8629,7 +9569,9 @@
           }
         ],
         "summary": "每次下载重新校验当前业务权限，不提供公开永久链接",
-        "tags": ["私有附件"]
+        "tags": [
+          "私有附件"
+        ]
       }
     },
     "/api/attachments/{id}/preview": {
@@ -8671,7 +9613,9 @@
           }
         ],
         "summary": "图片/PDF/MP4授权预览；文档类型仍需下载",
-        "tags": ["私有附件"]
+        "tags": [
+          "私有附件"
+        ]
       }
     },
     "/api/planner": {
@@ -8704,7 +9648,9 @@
           }
         ],
         "summary": "按当前课程权限聚合作业、考试与本人待办；最多查询93天",
-        "tags": ["学习日历与个人计划"]
+        "tags": [
+          "学习日历与个人计划"
+        ]
       }
     },
     "/api/planner/tasks": {
@@ -8746,7 +9692,9 @@
           }
         ],
         "summary": "新增仅本人可见的个人待办",
-        "tags": ["学习日历与个人计划"],
+        "tags": [
+          "学习日历与个人计划"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -8769,7 +9717,10 @@
                     "format": "date-time"
                   }
                 },
-                "required": ["title", "dueAt"],
+                "required": [
+                  "title",
+                  "dueAt"
+                ],
                 "additionalProperties": false
               }
             }
@@ -8816,7 +9767,9 @@
           }
         ],
         "summary": "获取本人待办的最新内容及版本",
-        "tags": ["学习日历与个人计划"]
+        "tags": [
+          "学习日历与个人计划"
+        ]
       },
       "patch": {
         "operationId": "PlannerController_update",
@@ -8864,7 +9817,9 @@
           }
         ],
         "summary": "通过revision并发校验编辑或完成本人待办",
-        "tags": ["学习日历与个人计划"],
+        "tags": [
+          "学习日历与个人计划"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -8895,7 +9850,9 @@
                     "type": "boolean"
                   }
                 },
-                "required": ["revision"],
+                "required": [
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -8948,7 +9905,9 @@
           }
         ],
         "summary": "删除本人待办并校验revision",
-        "tags": ["学习日历与个人计划"],
+        "tags": [
+          "学习日历与个人计划"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -8962,7 +9921,9 @@
                     "maximum": 2147483647
                   }
                 },
-                "required": ["revision"],
+                "required": [
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -8999,7 +9960,9 @@
             "cookie": []
           }
         ],
-        "tags": ["私人学习笔记"]
+        "tags": [
+          "私人学习笔记"
+        ]
       }
     },
     "/api/lessons/{id}/note": {
@@ -9040,7 +10003,9 @@
             "cookie": []
           }
         ],
-        "tags": ["私人学习笔记"]
+        "tags": [
+          "私人学习笔记"
+        ]
       },
       "put": {
         "operationId": "NotesController_save",
@@ -9087,7 +10052,9 @@
             "cookie": []
           }
         ],
-        "tags": ["私人学习笔记"],
+        "tags": [
+          "私人学习笔记"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9115,7 +10082,10 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["body", "revision"],
+                "required": [
+                  "body",
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }
@@ -9167,7 +10137,9 @@
             "cookie": []
           }
         ],
-        "tags": ["私人学习笔记"],
+        "tags": [
+          "私人学习笔记"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9185,7 +10157,10 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["revision", "noteId"],
+                "required": [
+                  "revision",
+                  "noteId"
+                ],
                 "additionalProperties": false
               }
             }
@@ -9222,7 +10197,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"]
+        "tags": [
+          "AI 错题复盘"
+        ]
       }
     },
     "/api/ai-study/reports": {
@@ -9275,7 +10252,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"]
+        "tags": [
+          "AI 错题复盘"
+        ]
       },
       "post": {
         "operationId": "AiStudyController_create",
@@ -9314,7 +10293,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"],
+        "tags": [
+          "AI 错题复盘"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9338,7 +10319,9 @@
                     "default": ""
                   }
                 },
-                "required": ["mistakeIds"],
+                "required": [
+                  "mistakeIds"
+                ],
                 "additionalProperties": false
               }
             }
@@ -9384,7 +10367,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"]
+        "tags": [
+          "AI 错题复盘"
+        ]
       },
       "delete": {
         "operationId": "AiStudyController_remove",
@@ -9431,7 +10416,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"]
+        "tags": [
+          "AI 错题复盘"
+        ]
       }
     },
     "/api/ai-study/reports/{id}/search": {
@@ -9480,7 +10467,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"],
+        "tags": [
+          "AI 错题复盘"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9494,7 +10483,9 @@
                     "maxLength": 300
                   }
                 },
-                "required": ["query"],
+                "required": [
+                  "query"
+                ],
                 "additionalProperties": false
               }
             }
@@ -9519,7 +10510,10 @@
             "name": "format",
             "schema": {
               "type": "string",
-              "enum": ["md", "json"],
+              "enum": [
+                "md",
+                "json"
+              ],
               "default": "md"
             }
           }
@@ -9549,7 +10543,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"]
+        "tags": [
+          "AI 错题复盘"
+        ]
       }
     },
     "/api/ai-study/reports/{id}/sources/{sourceId}/download": {
@@ -9606,7 +10602,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 错题复盘"]
+        "tags": [
+          "AI 错题复盘"
+        ]
       }
     },
     "/api/ai-authoring/status": {
@@ -9638,7 +10636,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 出题与组卷"]
+        "tags": [
+          "AI 出题与组卷"
+        ]
       }
     },
     "/api/ai-authoring/drafts": {
@@ -9691,7 +10691,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 出题与组卷"]
+        "tags": [
+          "AI 出题与组卷"
+        ]
       },
       "post": {
         "operationId": "AiAuthoringController_create",
@@ -9730,7 +10732,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 出题与组卷"],
+        "tags": [
+          "AI 出题与组卷"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9740,7 +10744,10 @@
                 "properties": {
                   "mode": {
                     "type": "string",
-                    "enum": ["questions", "paper"]
+                    "enum": [
+                      "questions",
+                      "paper"
+                    ]
                   },
                   "courseId": {
                     "type": "string",
@@ -9789,7 +10796,13 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["single", "multiple", "boolean", "blank", "short"]
+                          "enum": [
+                            "single",
+                            "multiple",
+                            "boolean",
+                            "blank",
+                            "short"
+                          ]
                         },
                         "count": {
                           "type": "integer",
@@ -9807,14 +10820,25 @@
                           "maximum": 5
                         }
                       },
-                      "required": ["type", "count", "scoreCents", "difficulty"],
+                      "required": [
+                        "type",
+                        "count",
+                        "scoreCents",
+                        "difficulty"
+                      ],
                       "additionalProperties": false
                     },
                     "minItems": 1,
                     "maxItems": 5
                   }
                 },
-                "required": ["mode", "courseId", "title", "knowledgePoints", "blueprint"],
+                "required": [
+                  "mode",
+                  "courseId",
+                  "title",
+                  "knowledgePoints",
+                  "blueprint"
+                ],
                 "additionalProperties": false
               }
             }
@@ -9860,7 +10884,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 出题与组卷"]
+        "tags": [
+          "AI 出题与组卷"
+        ]
       },
       "delete": {
         "operationId": "AiAuthoringController_remove",
@@ -9907,7 +10933,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 出题与组卷"]
+        "tags": [
+          "AI 出题与组卷"
+        ]
       }
     },
     "/api/ai-authoring/drafts/{id}/commit": {
@@ -9956,7 +10984,9 @@
             "cookie": []
           }
         ],
-        "tags": ["AI 出题与组卷"],
+        "tags": [
+          "AI 出题与组卷"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -9980,7 +11010,13 @@
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["single", "multiple", "boolean", "blank", "short"]
+                          "enum": [
+                            "single",
+                            "multiple",
+                            "boolean",
+                            "blank",
+                            "short"
+                          ]
                         },
                         "stem": {
                           "type": "string",
@@ -10002,7 +11038,10 @@
                                 "maxLength": 1000
                               }
                             },
-                            "required": ["id", "text"],
+                            "required": [
+                              "id",
+                              "text"
+                            ],
                             "additionalProperties": false
                           },
                           "maxItems": 8
@@ -10059,7 +11098,2272 @@
                     "maxItems": 10
                   }
                 },
-                "required": ["revision", "title", "questions"],
+                "required": [
+                  "revision",
+                  "title",
+                  "questions"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithms/status": {
+      "get": {
+        "operationId": "AlgorithmsController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/overview": {
+      "get": {
+        "operationId": "AlgorithmsController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/problems": {
+      "get": {
+        "operationId": "AlgorithmsController_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "favorite",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "review",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "review",
+                "mastered"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "difficulty",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "easy",
+                "medium",
+                "hard"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "tag",
+            "schema": {
+              "type": "string",
+              "maxLength": 60
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "todo",
+                "attempted",
+                "solved"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/problems/{id}": {
+      "get": {
+        "operationId": "AlgorithmsController_problem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/problems/{id}/learning": {
+      "get": {
+        "operationId": "AlgorithmsController_learning",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      },
+      "patch": {
+        "operationId": "AlgorithmsController_updateLearning",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "favorite": {
+                    "type": "boolean"
+                  },
+                  "reviewStatus": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "review",
+                      "mastered"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 12000
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithms/problems/{id}/editorial": {
+      "get": {
+        "operationId": "AlgorithmsController_editorial",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/problems/{id}/draft": {
+      "put": {
+        "operationId": "AlgorithmsController_draft",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "cpp",
+                      "python",
+                      "javascript",
+                      "java"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 16000
+                  }
+                },
+                "required": [
+                  "language",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithms/problems/{id}/submissions": {
+      "post": {
+        "operationId": "AlgorithmsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "cpp",
+                      "python",
+                      "javascript",
+                      "java"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 16000
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "run",
+                      "submit"
+                    ]
+                  },
+                  "stdin": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 16000
+                  }
+                },
+                "required": [
+                  "language",
+                  "code",
+                  "mode"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "AlgorithmsController_submissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/submissions/{id}": {
+      "get": {
+        "operationId": "AlgorithmsController_submission",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/algorithms/problems/{id}/analysis": {
+      "post": {
+        "operationId": "AlgorithmsController_analysis",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "cpp",
+                      "python",
+                      "javascript",
+                      "java"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 16000
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "hint",
+                      "explain",
+                      "debug"
+                    ]
+                  },
+                  "submissionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "language",
+                  "code",
+                  "mode"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithms/problems/{id}/analyses": {
+      "get": {
+        "operationId": "AlgorithmsController_analyses",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学生算法练习"
+        ]
+      }
+    },
+    "/api/account/organization": {
+      "get": {
+        "operationId": "AccountController_organization",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "个人账号与机构加入"
+        ]
+      }
+    },
+    "/api/account/join-requests": {
+      "get": {
+        "operationId": "AccountController_requests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "个人账号与机构加入"
+        ]
+      },
+      "post": {
+        "operationId": "AccountController_apply",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "个人账号与机构加入"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "inviteCode": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 100
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "default": ""
+                  }
+                },
+                "required": [
+                  "inviteCode"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/join-requests/{id}/cancel": {
+      "post": {
+        "operationId": "AccountController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "个人账号与机构加入"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/leave-organization": {
+      "post": {
+        "operationId": "AccountController_leave",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "个人账号与机构加入"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/join-settings": {
+      "get": {
+        "operationId": "AdminAccountController_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "机构加入申请管理"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminAccountController_updateSettings",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "机构加入申请管理"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "joinEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "joinEnabled"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/join-settings/rotate-code": {
+      "post": {
+        "operationId": "AdminAccountController_rotate",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "机构加入申请管理"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/join-requests": {
+      "get": {
+        "operationId": "AdminAccountController_requests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "机构加入申请管理"
+        ]
+      }
+    },
+    "/api/admin/join-requests/{id}": {
+      "patch": {
+        "operationId": "AdminAccountController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "机构加入申请管理"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "APPROVED",
+                      "REJECTED"
+                    ]
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/catalog": {
+      "get": {
+        "operationId": "AcademicsController_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      }
+    },
+    "/api/academics/me": {
+      "get": {
+        "operationId": "AcademicsController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      }
+    },
+    "/api/academics/preferences": {
+      "patch": {
+        "operationId": "AcademicsController_preferences",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "selectedModuleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "maxItems": 60
+                  },
+                  "majorId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "revision",
+                  "selectedModuleIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/modules/{id}": {
+      "get": {
+        "operationId": "AcademicsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      }
+    },
+    "/api/academics/modules/{id}/evaluate": {
+      "post": {
+        "operationId": "AcademicsController_evaluate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "values"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/records": {
+      "get": {
+        "operationId": "AcademicsController_records",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "moduleId",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      }
+    },
+    "/api/academics/records/{id}": {
+      "get": {
+        "operationId": "AcademicsController_record",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      },
+      "patch": {
+        "operationId": "AcademicsController_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 12000
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "COMPLETED"
+                    ]
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "AcademicsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      }
+    },
+    "/api/academics/admin/subjects": {
+      "get": {
+        "operationId": "AcademicsController_subjects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      },
+      "post": {
+        "operationId": "AcademicsController_createSubject",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 4000,
+                    "default": ""
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/admin/subjects/{id}": {
+      "patch": {
+        "operationId": "AcademicsController_patchSubject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 4000,
+                    "default": ""
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/admin/majors": {
+      "get": {
+        "operationId": "AcademicsController_majors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ]
+      },
+      "post": {
+        "operationId": "AcademicsController_createMajor",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 4000,
+                    "default": ""
+                  },
+                  "subjectId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "moduleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "minItems": 1,
+                    "maxItems": 60
+                  }
+                },
+                "required": [
+                  "name",
+                  "subjectId",
+                  "moduleIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/admin/majors/{id}": {
+      "patch": {
+        "operationId": "AcademicsController_patchMajor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "学科专业学习"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 4000,
+                    "default": ""
+                  },
+                  "subjectId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "moduleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "minItems": 1,
+                    "maxItems": 60
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
                 "additionalProperties": false
               }
             }

@@ -22,6 +22,7 @@ import { useAuth } from '../auth';
 import { useData, date, isTeacher, isAdmin } from '../api';
 import { Chart, chartTheme, EmptyState, QueryState, RichContent } from '../components/shared';
 import '../dashboard.css';
+import { Academics } from './Academics';
 
 function DashboardPanel({
   title,
@@ -59,6 +60,10 @@ function DashboardLink({ to, children = '查看全部' }: { to: string; children
 }
 
 export function Dashboard() {
+  const { user } = useAuth();
+  return user?.accountMode === 'PERSONAL' ? <Academics home /> : <OrganizationDashboard />;
+}
+function OrganizationDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const query = useData('/dashboard');

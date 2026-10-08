@@ -9,6 +9,10 @@ export type User = {
   roles: string[];
   permissions: string[];
   organizationId: string;
+  accountMode?: 'PERSONAL' | 'ORGANIZATION';
+  majorId?: string | null;
+  major?: { id: string; name: string; subjectId: string; description: string; moduleIds: string[] } | null;
+  canReturnToPersonal?: boolean;
 };
 let csrfToken = '';
 let sessionScope = 'anonymous';

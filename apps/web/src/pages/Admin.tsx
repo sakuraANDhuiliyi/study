@@ -24,13 +24,16 @@ import { useAuth } from '../auth';
 import { RemoteSelect } from '../components/RemoteSelect';
 import { date, label, queryString, send, useAction, useData } from '../api';
 import { PageTitle, Panel, QueryState, Status } from '../components/shared';
+import type { Major } from '../components/academics/types';
 export function AdminUsers() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<string>();
+  const [majorId, setMajorId] = useState<string>();
+  const majors = useData<{ items: Major[] }>('/academics/admin/majors');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const query = useData(`/admin/users?${queryString({ search, role, page, pageSize: 15 })}`);
+  const query = useData(`/admin/users?${queryString({ search, role, majorId, page, pageSize: 15 })}`);
   const action = useAction('账号信息已保存');
   const [modal, setModal] = useState<any>(null);
   const [form] = Form.useForm();
@@ -38,6 +41,7 @@ export function AdminUsers() {
   const [csv, setCsv] = useState('');
   const [preview, setPreview] = useState<any>();
   const [importBusy, setImportBusy] = useState(false);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
   const { message, modal: feedbackModal } = App.useApp();
   const roles = ['STUDENT', 'TEACHER', ...(user?.role === 'SUPER_ADMIN' ? ['ADMIN'] : [])];
   function open(record: any = {}) {
@@ -82,6 +86,19 @@ export function AdminUsers() {
     });
     setModal(null);
   }
+  async function recoverAccount() {
+    setRecoveryBusy(true);
+    try {
+      await send(`/admin/users/${modal.id}/recovery`);
+      message.success('恢复许可已开启。本人须在 15 分钟内使用预留恢复码设置新密码。');
+      setModal(null);
+      await query.refetch();
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setRecoveryBusy(false);
+    }
+  }
   async function importData(commit = false) {
     setImportBusy(true);
     try {
@@ -93,6 +110,7 @@ export function AdminUsers() {
           const item: any = Object.fromEntries(headers.map((h, i) => [h.trim(), row[i]?.trim() || '']));
           item.roles = (item.roles || item.role || 'STUDENT').split('|');
           delete item.role;
+          if (!item.majorId) delete item.majorId;
           return item;
         });
       const result = await send('/admin/users/import', { rows, commit });
@@ -160,6 +178,18 @@ export function AdminUsers() {
           }))}
         />
         <span className="filter-count">共 {query.data?.total || 0} 位用户</span>
+        <Select
+          aria-label="学生专业筛选"
+          allowClear
+          placeholder="全部专业"
+          style={{ width: 190 }}
+          value={majorId}
+          onChange={(value) => {
+            setMajorId(value);
+            setPage(1);
+          }}
+          options={majors.data?.items.map((item) => ({ value: item.id, label: item.name }))}
+        />
         {selectedIds.length > 0 && (
           <Space>
             <span className="form-hint" style={{ margin: 0 }}>
@@ -226,6 +256,13 @@ export function AdminUsers() {
               },
               { title: '学号 / 工号', dataIndex: 'studentNo', render: (v) => v || '—' },
               {
+                title: '专业',
+                dataIndex: 'majorId',
+                render: (value) =>
+                  majors.data?.items.find((item) => item.id === value)?.name ||
+                  (value ? '已设置专业' : '未指定'),
+              },
+              {
                 title: '状态',
                 render: (_, r: any) => (
                   <Status value={r.status || (r.active === false ? 'DISABLED' : 'ACTIVE')} />
@@ -278,19 +315,46 @@ export function AdminUsers() {
             <Input />
           </Form.Item>
           <Form.Item
-            name="password"
-            label={modal?.id ? '重置密码（留空不修改）' : '初始密码'}
-            rules={
-              modal?.id
-                ? []
-                : [
-                    { required: true, message: '请输入初始密码' },
-                    { min: 12, message: '至少 12 个字符' },
-                  ]
-            }
+            name="majorId"
+            label="学生专业"
+            extra="组织学生的专业由管理员指定；可在“专业与成员申请”中维护目录。"
+            getValueFromEvent={(value) => value ?? null}
           >
-            <Input.Password autoComplete="new-password" />
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="选择专业（可选）"
+              options={majors.data?.items
+                .filter((item) => item.active || item.id === modal?.majorId)
+                .map((item) => ({ value: item.id, label: item.name }))}
+            />
           </Form.Item>
+          {modal?.id ? (
+            <Alert
+              type="info"
+              showIcon
+              message="账号密码由本人设置"
+              description="本人须已在个人中心预留恢复码。发起恢复后全部会话和敏感授权会撤销，须在 15 分钟内由本人前往登录页完成。"
+              action={
+                <Popconfirm title="发起账号恢复并撤销当前会话及敏感授权？" onConfirm={recoverAccount}>
+                  <Button loading={recoveryBusy}>发起恢复</Button>
+                </Popconfirm>
+              }
+              style={{ marginBottom: 16 }}
+            />
+          ) : (
+            <Form.Item
+              name="password"
+              label="初始密码"
+              rules={[
+                { required: true, message: '请输入初始密码' },
+                { min: 12, message: '至少 12 个字符' },
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+          )}
           <Form.Item name="roles" label="角色" rules={[{ required: true, message: '至少选择一个角色' }]}>
             <Select mode="multiple" options={roles.map((value) => ({ value, label: label(value) }))} />
           </Form.Item>
@@ -322,7 +386,7 @@ export function AdminUsers() {
         <Alert
           showIcon
           type="info"
-          message="先校验，再提交。每行包含 username、name、password、role、studentNo。"
+          message="先校验，再提交。每行包含 username、name、password、role、studentNo；可选 majorId 指定学生专业，留空则暂不指定。"
           style={{ marginBottom: 16 }}
         />
         <Space style={{ marginBottom: 15 }}>
@@ -363,7 +427,7 @@ export function AdminUsers() {
             setPreview(null);
           }}
           placeholder={
-            'username,name,password,role,studentNo\nstudent001,张同学,安全的初始密码,STUDENT,2026001'
+            'username,name,password,role,studentNo,majorId\nstudent001,张同学,安全的初始密码,STUDENT,2026001,'
           }
         />
         {preview && (

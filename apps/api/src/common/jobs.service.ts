@@ -1,14 +1,17 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CommunicationService } from '../communication/communication.service';
+import { UploadSafetyService } from '../communication/upload-safety.service';
 @Injectable()
 export class JobsService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private busy = false;
+  private lastUploadCleanup = 0;
   private logger = new Logger('Jobs');
   constructor(
     private db: PrismaService,
     private communication: CommunicationService,
+    private uploads: UploadSafetyService,
   ) {}
   onModuleInit() {
     this.timer = setInterval(() => void this.run(), 5000);
@@ -22,6 +25,14 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     this.busy = true;
     try {
       const now = new Date();
+      if (now.getTime() - this.lastUploadCleanup >= 60000) {
+        this.lastUploadCleanup = now.getTime();
+        try {
+          await this.uploads.cleanup();
+        } catch {
+          this.logger.error('Upload cleanup will retry; other background jobs continue');
+        }
+      }
       await this.db.backgroundJob.updateMany({
         where: { status: 'RUNNING', lockedAt: { lt: new Date(Date.now() - 60000) } },
         data: { status: 'PENDING', lockedAt: null },

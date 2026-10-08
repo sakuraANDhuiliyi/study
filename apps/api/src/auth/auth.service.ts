@@ -17,7 +17,7 @@ export class AuthService {
     const flags = setting?.value as { practice?: boolean; communication?: boolean } | undefined;
     if (
       (flags?.practice === false &&
-        (/^\/api\/(practice|mistakes|favorites|ai-study)(\/|$)/i.test(path) ||
+        (/^\/api\/(practice|mistakes|favorites|ai-study|algorithms)(\/|$)/i.test(path) ||
           /^\/api\/questions\/[^/]+\/favorite\/?$/i.test(path))) ||
       (flags?.communication === false &&
         /^\/api\/(discussions|conversations|communication)(\/|$)/i.test(path))
@@ -43,6 +43,12 @@ export class AuthService {
     if (!user?.active || user.authVersion !== session.authVersion) return null;
     const org = await this.db.organization.findUnique({ where: { id: user.organizationId } });
     if (!org?.active) return null;
+    if (
+      user.accountMode === 'PERSONAL' &&
+      (org.kind !== 'PERSONAL' || user.personalOrganizationId !== org.id || session.role !== 'STUDENT')
+    )
+      return null;
+    if (user.accountMode === 'ORGANIZATION' && org.kind !== 'INSTITUTION') return null;
     const role = user.roles.find((r) => r.roleId === session.role)?.role;
     if (!role) return null;
     const grants = await this.db.sensitiveGrant.findMany({
@@ -57,6 +63,8 @@ export class AuthService {
       id: user.id,
       name: user.name,
       organizationId: user.organizationId,
+      accountMode: user.accountMode,
+      majorId: user.majorId,
       role: role.id,
       permissions,
       sessionId: session.id,

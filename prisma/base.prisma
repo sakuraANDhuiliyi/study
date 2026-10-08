@@ -9,12 +9,20 @@ datasource db {
 model Organization {
   id String @id @default(cuid())
   name String
+  kind String @default("INSTITUTION")
+  joinEnabled Boolean @default(false)
+  inviteCode String? @unique
   active Boolean @default(true)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([kind,createdAt,id])
 }
 model User {
   id String @id @default(cuid())
   organizationId String
+  accountMode String @default("ORGANIZATION")
+  personalOrganizationId String? @unique
+  majorId String?
+  personalMajorId String?
   username String @unique
   studentNo String?
   name String
@@ -24,6 +32,7 @@ model User {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   roles UserRole[]
+  passwordRecovery PasswordRecovery?
   @@unique([organizationId, studentNo])
   @@index([organizationId,active,createdAt,id])
 }

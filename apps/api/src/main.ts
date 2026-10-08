@@ -80,7 +80,11 @@ async function bootstrap() {
         '404': { description: '资源不存在' },
         '409': { description: '版本冲突或重复约束' },
       };
-      if (!['get', 'head', 'options'].includes(method) && !path.endsWith('/login'))
+      if (
+        !['get', 'head', 'options'].includes(method) &&
+        !path.endsWith('/auth/login') &&
+        !path.endsWith('/auth/recover')
+      )
         op.parameters = [
           ...(op.parameters || []),
           { in: 'header', name: 'x-csrf-token', required: true, schema: { type: 'string' } },

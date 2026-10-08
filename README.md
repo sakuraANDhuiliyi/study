@@ -40,6 +40,12 @@ AI 错题复盘、联网找同类题及来源下载使用根目录 `config.yaml`
 
 教师可在“题库与试卷”或侧栏“AI 出题”中生成题目与试卷初稿，编辑确认后保存到私有题库和固定版本试卷，再在考试中心选用。沿用同一 DeepSeek 配置，支持单选、多选、判断、填空和简答；说明见 [教师 AI 出题](docs/ai-authoring.md)。
 
+学生侧栏新增“算法练习”：内置 18 道原创题和 4 条学习路线，支持本地 Monaco 四语言编辑器、样例与自定义测试、隐藏用例判题、详细题解与四语言参考程序、AI 提示/解析/诊断，以及个人收藏、笔记、复习和提交历史。题解包含解法比较、正确性说明、复杂度推导和样例逐步演示；每日题、章节进度和活动图基于当前学生记录。代码执行需在 `config.yaml` 的 `judge0` 中填写独立 Judge0 CE 服务地址和认证令牌，AI 沿用同文件的 DeepSeek 配置；未配置时页面明确提示，不生成模拟判题结果。使用流程与接口见 [算法练习](docs/algorithms.md)，执行服务隔离与配置见 [判题服务](docs/algorithm-judge.md)。升级时须应用新增数据库迁移。
+
+“专业学习中心”提供 15 个学科分类、76 个专业模板和 52 个学习模块：30 个实际计算工具、18 个结构化学习工作台、2 组原创知识练习、只读 SQL 实验室及算法入口。学生可以修改参数、运行课程模型、保存结果并补充个人笔记；工作台做结构检查与明确的数值核对，不生成虚构 AI 评分。专业目录是可扩展的起步模板，不是官方完整专业目录。公共目录随数据库迁移初始化，普通计算与笔记不需要外部 AI 密钥；完整模块清单、权限与 API 见 [专业学习中心](docs/academics.md)。
+
+登录页支持“个人注册”：无需加入机构即可自主选专业和学习模块，使用日历、笔记、算法及已配置的 AI 学习功能。个人学生可通过邀请码申请加入机构，由管理员审批并指定专业；审批后需要重新登录，组织学生不能自行修改专业。符合条件的学生可返回原个人空间，原个人记录和设置保留。管理员可在“用户管理”创建或导入学生时分配专业，并在“专业与成员申请”复制公共模板、维护本机构目录及审核申请；该管理入口同时要求 `org.manage` 和 `users.manage`。
+
 前端：<http://localhost:5173>；API：<http://127.0.0.1:3001/api>；Swagger：<http://127.0.0.1:3001/api/docs>。Vite 会代理 API 与 WebSocket。浏览器地址必须与 `APP_ORIGIN` 一致，否则写请求会被 Origin 检查拒绝。
 
 种子可重复执行，不覆盖已有账号密码或业务操作。开发账号如下，密码均为 `.env` 配置的 `DEV_SEED_PASSWORD`：
@@ -78,6 +84,8 @@ npm run test:performance
 
 浏览器验收（API 与 Vite 都须运行）：`npm run test:browser`。macOS 默认使用本机 Chrome；Linux／CI 先执行 `npx playwright install --with-deps chromium`。浏览器报告在 `playwright-report`，截图在 `test-results`。
 
+专业学习中心的真实浏览器验收位于 `tests/browser/academics-live.spec.ts`，覆盖个人注册、实际电路／SQL 计算、清除浏览器缓存后的服务端记录、组织审批及返回个人空间。它仅在回环地址和独立 `review` 数据库上启用；专用环境文件、运行命令及与界面模拟测试的区别见 [专业学习验收说明](docs/academics.md#验证与后续扩展)。
+
 `test:clean-start` 建立独立临时空数据库，迁移、重复初始化、启动独立 API 并验证四角色登录；完成后只删除本脚本创建的临时数据库。
 
 安全回归：`test:security` 顺序执行附件授权、机构功能开关、模板权限边界、考试并发和统计筛选用例。请使用独立开发数据库；可用 `DOTENV_CONFIG_PATH` 指定测试配置，`TEST_BASE_URL` 指向 API 根地址，交流测试的 `TEST_API_URL` 指向 `/api`。浏览器测试支持 `WEB_BASE_URL`，Vite 支持 `API_PROXY_TARGET`，可在独立端口连接测试库，不必污染演示库。
@@ -100,7 +108,7 @@ DOTENV_CONFIG_PATH=.data/review.env WEB_BASE_URL=http://localhost:5174 npm run t
 ## Docker 部署
 
 1. 准备域名和 HTTPS 反向代理，把同一域名的 HTTP 和 WebSocket 流量转发至本机 3001。
-2. 在部署环境安全设置 `POSTGRES_PASSWORD`（使用 URL 安全字符或正确编码连接串）与 `APP_ORIGIN=https://你的域名`。不要将真实凭据提交到仓库。
+2. 在部署环境安全设置迁移账号的 `POSTGRES_PASSWORD`、独立运行账号的 `APP_DATABASE_PASSWORD` 与 `APP_ORIGIN=https://你的域名`。运行密码必须与迁移密码不同，使用 16–128 位 URL 安全字母、数字、下划线或连字符；默认运行账号 `lms_app`，可用 `APP_DATABASE_USER` 指定新的受限账号。不要将真实凭据提交到仓库。
 3. 首次部署先复制 `config.example.yaml` 为 `config.yaml`，填写所需 AI 密钥，并确保容器用户（UID 1000）可读取该文件；文件以只读方式挂载。执行 `docker compose up --build -d`。`migrate` 服务先等待数据库，再应用迁移；应用等待迁移成功。
 4. 生产禁用演示种子，通过受控环境创建管理员：
 
@@ -115,6 +123,12 @@ docker compose run --rm \
 `BOOTSTRAP_PASSWORD` 至少 16 字符，初始化拒绝覆盖已存在账号，创建后清除初始化变量。可指定 `BOOTSTRAP_ORGANIZATION_ID` 和 `BOOTSTRAP_ORGANIZATION_NAME`；默认 `org-main`。多机构公开品牌可设置 `PUBLIC_ORGANIZATION_ID`。生产登录必须 HTTPS，`COOKIE_SECURE=true`。
 
 数据卷分别保存 PostgreSQL 与私有上传文件。应用以非 root 用户运行，只暴露回环地址端口。`/api/health` 会实际查询数据库。
+
+迁移容器在每次迁移成功后运行 `scripts/provision-runtime-db.mjs`，仅向运行账号授予业务表的 SELECT/INSERT/UPDATE/DELETE、序列使用和 schema 使用权限。运行账号不能创建表、管理角色、拥有业务表或读取迁移记录；生产 API 在启动时验证这些权限。已有部署应先配置独立运行凭据再升级，不能继续使用超级用户启动生产应用。非 Compose 部署使用迁移连接串运行该脚本，并把应用的 `DATABASE_URL` 切换为运行账号。备份与迁移继续使用受控运维连接。
+
+登录限流在 PostgreSQL 中原子预占，失败和在途请求计入同账号 8 次、同 IP 50 次／15 分钟；成功仅返还自身额度，跨实例也不会清掉其他并发失败。密码校验使用有界异步队列。已有账号的密码不能由管理员直接设置：用户先在“个人设置”用当前密码预留一次性恢复码并离线保存；组织账号还需管理员在用户管理开启 15 分钟恢复许可，个人账号无需此许可。本人在登录页使用预留恢复码设置新密码。恢复成功会撤销全部会话和敏感授权；没有预留恢复码时不能通过管理员接口覆盖已有密码。
+
+附件默认按用户 1 GiB／1000 个、机构 10 GiB／20000 个限制累计容量和数量。每用户最多 2 个、整个平台最多 8 个上传或文件导出在途请求，每用户每分钟最多 20 次。对应设置见 `.env.example`；未被任何业务引用过的附件默认 24 小时后回收，已引用文件不会自动删除。用户可以通过 `DELETE /api/attachments/:id` 删除本人当前未被引用的普通附件。容量预留在接收文件前完成，因此剩余空间不足以容纳当前单文件上限时也会暂时拒绝新上传。
 
 Nginx 示例（TLS 证书配置请使用部署环境的证书）：
 
@@ -135,7 +149,7 @@ location / {
 
 ## 升级
 
-先暂停写入并备份数据库及文件，检出经验证的新版本，运行 `npm ci` 与构建；部署时先执行 `prisma migrate deploy --schema prisma`。确认健康检查、登录、提交和文件下载后恢复流量。数据库版本升级或不可逆迁移前，应在独立数据库恢复备份并完整演练。不要只回滚应用镜像而忽略数据库兼容性。
+先暂停写入并备份数据库及文件，检出经验证的新版本，运行 `npm ci` 与构建；部署时先执行 `prisma migrate deploy --schema prisma`，再以迁移连接运行 `node scripts/provision-runtime-db.mjs` 更新运行账号权限。确认健康检查、登录、提交和文件下载后恢复流量。数据库版本升级或不可逆迁移前，应在独立数据库恢复备份并完整演练。不要只回滚应用镜像而忽略数据库兼容性。
 
 ## 备份与恢复
 
@@ -172,6 +186,9 @@ node scripts/backup.mjs restore .data/backups/manual --confirm
 - [Tabler 浅色界面参考、主题规则与新版截图](docs/ui-refresh.md)
 - [官方平台功能调研及学习日历、私人笔记、题目分析扩展](docs/feature-expansion.md)
 - [DeepSeek 错题复盘、Tavily 检索与来源下载配置](docs/ai-study.md)
+- [学生算法练习、代码草稿、提交与 AI 解析](docs/algorithms.md)
+- [独立 Judge0 编译运行服务配置](docs/algorithm-judge.md)
+- [学科专业学习中心、个人注册、组织审批与学习模块](docs/academics.md)
 
 ## 常见问题
 

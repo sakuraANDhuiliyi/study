@@ -74,6 +74,16 @@ describe('考试题目分析指标', () => {
     assert.equal(result.invalidResponseCount, 1);
     assert.ok(!JSON.stringify(result).includes('学生隐私'));
   });
+  it('历史恶意对象及混合数组按非法答案统计，不执行对象转换', () => {
+    const poison = JSON.parse('{"toString":{},"private":"隐私"}');
+    for (const type of ['single', 'boolean', 'multiple']) {
+      const stats = itemAccumulator(question({ type, answer: type === 'multiple' ? ['A', 'B'] : 'A' }), 1);
+      stats.add({ value: type === 'multiple' ? ['A', poison] : poison, graded: true, scoreCents: 0 });
+      assert.equal(stats.result().invalidResponseCount, 1);
+      assert.equal(stats.result().correctRate, 0);
+      assert.ok(!JSON.stringify(stats.result()).includes('隐私'));
+    }
+  });
   it('主观题只平均已评分答案，缺失和待批阅都不当作0', () => {
     const stats = itemAccumulator(question({ type: 'short', answer: '参考答案' }), 3);
     stats.add({ value: '待批文本', graded: false, scoreCents: null });

@@ -11,14 +11,17 @@ import {
   type Conversation,
   type DiscussionPost,
   type Message,
+  type UploadOperation,
 } from '@prisma/client';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { AuthService } from '../auth/auth.service';
 import { type Actor } from '../auth/auth.guard';
 import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { CommunicationGateway } from './communication.gateway';
 import { LocalPrivateStorage } from './storage';
+import { UploadSafetyService } from './upload-safety.service';
+import { assertSafePdf } from '../common/pdf-security';
 import { assertPrivateParticipant, canRetract, cleanText, inspectUpload, safeFilename } from './security';
 import { compressedArchive, type ArchiveEntry } from './archive';
 import type {
@@ -43,6 +46,7 @@ export class CommunicationService {
     private readonly audit: AuditService,
     private readonly gateway: CommunicationGateway,
     private readonly storage: LocalPrivateStorage,
+    private readonly uploadSafety: UploadSafetyService,
   ) {}
 
   private async users(ids: string[]) {
@@ -1205,7 +1209,12 @@ export class CommunicationService {
     return assignment;
   }
 
-  async upload(actor: Actor, file: Express.Multer.File | undefined, input: AttachmentInput) {
+  async upload(
+    actor: Actor,
+    file: Express.Multer.File | undefined,
+    input: AttachmentInput,
+    lease: UploadOperation,
+  ) {
     this.auth.require(actor, 'file.upload');
     if (!file) throw new BadRequestException('请选择文件');
     if (input.courseId) await this.auth.course(actor, input.courseId);
@@ -1222,6 +1231,7 @@ export class CommunicationService {
       typeof sizeSetting === 'number' && sizeSetting > 0 ? sizeSetting : 50,
     );
     const inspected = inspectUpload(file.originalname, file.buffer, maxMB * 1024 * 1024);
+    if (inspected.mime === 'application/pdf') await assertSafePdf(file.buffer);
     const allowed = settings.find((item) => item.key === 'allowedFileTypes')?.value;
     const extension = inspected.name.split('.').pop()?.toLowerCase() || '';
     if (
@@ -1233,20 +1243,33 @@ export class CommunicationService {
       )
     )
       throw new ForbiddenException('机构配置不允许上传此文件类型');
-    const storageKey = randomUUID();
+    const current = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+    if (
+      !current ||
+      current.id !== actor.id ||
+      current.organizationId !== actor.organizationId ||
+      current.role !== actor.role
+    )
+      throw new ForbiddenException('上传期间会话或身份发生变化，请重试');
+    this.auth.require(current, 'file.upload');
+    if (input.courseId) await this.auth.course(current, input.courseId);
+    if (input.conversationId) await this.conversation(current, input.conversationId);
+    if (input.assignmentId)
+      await this.assignmentAttachmentScope(current, input.assignmentId, current.id, true);
+    if (!lease || lease.ownerId !== actor.id || lease.organizationId !== actor.organizationId)
+      throw new ForbiddenException('上传缺少有效容量预留');
+    const storageKey = lease.storageKey;
     await this.storage.put(storageKey, file.buffer);
     try {
-      const attachment = await this.db.attachment.create({
-        data: {
-          organizationId: actor.organizationId,
-          ownerId: actor.id,
-          ...input,
-          originalName: inspected.name,
-          mime: inspected.mime,
-          size: file.buffer.length,
-          storageKey,
-          sha256: createHash('sha256').update(file.buffer).digest('hex'),
-        },
+      const attachment = await this.uploadSafety.finish(actor, lease, {
+        organizationId: actor.organizationId,
+        ownerId: actor.id,
+        ...input,
+        originalName: inspected.name,
+        mime: inspected.mime,
+        size: file.buffer.length,
+        storageKey,
+        sha256: createHash('sha256').update(file.buffer).digest('hex'),
       });
       return {
         id: attachment.id,
@@ -1255,9 +1278,15 @@ export class CommunicationService {
         size: attachment.size,
       };
     } catch (error) {
-      await this.storage.delete(storageKey);
+      await this.uploadSafety.release(lease.id);
       throw error;
     }
+  }
+
+  async removeAttachment(actor: Actor, id: string) {
+    const result = await this.uploadSafety.remove(actor, id);
+    await this.audit.record(actor, 'attachment.delete', 'Attachment', id);
+    return result;
   }
 
   private async publishedCourseAttachment(actor: Actor, id: string, courseId: string) {
@@ -1514,7 +1543,15 @@ export class CommunicationService {
       });
       return;
     }
-    const storageKey = randomUUID();
+    const configuredMaximum = Number(process.env.MAX_ASSIGNMENT_EXPORT_MB || 100);
+    const exportMaximum =
+      Number.isFinite(configuredMaximum) && configuredMaximum > 0 ? Math.min(configuredMaximum, 500) : 100;
+    const uploadLease = await this.uploadSafety.reserve(
+      actor,
+      Math.ceil((exportMaximum + 30) * 1024 * 1024),
+      'export',
+    );
+    const storageKey = uploadLease.storageKey;
     const lease = setInterval(() => {
       void this.db.backgroundJob
         .updateMany({ where: { id: job.id, status: 'RUNNING' }, data: { lockedAt: new Date() } })
@@ -1598,45 +1635,48 @@ export class CommunicationService {
       const size = archive.size(),
         sha256 = archive.digest();
       try {
-        await this.db.$transaction(async (tx) => {
-          const attachment = await tx.attachment.create({
-            data: {
-              organizationId: actor.organizationId,
-              ownerId: actor.id,
-              assignmentId: payload.assignmentId,
-              exportJobId: job.id,
-              originalName: `${safeFilename(plan.assignment.title).slice(0, 80)}-提交版本-${exportedAt.toISOString().slice(0, 10)}.tar.gz`,
-              storageKey,
-              mime: 'application/gzip',
-              size,
-              sha256,
-            },
-          });
-          await tx.backgroundJob.update({
-            where: { id: job.id },
-            data: { payload: { ...payload, attachmentId: attachment.id, error: '' } },
-          });
-          await tx.auditLog.create({
-            data: {
-              organizationId: actor.organizationId,
-              userId: actor.id,
-              action: 'data.export',
-              resourceType: 'Assignment',
-              resourceId: payload.assignmentId,
-              details: {
-                jobId: job.id,
-                submissionCount: rows.length,
-                fileCount: entries.length,
-                bytes: size,
+        await this.uploadSafety.finish(
+          actor,
+          uploadLease,
+          {
+            organizationId: actor.organizationId,
+            ownerId: actor.id,
+            assignmentId: payload.assignmentId,
+            exportJobId: job.id,
+            originalName: `${safeFilename(plan.assignment.title).slice(0, 80)}-提交版本-${exportedAt.toISOString().slice(0, 10)}.tar.gz`,
+            storageKey,
+            mime: 'application/gzip',
+            size,
+            sha256,
+            claimedAt: new Date(),
+          },
+          async (tx, attachment) => {
+            await tx.backgroundJob.update({
+              where: { id: job.id },
+              data: { payload: { ...payload, attachmentId: attachment.id, error: '' } },
+            });
+            await tx.auditLog.create({
+              data: {
+                organizationId: actor.organizationId,
+                userId: actor.id,
+                action: 'data.export',
+                resourceType: 'Assignment',
+                resourceId: payload.assignmentId,
+                details: {
+                  jobId: job.id,
+                  submissionCount: rows.length,
+                  fileCount: entries.length,
+                  bytes: size,
+                },
               },
-            },
-          });
-        });
+            });
+          },
+        );
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
           const winner = await this.db.attachment.findUnique({ where: { exportJobId: job.id } });
           if (winner) {
-            await this.storage.delete(storageKey);
+            await this.uploadSafety.release(uploadLease.id);
             await this.db.backgroundJob.update({
               where: { id: job.id },
               data: { payload: { ...payload, attachmentId: winner.id, error: '' } },
@@ -1647,7 +1687,7 @@ export class CommunicationService {
         throw error;
       }
     } catch (error) {
-      await this.storage.delete(storageKey);
+      await this.uploadSafety.release(uploadLease.id);
       const message =
         error instanceof BadRequestException ||
         error instanceof ForbiddenException ||

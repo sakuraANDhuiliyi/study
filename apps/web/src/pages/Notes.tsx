@@ -6,6 +6,8 @@ import { date, queryString, useData } from '../api';
 import { EmptyState, PageTitle, Panel, QueryState } from '../components/shared';
 import { LessonNote } from '../components/LessonNote';
 import { RemoteSelect } from '../components/RemoteSelect';
+import { useAuth } from '../auth';
+import { AcademicRecords } from './AcademicRecords';
 
 type Summary = {
   id: string;
@@ -18,6 +20,10 @@ type Summary = {
   updatedAt: string;
 };
 export function Notes() {
+  const { user } = useAuth();
+  return user?.accountMode === 'PERSONAL' ? <AcademicRecords notes /> : <CourseNotes />;
+}
+function CourseNotes() {
   const [search, setSearch] = useState('');
   const [courseId, setCourseId] = useState<string>();
   const [pinned, setPinned] = useState<string>();

@@ -1,0 +1,13 @@
+model OrganizationJoinRequest {
+  id String @id @default(cuid())
+  userId String
+  organizationId String
+  status String @default("PENDING")
+  majorId String?
+  note String @default("")
+  reviewedBy String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,status,createdAt,id])
+  @@index([userId,createdAt,id])
+}

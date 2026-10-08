@@ -27,6 +27,8 @@ jobs:
       - run: cp .env.example .env
       - run: npm run db:generate && npm run db:migrate && npm run db:seed
       - run: npm run typecheck && npm run lint && npm test && npm run build
+      - name: Verify trusted algorithm reference programs
+        run: npm run test:algorithm-references -- --languages=python,javascript
       - name: Start application and run real database integration
         run: |
           npm run start > /tmp/zhixue-api.log 2>&1 &
@@ -38,9 +40,13 @@ jobs:
           npm run test:assessment
           npm run test:communication
           npm run test:security
+          npm run test:security-fixes
           npm run test:extensions
           npm run test:ai-study
           npm run test:ai-authoring
+          npm run test:algorithms
+          npm run test:accounts
+          npm run test:academics
           npm run test:clean-start
       - name: Browser workflow verification
         run: |

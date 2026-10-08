@@ -12,6 +12,8 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 - `POST /auth/logout {}` 清除会话。
 - `PATCH /auth/profile {name}` 更新本人名称。
 - `POST /auth/password {oldPassword,newPassword}` 修改后所有旧会话失效，需重新登录。
+- `GET /auth/recovery` 查看本人是否已预留恢复码；`POST /auth/recovery-code {oldPassword}` 生成新的高熵恢复码，只返回给本人一次，轮换会使旧码和恢复许可失效。
+- `POST /auth/recover {username,code,newPassword}` 在管理员已开启的 15 分钟许可内消费本人恢复码，无需登录；仍检查请求来源并执行数据库限流。成功后恢复码作废，全部旧会话和敏感授权撤销。
 
 ## 课程
 
@@ -29,7 +31,8 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 
 - `GET /admin/users?search=&role=&active=&page=&pageSize=`。
 - `POST /admin/users {username,name,password,studentNo?,roles:string[]}`。
-- `PATCH /admin/users/:id {name?,active?,password?,studentNo?,roles?}`，拒绝自身权限变更，管理员只能操作学生／教师。
+- `PATCH /admin/users/:id {name?,active?,studentNo?,roles?}`，拒绝自身权限变更，管理员只能操作学生／教师。所有已有账号禁止通过此接口设置密码。
+- `POST /admin/users/:id/recovery` 开启 15 分钟恢复许可，需要 `users.manage` 和相同目标管理边界；目标必须已由本人预留恢复码。管理员拿不到恢复码，也不能指定新密码。
 - `POST /admin/users/import {rows:[…新增账号字段],commit:false}` 先预览；全量通过后 `commit:true` 事务导入。错误 `{row,message}`；返回预览不会含密码。
 - `GET /admin/users/template` CSV 模板；`GET /admin/users/export` 当前权限复查后直接下载，无永久导出链接。
 - `POST /admin/users/batch {ids,active}` 每项独立授权并返回结果。

@@ -1,5 +1,20 @@
 # 复制为项目根目录 config.yaml；只在服务器上填写，不要提交密钥。
 # config.yaml 已被 Git 和 Docker 构建忽略；修改后下一次请求即可生效。
+judge0:
+  enabled: true
+  # 填写独立 Judge0 CE 服务的 HTTPS 地址；留空时运行/提交明确显示不可用。
+  baseUrl: ''
+  # 自托管可不启用认证；建议配置 AUTHN_TOKEN，并在这里填写相同令牌。
+  # 通过 X-Auth-Token 请求头发送，绝不填写在URL里。
+  apiKey: ''
+  timeoutMs: 45000
+  pollMs: 250
+  languageIds:
+    cpp: 54
+    python: 71
+    javascript: 63
+    java: 62
+
 ai:
   enabled: true
   # DeepSeek Chat Completions：使用max_tokens，关闭额外思考模式。

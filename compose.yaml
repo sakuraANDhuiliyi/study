@@ -15,9 +15,16 @@ services:
     restart: unless-stopped
   migrate:
     build: .
-    command: [./node_modules/.bin/prisma, migrate, deploy, --schema, prisma]
+    command:
+      [
+        /bin/sh,
+        -c,
+        './node_modules/.bin/prisma migrate deploy --schema prisma && node scripts/provision-runtime-db.mjs',
+      ]
     environment:
       DATABASE_URL: postgresql://lms:${POSTGRES_PASSWORD}@db:5432/zhixue?schema=public
+      APP_DATABASE_USER: ${APP_DATABASE_USER:-lms_app}
+      APP_DATABASE_PASSWORD: ${APP_DATABASE_PASSWORD:?Set a distinct runtime database password}
     depends_on:
       db: { condition: service_healthy }
   app:
@@ -25,11 +32,19 @@ services:
     environment:
       NODE_ENV: production
       BIND_HOST: 0.0.0.0
-      DATABASE_URL: postgresql://lms:${POSTGRES_PASSWORD}@db:5432/zhixue?schema=public
+      DATABASE_URL: postgresql://${APP_DATABASE_USER:-lms_app}:${APP_DATABASE_PASSWORD:?Set runtime database password}@db:5432/zhixue?schema=public
       APP_ORIGIN: ${APP_ORIGIN:?Set public HTTPS origin}
       COOKIE_SECURE: 'true'
       UPLOAD_DIR: /app/uploads
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      MAX_USER_UPLOAD_MB: ${MAX_USER_UPLOAD_MB:-1024}
+      MAX_ORG_UPLOAD_MB: ${MAX_ORG_UPLOAD_MB:-10240}
+      MAX_USER_UPLOAD_FILES: ${MAX_USER_UPLOAD_FILES:-1000}
+      MAX_ORG_UPLOAD_FILES: ${MAX_ORG_UPLOAD_FILES:-20000}
+      MAX_UPLOADS_PER_USER: ${MAX_UPLOADS_PER_USER:-2}
+      MAX_UPLOADS_TOTAL: ${MAX_UPLOADS_TOTAL:-8}
+      UPLOADS_PER_MINUTE: ${UPLOADS_PER_MINUTE:-20}
+      UNUSED_UPLOAD_TTL_HOURS: ${UNUSED_UPLOAD_TTL_HOURS:-24}
       MAX_JSON_MB: ${MAX_JSON_MB:-2}
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       MAX_ASSIGNMENT_EXPORT_MB: ${MAX_ASSIGNMENT_EXPORT_MB:-100}

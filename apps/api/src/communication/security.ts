@@ -91,7 +91,10 @@ function isOfficeZip(buffer: Buffer, prefix: string): boolean {
   return names.includes('[Content_Types].xml') && names.includes(prefix);
 }
 
-/** MIME supplied by a browser is never sufficient: extension and bytes must agree. */
+/**
+ * Identify extension and bytes independently of browser MIME.
+ * PDF uploads must additionally await assertSafePdf before storage or delivery.
+ */
 export function inspectUpload(
   filename: string,
   buffer: Buffer,
@@ -114,11 +117,7 @@ export function inspectUpload(
     magic.subarray(8, 12).toString() === 'WEBP'
   )
     mime = 'image/webp';
-  if (
-    ext === 'pdf' &&
-    magic.subarray(0, 5).toString() === '%PDF-' &&
-    !/\/(JavaScript|JS|Launch|EmbeddedFile)\b/.test(buffer.toString('latin1'))
-  )
+  if (ext === 'pdf' && /^%PDF-[12]\.\d(?:\r\n|\r|\n)/.test(magic.toString('latin1')))
     mime = 'application/pdf';
   if (ext === 'mp4' && magic.subarray(4, 8).toString() === 'ftyp') mime = 'video/mp4';
   if (

@@ -3,6 +3,7 @@ import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { AssessmentService } from '../apps/api/src/assessment/assessment.service';
 
 const base = process.env.TEST_BASE_URL;
 if (
@@ -93,7 +94,7 @@ async function holdRow(table: 'User' | 'ExamAttempt', id: string) {
 }
 
 test('Assessment security regressions use independent data and real PostgreSQL lock boundaries', async (t) => {
-  const [admin, teacher] = await Promise.all(['admin', 'teacher'].map(client));
+  const [admin, teacher, teacher2] = await Promise.all(['admin', 'teacher', 'teacher2'].map(client));
   const suffix = randomUUID().slice(0, 8);
   const studentUser = await admin.call('POST', '/admin/users', {
     username: `review-assessment-${suffix}`,
@@ -118,6 +119,7 @@ test('Assessment security regressions use independent data and real PostgreSQL l
     return course;
   }
   const course = await makeCourse('评测安全回归');
+  await admin.call('POST', `/courses/${course.id}/members`, { userId: teacher2.user.id, kind: 'teacher' });
   async function question(name: string) {
     return teacher.call('POST', '/questions', {
       courseId: course.id,
@@ -149,6 +151,173 @@ test('Assessment security regressions use independent data and real PostgreSQL l
     await teacher.call('POST', `/exams/${exam.id}/publish`, {});
     return { exam, versions };
   }
+
+  await t.test(
+    'All assignment answer types validate against their fixed version, including composite children',
+    async () => {
+      const create = (type: string, answer: unknown, extra: Record<string, unknown> = {}) =>
+        teacher.call('POST', '/questions', {
+          courseId: course.id,
+          stem: `答案格式-${type}-${randomUUID()}`,
+          type,
+          answer,
+          scoreCents: 100,
+          options: ['single', 'multiple'].includes(type)
+            ? [
+                { id: 'A', text: '甲' },
+                { id: 'B', text: '乙' },
+              ]
+            : [],
+          ...extra,
+        });
+      const questions = await Promise.all([
+        create('single', 'A'),
+        create('multiple', ['A', 'B']),
+        create('boolean', false),
+        create('blank', [['first'], ['second']]),
+        create('short', '参考答案'),
+        create('composite', '综合参考', {
+          scoreCents: 200,
+          children: [
+            {
+              id: 'choice',
+              type: 'single',
+              stem: '子题选择',
+              options: [
+                { id: 'A', text: '甲' },
+                { id: 'B', text: '乙' },
+              ],
+              answer: 'A',
+              scoreCents: 100,
+            },
+            { id: 'essay', type: 'short', stem: '子题简答', answer: '参考', scoreCents: 100 },
+          ],
+        }),
+      ]);
+      const versions = questions.map((item) => item.versions[0].id);
+      const assignment = await teacher.call('POST', '/assignments', {
+        courseId: course.id,
+        title: '题型答案验证',
+        opensAt: new Date(Date.now() - 1000).toISOString(),
+        dueAt: new Date(Date.now() + 3600000).toISOString(),
+        questionVersionIds: versions,
+      });
+      await teacher.call('POST', `/assignments/${assignment.id}/publish`, {});
+      for (const [index, value] of [['A'], 'A', ['false'], 'first', ['文章'], { unknown: 'A' }].entries()) {
+        await student.call(
+          'PUT',
+          `/assignments/${assignment.id}/draft`,
+          {
+            revision: 0,
+            answers: [{ questionVersionId: versions[index], value }],
+          },
+          400,
+        );
+      }
+      const values = ['A', ['A', 'B'], false, ['first', 'second'], '文章', { choice: 'A', essay: '步骤' }];
+      const answers = values.map((value, index) => ({ questionVersionId: versions[index], value }));
+      const draft = await student.call('PUT', `/assignments/${assignment.id}/draft`, {
+        revision: 0,
+        answers,
+      });
+      assert.equal(draft.revision, 1);
+      await student.call('POST', `/assignments/${assignment.id}/submit`, {
+        answers,
+        idempotencyKey: `typed-${suffix}`,
+      });
+      const saved = await db.assignmentSubmission.findFirstOrThrow({
+        where: { assignmentId: assignment.id },
+      });
+      assert.deepEqual(saved.answers, answers);
+      assert.equal(saved.gradingStatus, 'pending');
+    },
+  );
+
+  await t.test(
+    'Poisoned new answers are rejected; historical poisoned values and healthy attempts both auto-submit',
+    async () => {
+      const first = await makeExam('历史异常答案');
+      const second = await makeExam('健康自动交卷');
+      const poisoned = await student.call('POST', `/exams/${first.exam.id}/start`, {});
+      const healthy = await student.call('POST', `/exams/${second.exam.id}/start`, {});
+      for (const value of [{ toString: {} }, { toString: 'A' }, ['A']])
+        await student.call(
+          'PUT',
+          `/attempts/${poisoned.id}/answers`,
+          {
+            revision: 0,
+            answers: [{ questionVersionId: first.versions[0], value }],
+          },
+          400,
+        );
+      assert.equal((await db.examAttempt.findUniqueOrThrow({ where: { id: poisoned.id } })).revision, 0);
+      await student.call('PUT', `/attempts/${poisoned.id}/answers`, {
+        revision: 0,
+        answers: [{ questionVersionId: first.versions[0], value: 'A' }],
+      });
+      await student.call('PUT', `/attempts/${healthy.id}/answers`, {
+        revision: 0,
+        answers: second.versions.map((questionVersionId) => ({ questionVersionId, value: 'A' })),
+      });
+      // Simulate a value persisted by the old release in this explicitly isolated database.
+      await db.examAnswer.create({
+        data: { attemptId: poisoned.id, questionVersionId: first.versions[1], value: { toString: {} } },
+      });
+      await db.examAttempt.updateMany({
+        where: { id: { in: [poisoned.id, healthy.id] } },
+        data: { deadlineAt: new Date(Date.now() - 1000) },
+      });
+      const runner = new AssessmentService(db as never, {} as never, {} as never);
+      await runner.sweepDueAttempts();
+      const submitted = await db.examAttempt.findMany({ where: { id: { in: [poisoned.id, healthy.id] } } });
+      assert.ok(
+        submitted.every((attempt) => attempt.status === 'timed_out' && attempt.gradingStatus === 'graded'),
+      );
+      assert.equal(submitted.find((attempt) => attempt.id === poisoned.id)!.scoreCents, 100);
+      assert.equal(submitted.find((attempt) => attempt.id === healthy.id)!.scoreCents, 200);
+    },
+  );
+
+  await t.test(
+    'Designated exam graders protect rosters, attempts, results and appeal review from other course teachers',
+    async () => {
+      const { exam, versions } = await makeExam('指定阅卷边界', { graderIds: [teacher.user.id] });
+      const attempt = await student.call('POST', `/exams/${exam.id}/start`, {});
+      await student.call('POST', `/attempts/${attempt.id}/submit`, { idempotencyKey: `grader-${suffix}` });
+      await db.exam.update({
+        where: { id: exam.id },
+        data: {
+          endsAt: new Date(Date.now() - 1000),
+          entryClosesAt: new Date(Date.now() - 2000),
+          appealDeadline: new Date(Date.now() + 3600000),
+        },
+      });
+      for (const path of [
+        `/attempts/${attempt.id}`,
+        `/attempts/${attempt.id}/revisions`,
+        `/exams/${exam.id}/attempts`,
+        `/exams/${exam.id}/roster`,
+        `/exams/${exam.id}/item-analysis`,
+        `/exams/${exam.id}/questions/${versions[0]}/answers`,
+      ])
+        await teacher2.call('GET', path, undefined, 403);
+      assert.equal((await teacher2.call('GET', `/exams/${exam.id}`)).audience, undefined);
+      await teacher2.call('POST', `/exams/${exam.id}/release`, {}, 403);
+      await teacher.call('GET', `/attempts/${attempt.id}`);
+      await teacher.call('GET', `/exams/${exam.id}/roster`);
+      await teacher.call('POST', `/exams/${exam.id}/release`, {});
+      const appeal = await student.call('POST', `/attempts/${attempt.id}/appeals`, {
+        reason: '请求教师重新核实分数',
+      });
+      const hidden = await teacher2.call('GET', `/appeals?courseId=${course.id}`);
+      assert.ok(!hidden.items.some((row: { id: string }) => row.id === appeal.id));
+      const visible = await teacher.call('GET', `/appeals?courseId=${course.id}`);
+      assert.ok(visible.items.some((row: { id: string }) => row.id === appeal.id));
+      await teacher2.call('POST', `/appeals/${appeal.id}/resolve`, { resolution: '尝试处理复核申请' }, 403);
+      await teacher.call('POST', `/appeals/${appeal.id}/resolve`, { resolution: '已核实成绩和评分依据' });
+      await student.call('GET', `/attempts/${attempt.id}`);
+    },
+  );
 
   for (const operation of ['cancel', 'revoke'] as const)
     await t.test(

@@ -1,0 +1,25 @@
+model UploadOperation {
+  id            String   @id @default(cuid())
+  organizationId String
+  ownerId       String
+  purpose       String   @default("upload")
+  status        String   @default("pending")
+  reservedBytes Int
+  storageKey    String   @unique
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt     DateTime @db.Timestamptz(3)
+  cleanupAttemptedAt DateTime? @db.Timestamptz(3)
+  @@index([organizationId, ownerId, createdAt])
+  @@index([status, expiresAt])
+}
+
+model PendingFileDeletion {
+  storageKey     String @id
+  organizationId String
+  ownerId        String
+  size           Int
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  retryAt        DateTime @default(now()) @db.Timestamptz(3)
+  @@index([organizationId, ownerId])
+  @@index([retryAt])
+}

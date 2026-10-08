@@ -132,6 +132,7 @@ model Attachment {
   size Int
   sha256 String
   createdAt DateTime @default(now()) @db.Timestamptz(3)
+  claimedAt DateTime? @db.Timestamptz(3)
   @@index([organizationId,ownerId,createdAt])
   @@index([courseId])
 }

@@ -2008,6 +2008,7 @@ export function Practice() {
         eyebrow="PRACTICE MAKES PROGRESS"
         title="练习中心"
         description="在练习中理解知识，在错题中找到进步的机会。"
+        extra={user?.role === 'STUDENT' && user.permissions.includes('learning.use') ? <Button onClick={() => navigate('/algorithms')}>算法编程练习</Button> : undefined}
       />
       <Tabs
         activeKey={tab}

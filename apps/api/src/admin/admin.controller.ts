@@ -20,9 +20,11 @@ import { PrismaService } from '../common/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AuditService } from '../common/audit.service';
-import { hashPassword } from '../auth/password';
+import { hashPasswordAsync } from '../auth/password';
 import { roleDefinitions } from '../auth/permissions';
 import { paging, username, password, dateString, safeUser, csvCell } from '../common/utils';
+import { majorIdSchema } from '../accounts/accounts.schemas';
+import { validateAccountMajor } from '../accounts/accounts.service';
 const role = z.enum(['STUDENT', 'TEACHER', 'ADMIN', 'SUPER_ADMIN']);
 export const newUser = z.object({
   username,
@@ -30,6 +32,7 @@ export const newUser = z.object({
   password,
   studentNo: z.string().max(64).nullable().optional(),
   roles: z.array(role).min(1).max(4),
+  majorId: majorIdSchema.optional(),
 });
 @ApiTags('机构与后台管理')
 @ApiCookieAuth()
@@ -43,6 +46,7 @@ export class AdminController {
   ) {}
   private roleCeiling(a: Actor, roles: string[]) {
     this.auth.require(a, 'users.manage');
+    if (a.accountMode === 'PERSONAL') throw new ForbiddenException('个人账号不能管理机构用户');
     if (
       roles.includes('SUPER_ADMIN') ||
       (a.role !== 'SUPER_ADMIN' && roles.some((r) => !['STUDENT', 'TEACHER'].includes(r)))
@@ -51,7 +55,7 @@ export class AdminController {
   }
   private async target(a: Actor, id: string) {
     const u = await this.db.user.findFirst({
-      where: { id, organizationId: a.organizationId },
+      where: { id, organizationId: a.organizationId, accountMode: 'ORGANIZATION' },
       include: { roles: true },
     });
     if (!u) throw new NotFoundException('用户不存在');
@@ -68,6 +72,7 @@ export class AdminController {
     const where = {
       organizationId: a.organizationId,
       ...(q.role ? { roles: { some: { roleId: q.role } } } : {}),
+      ...(q.majorId ? { majorId: q.majorId } : {}),
       ...(q.active ? { active: q.active === 'true' } : {}),
       ...(q.search
         ? {
@@ -142,8 +147,10 @@ export class AdminController {
   @Post('users') async create(@CurrentActor() a: Actor, @Body() body: unknown) {
     const d = newUser.parse(body);
     this.roleCeiling(a, d.roles);
-    const passwordHash = hashPassword(d.password);
+    const passwordHash = await hashPasswordAsync(d.password);
     const user = await this.db.$transaction(async (tx) => {
+      if (d.majorId && !d.roles.includes('STUDENT')) throw new BadRequestException('只能为学生分配专业');
+      await validateAccountMajor(tx, d.majorId, a.organizationId);
       const u = await tx.user.create({
         data: {
           organizationId: a.organizationId,
@@ -151,6 +158,7 @@ export class AdminController {
           name: d.name,
           passwordHash,
           studentNo: d.studentNo,
+          majorId: d.majorId,
           roles: { create: [...new Set(d.roles)].map((roleId) => ({ roleId })) },
         },
         select: safeUser,
@@ -181,10 +189,27 @@ export class AdminController {
         roles: z.array(role).min(1).max(4).optional(),
         password: password.optional(),
         studentNo: z.string().max(64).nullable().optional(),
+        majorId: majorIdSchema.optional(),
       })
       .parse(body);
+    if (d.password !== undefined)
+      throw new ForbiddenException('已有账号的密码必须由本人设置，请发起账号恢复许可');
     if (d.roles) this.roleCeiling(a, d.roles);
     const result = await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
+      const current = await tx.user.findFirst({
+        where: { id, organizationId: a.organizationId, accountMode: 'ORGANIZATION' },
+        include: { roles: true },
+      });
+      if (!current) throw new NotFoundException('用户不存在');
+      if (
+        current.roles.some((r) => r.roleId === 'SUPER_ADMIN') ||
+        (a.role !== 'SUPER_ADMIN' && current.roles.some((r) => r.roleId === 'ADMIN'))
+      )
+        throw new ForbiddenException('不能管理同级或更高权限的账号');
+      const student = (d.roles || current.roles.map((r) => r.roleId)).includes('STUDENT');
+      if (d.majorId && !student) throw new BadRequestException('只能为学生分配专业');
+      await validateAccountMajor(tx, d.majorId, a.organizationId);
       if (d.roles) {
         await tx.userRole.deleteMany({ where: { userId: id } });
         await tx.userRole.createMany({
@@ -197,13 +222,22 @@ export class AdminController {
           name: d.name,
           active: d.active,
           studentNo: d.studentNo,
-          ...(d.password ? { passwordHash: hashPassword(d.password) } : {}),
-          ...(d.roles || d.password || d.active !== undefined ? { authVersion: { increment: 1 } } : {}),
+          majorId: student ? d.majorId : null,
+          ...(d.roles || d.active !== undefined ? { authVersion: { increment: 1 } } : {}),
         },
         select: safeUser,
       });
-      if (d.roles || d.password || d.active !== undefined)
+      if (d.roles || d.active !== undefined) {
         await tx.session.deleteMany({ where: { userId: id } });
+        await tx.passwordRecovery.updateMany({
+          where: { userId: id },
+          data: {
+            pendingUntil: null,
+            requestedAuthVersion: null,
+            requestedBy: null,
+          },
+        });
+      }
       await tx.auditLog.create({
         data: {
           organizationId: a.organizationId,
@@ -214,14 +248,13 @@ export class AdminController {
           details: {
             before: { roles: before.roles.map((r) => r.roleId), active: before.active },
             after: { roles: u.roles.map((r) => r.roleId), active: u.active },
-            passwordReset: !!d.password,
           },
           requestId: a.requestId,
         },
       });
       return u;
     });
-    if (d.roles || d.active !== undefined || d.password)
+    if (d.roles || d.active !== undefined)
       await this.audit.notify(
         [id],
         a.organizationId,
@@ -233,13 +266,58 @@ export class AdminController {
       );
     return { ...result, roles: result.roles.map((r) => r.roleId) };
   }
+  @Post('users/:id/recovery') async recovery(@CurrentActor() a: Actor, @Param('id') id: string) {
+    this.auth.require(a, 'users.manage');
+    if (a.id === id) throw new ForbiddenException('请由另一位有权限的管理员发起恢复');
+    await this.target(a, id);
+    const pendingUntil = new Date(Date.now() + 15 * 60 * 1000);
+    await this.db.$transaction(async (tx) => {
+      const u = await tx.user.update({ where: { id }, data: { authVersion: { increment: 1 } } });
+      if (!u.active) throw new BadRequestException('请先启用账号');
+      const available = await tx.passwordRecovery.updateMany({
+        where: { userId: id },
+        data: {
+          pendingUntil,
+          requestedAuthVersion: u.authVersion,
+          requestedBy: a.id,
+        },
+      });
+      if (available.count !== 1)
+        throw new BadRequestException(
+          '本人尚未预留恢复码，请本人登录个人中心设置；管理员不能代设已有账号密码',
+        );
+      await tx.session.deleteMany({ where: { userId: id } });
+      await tx.sensitiveGrant.deleteMany({ where: { userId: id } });
+      await tx.auditLog.create({
+        data: {
+          organizationId: a.organizationId,
+          userId: a.id,
+          action: 'password.recovery-request',
+          resourceType: 'User',
+          resourceId: id,
+          details: { pendingUntil: pendingUntil.toISOString() },
+          requestId: a.requestId,
+        },
+      });
+    });
+    await this.audit.notify(
+      [id],
+      a.organizationId,
+      'MEMBERSHIP',
+      '账号恢复许可已开启',
+      '请在 15 分钟内前往登录页，使用你本人预留的恢复码设置新密码。全部会话及敏感授权已撤销。',
+      '/login',
+      `password-recovery:${id}:${pendingUntil.getTime()}`,
+    );
+    return { ok: true, pendingUntil };
+  }
   @Get('users/template') template(@CurrentActor() a: Actor, @Res() res: Response) {
     this.auth.require(a, 'users.manage');
     res
       .type('text/csv; charset=utf-8')
       .attachment('user-import-template.csv')
       .send(
-        '\ufeffusername,name,password,studentNo,roles\nsample_student,学生姓名,请设置12位以上密码,20260001,STUDENT\n',
+        '\ufeffusername,name,password,studentNo,roles,majorId\nsample_student,学生姓名,请设置12位以上密码,20260001,STUDENT,\n',
       );
   }
   @Post('users/import') async importUsers(@CurrentActor() a: Actor, @Body() body: unknown) {
@@ -266,6 +344,12 @@ export class AdminController {
         this.roleCeiling(a, r.roles);
       } catch {
         errors.push({ row: index + 2, message: '角色超出授权范围' });
+      }
+      try {
+        if (r.majorId && !r.roles.includes('STUDENT')) throw new BadRequestException('只能为学生分配专业');
+        await validateAccountMajor(this.db, r.majorId, a.organizationId);
+      } catch (error) {
+        errors.push({ row: index + 2, message: error instanceof Error ? error.message : '专业不可用' });
       }
       if (usernames.has(r.username)) errors.push({ row: index + 2, message: '文件内账号重复' });
       if (r.studentNo && numbers.has(r.studentNo)) errors.push({ row: index + 2, message: '文件内学号重复' });
@@ -301,20 +385,24 @@ export class AdminController {
         errors,
         preview: rows.map(({ password: _password, ...r }) => r),
       };
-    const hashes = rows.map((r) => hashPassword(r.password));
+    const hashes: string[] = [];
+    for (const r of rows) hashes.push(await hashPasswordAsync(r.password));
     await this.db.$transaction(
       async (tx) => {
-        for (const [i, r] of rows.entries())
+        for (const [i, r] of rows.entries()) {
+          await validateAccountMajor(tx, r.majorId, a.organizationId);
           await tx.user.create({
             data: {
               organizationId: a.organizationId,
               username: r.username,
               name: r.name,
               studentNo: r.studentNo,
+              majorId: r.majorId,
               passwordHash: hashes[i],
               roles: { create: [...new Set(r.roles)].map((roleId) => ({ roleId })) },
             },
           });
+        }
         await tx.auditLog.create({
           data: {
             organizationId: a.organizationId,
@@ -577,11 +665,13 @@ export class AdminController {
     const p = paging(q);
     const [items, total] = await Promise.all([
       this.db.organization.findMany({
+        where: { kind: 'INSTITUTION' },
+        select: { id: true, name: true, active: true, kind: true, createdAt: true },
         skip: p.skip,
         take: p.pageSize,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       }),
-      this.db.organization.count(),
+      this.db.organization.count({ where: { kind: 'INSTITUTION' } }),
     ]);
     return { items, total, page: p.page, pageSize: p.pageSize };
   }
@@ -606,7 +696,7 @@ export class AdminController {
       })
       .parse(body);
     if (id === a.organizationId && d.active === false) throw new ForbiddenException('不能停用当前管理机构');
-    const before = await this.db.organization.findUnique({ where: { id } });
+    const before = await this.db.organization.findFirst({ where: { id, kind: 'INSTITUTION' } });
     if (!before) throw new NotFoundException();
     const org = await this.db.organization.update({
       where: { id },
@@ -629,15 +719,16 @@ export class AdminController {
     const d = z
       .object({ username, name: z.string().min(1).max(80), password, reason: z.string().min(5).max(500) })
       .parse(body);
-    if (!(await this.db.organization.findFirst({ where: { id, active: true } })))
+    if (!(await this.db.organization.findFirst({ where: { id, active: true, kind: 'INSTITUTION' } })))
       throw new NotFoundException();
+    const passwordHash = await hashPasswordAsync(d.password);
     const user = await this.db.$transaction(async (tx) => {
       const u = await tx.user.create({
         data: {
           organizationId: id,
           username: d.username.toLowerCase(),
           name: d.name,
-          passwordHash: hashPassword(d.password),
+          passwordHash,
           roles: { create: { roleId: 'ADMIN' } },
         },
         select: safeUser,
@@ -933,7 +1024,15 @@ export class AdminController {
   @Get('jobs') async jobs(@CurrentActor() a: Actor, @Query() q: Record<string, string>) {
     this.auth.require(a, 'audit.read');
     const p = paging(q);
-    const where = a.permissions.includes('org.platform') ? {} : { organizationId: a.organizationId };
+    const where = a.permissions.includes('org.platform')
+      ? {
+          organizationId: {
+            in: (
+              await this.db.organization.findMany({ where: { kind: 'INSTITUTION' }, select: { id: true } })
+            ).map((org) => org.id),
+          },
+        }
+      : { organizationId: a.organizationId };
     const [items, total] = await Promise.all([
       this.db.backgroundJob.findMany({
         where,

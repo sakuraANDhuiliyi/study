@@ -1,0 +1,71 @@
+# Run ONLY on a dedicated Linux x86_64 VM with cgroup v1, never on the LMS host.
+name: study-judge0
+x-logging: &bounded-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+x-judge: &judge
+  image: judge0/judge0:1.13.1
+  platform: linux/amd64
+  privileged: true # Required by upstream isolate. The dedicated VM is the trust boundary.
+  volumes:
+    - ./judge0.conf:/judge0.conf:ro
+  networks: [isolated]
+  restart: unless-stopped
+  logging: *bounded-logging
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+services:
+  server:
+    <<: *judge
+    ports:
+      - '127.0.0.1:2358:2358'
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 256
+  workers:
+    <<: *judge
+    command: ['./scripts/workers']
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 512
+  db:
+    image: postgres:16-alpine
+    env_file: ./judge0.conf
+    volumes:
+      - judge-data:/var/lib/postgresql/data
+    networks: [isolated]
+    restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 128
+    logging: *bounded-logging
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.2-alpine
+    env_file: ./judge0.conf
+    command: ['sh', '-c', 'exec docker-entrypoint.sh --appendonly no --requirepass "$$REDIS_PASSWORD"']
+    networks: [isolated]
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 256m
+    pids_limit: 64
+    logging: *bounded-logging
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+networks:
+  isolated:
+    internal: true
+volumes:
+  judge-data:

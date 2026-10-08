@@ -1,0 +1,51 @@
+model AcademicsSubject {
+  id String @id @default(cuid())
+  organizationId String?
+  name String
+  description String @default("")
+  active Boolean @default(true)
+  revision Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,active])
+}
+model AcademicsMajor {
+  id String @id @default(cuid())
+  organizationId String?
+  subjectId String
+  name String
+  description String @default("")
+  moduleIds String[] @default([])
+  active Boolean @default(true)
+  revision Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,active])
+  @@index([subjectId])
+}
+model AcademicsPreference {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  selectedModuleIds String[] @default([])
+  revision Int @default(0)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([organizationId,userId])
+  @@index([userId])
+}
+model AcademicsRecord {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  moduleId String
+  title String
+  values Json
+  result Json
+  notes String @default("")
+  status String @default("COMPLETED")
+  revision Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,userId,moduleId,createdAt,id])
+  @@index([userId])
+}

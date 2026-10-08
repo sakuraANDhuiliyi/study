@@ -42,6 +42,8 @@ export class LocalPrivateStorage implements PrivateStorage {
     return createReadStream(this.path(key));
   }
   async delete(key: string): Promise<void> {
-    await unlink(this.path(key)).catch(() => undefined);
+    await unlink(this.path(key)).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== 'ENOENT') throw error;
+    });
   }
 }

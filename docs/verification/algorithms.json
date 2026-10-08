@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-08",
+  "feature": "学生算法练习与详细学习工作台",
+  "node": "24.19.0",
+  "database": "isolated local PostgreSQL review database",
+  "content": {
+    "originalProblems": 18,
+    "learningPlans": 4,
+    "referencePrograms": 72,
+    "publicTestCases": 30,
+    "privateTestCases": 113
+  },
+  "checks": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "productionBuild": "passed",
+    "unitTests": {
+      "passed": 157,
+      "failed": 0,
+      "algorithmTests": 30
+    },
+    "algorithmIntegration": {
+      "passed": 14,
+      "failed": 0,
+      "transport": "real HTTP and PostgreSQL; local Judge0 and DeepSeek protocol fixtures"
+    },
+    "algorithmBrowser": {
+      "passed": 14,
+      "failed": 0,
+      "contractTests": 13,
+      "realApiTests": 1,
+      "viewports": ["1440x1000", "390x844"],
+      "servedFrom": "built static assets served by API with Helmet CSP; local Monaco and JavaScript worker"
+    },
+    "trustedReferencePrograms": {
+      "programsPassed": 72,
+      "uniqueCaseLanguageCombinationsPassed": 572,
+      "languages": ["C++17", "Python", "JavaScript", "Java"],
+      "execution": "fixed repository-owned reference programs compiled/run locally; never student code",
+      "note": "An initial Python subprocess timed out; unchanged rerun passed. The complete final Python/JavaScript CI selection also passed all 286 combinations."
+    }
+  },
+  "coverage": [
+    "18 original problems with independent answer calculations and maximum-size boundary cases",
+    "structured editorial completeness, progressive hints, sample walkthroughs and valid related problem IDs",
+    "student role, institutional practice switch, ownership isolation and revoked-session recheck",
+    "persistent code drafts, submissions, AI reports, favorites, review status and personal notes",
+    "optimistic note revision conflicts including concurrent first saves",
+    "Beijing-time daily activity, streaks, real accepted progress and chapter recommendations",
+    "custom run and locally compared expected output do not mark a problem solved",
+    "hidden input/output redaction and AI payload allow-lists by tutoring mode",
+    "judge concurrency, quotas, expired leases and safe provider errors",
+    "professional editor keyboard operations, local worker loading, fullscreen and resizable panes",
+    "reference-code reveal, confirmed load and pre-load draft backup recovery",
+    "unsynced draft race recovery and restoration after clearing browser storage",
+    "Monaco model/undo isolation across account and language changes",
+    "late note save responses cannot contaminate another account or delete a newly edited local draft",
+    "390px mobile layout and internal editorial-table scrolling"
+  ],
+  "limitations": [
+    "The current catalog contains 18 problems; no teacher-authored algorithm catalog, contest rankings, discussion community or interactive checker.",
+    "Production build warns about the lazy Monaco editor chunk size (about 915 KB gzip); JavaScript worker is loaded on demand."
+  ],
+  "notVerified": [
+    "Real Judge0 compiler toolchains, exact runtime versions, resource enforcement and execution isolation: no endpoint configured",
+    "Real DeepSeek authentication and generated analysis quality: no API credentials configured"
+  ],
+  "screenshots": [
+    "docs/screenshots/algorithms-library-desktop.png",
+    "docs/screenshots/algorithms-detail-desktop.png",
+    "docs/screenshots/algorithms-editorial-desktop.png",
+    "docs/screenshots/algorithms-detail-mobile.png",
+    "docs/screenshots/algorithms-editorial-mobile.png"
+  ]
+}

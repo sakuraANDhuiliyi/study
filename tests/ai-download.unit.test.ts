@@ -7,6 +7,7 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { HttpException } from '@nestjs/common';
 import { downloadStudySource, isPublicHttpUrl } from '../apps/api/src/ai-study/safe-download';
+import { objectStreamPdf, plainPdf } from './helpers/pdf-fixtures';
 
 const limits = { maxBytes: 4096, timeoutMs: 1000 };
 const publicRecord = { address: '8.8.8.8', family: 4 };
@@ -305,7 +306,7 @@ test('单字节网络分片也使用有界缓冲并保留完整UTF-8正文', asy
 });
 
 test('PDF需要匹配MIME、严格文件头和结束标记，拒绝伪装及常见主动内容标记', async (t) => {
-  const pdf = Buffer.from('%PDF-1.7\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n');
+  const pdf = plainPdf();
   network(t, [
     { headers: { 'content-type': 'application/pdf' }, chunks: [pdf] },
     { headers: { 'content-type': 'application/octet-stream' }, chunks: [pdf] },
@@ -329,6 +330,20 @@ test('PDF需要匹配MIME、严格文件头和结束标记，拒绝伪装及常�
   assert.deepEqual(result.buffer, pdf);
   for (let i = 0; i < 6; i++)
     await assert.rejects(downloadStudySource('https://source.example.com/paper.pdf', limits), status(415));
+});
+
+test('下载路径拒绝转义名称和压缩对象流中的 PDF 活动内容', async (t) => {
+  network(t, [
+    {
+      headers: { 'content-type': 'application/pdf' },
+      chunks: [plainPdf(['<< /S /Java#53cript /J#53 (void 0;) >>'])],
+    },
+    { headers: { 'content-type': 'application/pdf' }, chunks: [await objectStreamPdf(true)] },
+    { headers: { 'content-type': 'application/pdf' }, chunks: [await objectStreamPdf()] },
+  ]);
+  for (let i = 0; i < 2; i++)
+    await assert.rejects(downloadStudySource('https://source.example.com/paper.pdf', limits), status(415));
+  assert.equal((await downloadStudySource('https://source.example.com/paper.pdf', limits)).extension, 'pdf');
 });
 
 test('HTML转纯文本保留题目与段落，去掉脚本样式对象表单内容且不跟随链接', async (t) => {

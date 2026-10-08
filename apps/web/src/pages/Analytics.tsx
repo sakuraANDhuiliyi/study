@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Alert, App, Avatar, Button, Form, Input, Progress, Space, Table, Tag, Tabs } from 'antd';
 import { Download, ShieldCheck } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -345,6 +346,10 @@ export function Profile() {
   const { user, refresh } = useAuth();
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
+  const [recoveryForm] = Form.useForm();
+  const recovery = useData<{ configured: boolean }>('/auth/recovery');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
   const action = useAction('个人资料已更新');
   const client = useQueryClient();
   const { message } = App.useApp();
@@ -360,6 +365,20 @@ export function Profile() {
       message.error((e as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+  async function generateRecovery(values: { oldPassword: string }) {
+    setRecoveryBusy(true);
+    setRecoveryCode('');
+    try {
+      const result = await send('/auth/recovery-code', values);
+      setRecoveryCode(result.code);
+      recoveryForm.resetFields();
+      await recovery.refetch();
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setRecoveryBusy(false);
     }
   }
   return (
@@ -413,6 +432,26 @@ export function Profile() {
                     <Form.Item label="当前角色">
                       <Input disabled value={label(user?.role || '')} />
                     </Form.Item>
+                    <Form.Item label="学习空间">
+                      <Input
+                        disabled
+                        value={user?.accountMode === 'PERSONAL' ? '个人自主学习' : '组织教学空间'}
+                      />
+                    </Form.Item>
+                    {user?.role === 'STUDENT' && (
+                      <Form.Item
+                        label="我的专业"
+                        extra={
+                          user.accountMode === 'PERSONAL' ? (
+                            <Link to="/academics">前往专业学习中心调整专业与模块</Link>
+                          ) : (
+                            '组织学生的专业由管理员指定。'
+                          )
+                        }
+                      >
+                        <Input disabled value={user.major?.name || '未选择专业'} />
+                      </Form.Item>
+                    )}
                     <Button type="primary" htmlType="submit" loading={action.isPending}>
                       保存资料
                     </Button>
@@ -427,10 +466,16 @@ export function Profile() {
                     <Alert
                       type="info"
                       showIcon
-                      message="修改密码后，所有设备的旧会话将失效，请重新登录。"
+                      message="修改密码后，所有设备的旧会话及原恢复码将失效，请重新登录并生成新的恢复码。"
                       style={{ marginBottom: 23 }}
                     />
-                    <Form form={passwordForm} layout="vertical" onFinish={password} style={{ maxWidth: 430 }}>
+                    <Form
+                      name="profile-password"
+                      form={passwordForm}
+                      layout="vertical"
+                      onFinish={password}
+                      style={{ maxWidth: 430 }}
+                    >
                       <Form.Item
                         name="oldPassword"
                         label="当前密码"
@@ -469,6 +514,59 @@ export function Profile() {
                         更新密码并重新登录
                       </Button>
                     </Form>
+                    <div style={{ marginTop: 28, maxWidth: 430 }}>
+                      <h3>账号恢复码</h3>
+                      <p>
+                        {recovery.data?.configured
+                          ? '已预留恢复码。重新生成会使原码失效。'
+                          : '预先生成并离线保存恢复码，以便忘记密码时恢复账号。'}
+                      </p>
+                      <p className="form-hint">
+                        恢复码仅向你展示一次，管理员无法查看。
+                        {user?.accountMode === 'PERSONAL'
+                          ? '个人账号可直接在登录页使用预留恢复码。'
+                          : '组织账号需要管理员开启 15 分钟许可，再由你在登录页输入恢复码。'}
+                        使用后会撤销全部会话和敏感授权。
+                      </p>
+                      <Form
+                        name="profile-recovery"
+                        form={recoveryForm}
+                        layout="vertical"
+                        onFinish={generateRecovery}
+                      >
+                        <Form.Item
+                          name="oldPassword"
+                          label="验证当前密码"
+                          rules={[{ required: true, message: '请输入当前密码' }]}
+                        >
+                          <Input.Password autoComplete="current-password" />
+                        </Form.Item>
+                        <Button type="primary" htmlType="submit" loading={recoveryBusy}>
+                          {recovery.data?.configured ? '生成新的恢复码' : '生成恢复码'}
+                        </Button>
+                      </Form>
+                      {recoveryCode && (
+                        <Alert
+                          style={{ marginTop: 16 }}
+                          type="warning"
+                          showIcon
+                          message="请离线安全保存；关闭后无法再次查看"
+                          description={
+                            <>
+                              <Input.Password
+                                value={recoveryCode}
+                                readOnly
+                                autoComplete="off"
+                                aria-label="一次性账号恢复码"
+                              />
+                              <Button style={{ marginTop: 12 }} onClick={() => setRecoveryCode('')}>
+                                我已安全保存
+                              </Button>
+                            </>
+                          }
+                        />
+                      )}
+                    </div>
                   </>
                 ),
               },

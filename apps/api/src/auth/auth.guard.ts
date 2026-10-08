@@ -10,6 +10,8 @@ import { AuthService } from './auth.service';
 export interface Actor {
   id: string;
   organizationId: string;
+  accountMode?: string;
+  majorId?: string | null;
   role: string;
   permissions: string[];
   name: string;

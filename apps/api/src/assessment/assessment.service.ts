@@ -15,7 +15,15 @@ import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
-import { autoScore, paginate, personalDeadline, publicQuestion, QuestionData, shuffled } from './scoring';
+import {
+  autoScore,
+  paginate,
+  personalDeadline,
+  publicQuestion,
+  QuestionData,
+  shuffled,
+  validAnswerValue,
+} from './scoring';
 import { itemAccumulator } from './item-analysis';
 import * as schema from './assessment.schemas';
 import { z } from 'zod';
@@ -35,6 +43,7 @@ const unique = <T>(values: T[]) => [...new Set(values)];
 export class AssessmentService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
+  private readonly deadlineRetries = new Map<string, number>();
   private readonly logger = new Logger(AssessmentService.name);
   constructor(
     private readonly db: PrismaService,
@@ -100,14 +109,17 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     if (new Set(q.options.map((o) => o.id)).size !== q.options.length)
       throw new BadRequestException('选项 ID 不能重复');
     const options = q.options.map((o) => o.id);
-    if (q.type === 'single' && (options.length < 2 || !options.includes(String(q.answer))))
+    if (
+      q.type === 'single' &&
+      (options.length < 2 || typeof q.answer !== 'string' || !options.includes(q.answer))
+    )
       throw new BadRequestException('单选题须有至少两个选项，答案须为选项 ID');
     if (
       q.type === 'multiple' &&
       (options.length < 2 ||
         !Array.isArray(q.answer) ||
         !q.answer.length ||
-        q.answer.some((x) => !options.includes(String(x))) ||
+        q.answer.some((x) => typeof x !== 'string' || !options.includes(x)) ||
         new Set(q.answer).size !== q.answer.length)
     )
       throw new BadRequestException('多选题答案须为不重复的有效选项 ID 数组');
@@ -850,6 +862,25 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException('答案题目不属于当前任务或存在重复');
     if (JSON.stringify(answers).length > 500000) throw new BadRequestException('答案内容过大');
   }
+  private validateAnswerValues(
+    answers: { questionVersionId: string; value: unknown }[],
+    questions: QuestionData[],
+  ) {
+    this.validateAnswers(
+      answers,
+      questions.map((question) => question.id),
+    );
+    if (
+      answers.some(
+        (answer) =>
+          !validAnswerValue(
+            questions.find((question) => question.id === answer.questionVersionId)!,
+            answer.value,
+          ),
+      )
+    )
+      throw new BadRequestException('答案格式、选项或综合题子题与题目不匹配');
+  }
   private checkAssignmentWindow(
     assignment: { opensAt: Date; dueAt: Date; allowLate: boolean },
     exception?: { allowUntil: Date | null; exempt: boolean } | null,
@@ -871,9 +902,9 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
       where: { assignmentId_userId: { assignmentId: id, userId: actor.id } },
     });
     this.checkAssignmentWindow(assignment, exception);
-    this.validateAnswers(
+    this.validateAnswerValues(
       input.answers,
-      assignment.items.map((item) => item.questionVersionId),
+      assignment.items.map((item) => content(item.questionVersion)),
     );
     await this.validateAttachments(actor, input.attachmentIds, id);
     return this.db.$transaction(async (tx) => {
@@ -903,9 +934,9 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
   async submitAssignment(actor: Actor, id: string, input: z.infer<typeof schema.submissionSchema>) {
     this.require(actor, 'learning.use');
     const assignment = await this.assignmentAccess(actor, id);
-    this.validateAnswers(
+    this.validateAnswerValues(
       input.answers,
-      assignment.items.map((item) => item.questionVersionId),
+      assignment.items.map((item) => content(item.questionVersion)),
     );
     await this.validateAttachments(actor, input.attachmentIds, id);
     const submission = await this.db.$transaction(async (tx) => {
@@ -1320,6 +1351,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     const questions = session.snapshot as unknown as QuestionData[];
     const question = questions.find((q) => q.id === input.questionVersionId);
     if (!question) throw new BadRequestException('题目不属于本次练习');
+    this.validateAnswerValues([input], [question]);
     const current = await this.db.question.findUnique({ where: { id: question.questionId } });
     if (!current?.practiceEnabled) throw new ForbiddenException('题目已停止开放练习');
     const score = autoScore(question, input.value);
@@ -1452,6 +1484,10 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
       throw new ForbiddenException('没有本考试资格');
     return exam;
   }
+  private requireExamGrader(actor: Actor, exam: { graderIds: string[] }) {
+    if (!this.student(actor) && exam.graderIds.length && !exam.graderIds.includes(actor.id))
+      throw new ForbiddenException('未被指定为本考试阅卷教师');
+  }
   private validateExamTimes(exam: {
     startsAt: Date;
     endsAt: Date;
@@ -1578,7 +1614,10 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
             ...publicQuestion(content(item.content), true, true),
             questionVersionId: item.questionVersionId,
           })),
-      audience: this.student(actor) ? undefined : audience,
+      audience:
+        this.student(actor) || (exam.graderIds.length && !exam.graderIds.includes(actor.id))
+          ? undefined
+          : audience,
       eligible: this.student(actor) ? audience.find((a) => a.userId === actor.id)?.eligible : undefined,
       attempts,
       serverTime: new Date().toISOString(),
@@ -1806,8 +1845,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     await this.scoped(actor, attempt.exam.courseId, grade);
     if (this.student(actor) && attempt.userId !== actor.id)
       throw new ForbiddenException('只能访问自己的答卷');
-    if (grade && attempt.exam.graderIds.length && !attempt.exam.graderIds.includes(actor.id))
-      throw new ForbiddenException('未被指定为本考试阅卷教师');
+    this.requireExamGrader(actor, attempt.exam);
     return attempt;
   }
   async attempt(actor: Actor, id: string) {
@@ -1905,7 +1943,10 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
       throw new ConflictException('考试已到时，服务器已交卷；迟到的本地草稿未接收');
     }
     const order = attempt.questionOrder as string[];
-    this.validateAnswers(input.answers, order);
+    this.validateAnswerValues(
+      input.answers,
+      (attempt.exam.snapshot?.items ?? []).map((item) => content(item.content)),
+    );
     if (input.flags?.some((flag) => !order.includes(flag)))
       throw new BadRequestException('标记题目不属于此试卷');
     if (input.currentPosition !== undefined && input.currentPosition >= order.length)
@@ -2036,8 +2077,14 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     this.running = true;
     let runId: string | undefined;
     try {
+      const now = Date.now();
+      for (const [id, retryAt] of this.deadlineRetries) if (retryAt <= now) this.deadlineRetries.delete(id);
       const due = await this.db.examAttempt.findMany({
-        where: { status: 'in_progress', deadlineAt: { lte: new Date() } },
+        where: {
+          status: 'in_progress',
+          deadlineAt: { lte: new Date() },
+          id: { notIn: [...this.deadlineRetries.keys()] },
+        },
         select: { id: true },
         orderBy: [{ deadlineAt: 'asc' }, { id: 'asc' }],
         take: 100,
@@ -2048,14 +2095,26 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
       });
       runId = run.id;
       let processed = 0;
+      const failed: string[] = [];
       for (const attempt of due) {
-        await this.finalizeAttempt(attempt.id, 'deadline');
-        processed++;
-        await this.db.assessmentJobRun.update({ where: { id: run.id }, data: { processed } });
+        try {
+          await this.finalizeAttempt(attempt.id, 'deadline');
+          processed++;
+          this.deadlineRetries.delete(attempt.id);
+        } catch {
+          failed.push(attempt.id);
+          this.deadlineRetries.set(attempt.id, Date.now() + 60000);
+          this.logger.error(`答卷到期交卷失败，已隔离并将在一分钟后重试: ${attempt.id}`);
+        }
       }
       await this.db.assessmentJobRun.update({
         where: { id: run.id },
-        data: { status: 'completed', completedAt: new Date() },
+        data: {
+          status: failed.length ? 'failed' : 'completed',
+          processed,
+          error: failed.length ? JSON.stringify({ failedAttemptIds: failed, retryAfterMs: 60000 }) : null,
+          completedAt: new Date(),
+        },
       });
     } catch (error) {
       this.logger.error('到期交卷任务失败，将在下轮从未完成答卷恢复');
@@ -2077,7 +2136,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
 
   async examAttempts(actor: Actor, id: string, query: z.infer<typeof schema.listSchema>) {
     this.require(actor, 'assessment.grade');
-    await this.examAccess(actor, id);
+    this.requireExamGrader(actor, await this.examAccess(actor, id));
     const p = paginate(query);
     const where = { examId: id, ...(query.status ? { gradingStatus: query.status } : {}) };
     const [items, total] = await this.db.$transaction([
@@ -2103,6 +2162,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
   async examRoster(actor: Actor, id: string, query: z.infer<typeof schema.listSchema>) {
     this.require(actor, 'assessment.grade');
     const exam = await this.examAccess(actor, id);
+    this.requireExamGrader(actor, exam);
     const p = paginate(query);
     const audience = exam.audience.sort((a, b) => a.userId.localeCompare(b.userId));
     const page = audience.slice(p.skip, p.skip + p.take);
@@ -2139,8 +2199,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     if (administrator && !actor.permissions.includes('analysis.sensitive'))
       throw new ForbiddenException('未获教学统计敏感授权');
     const exam = await this.examAccess(actor, id);
-    if (exam.graderIds.length && !exam.graderIds.includes(actor.id))
-      throw new ForbiddenException('未被指定为本考试阅卷教师');
+    this.requireExamGrader(actor, exam);
     const page = paginate({ ...query, pageSize: Math.min(query.pageSize ?? 20, 50) });
     const allItems = exam.snapshot?.items ?? [];
     const items = allItems.slice(page.skip, page.skip + page.take);
@@ -2232,8 +2291,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
   ) {
     this.require(actor, 'assessment.grade');
     const exam = await this.examAccess(actor, id);
-    if (exam.graderIds.length && !exam.graderIds.includes(actor.id))
-      throw new ForbiddenException('未被指定为本考试阅卷教师');
+    this.requireExamGrader(actor, exam);
     const snapshotItem = exam.snapshot?.items.find((item) => item.questionVersionId === questionVersionId);
     if (!snapshotItem) throw new NotFoundException('此题不属于该考试的固定试卷');
     const p = paginate(query);
@@ -2343,6 +2401,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
   async releaseExam(actor: Actor, id: string) {
     this.require(actor, 'assessment.grade');
     const exam = await this.examAccess(actor, id);
+    this.requireExamGrader(actor, exam);
     await this.scoped(actor, exam.courseId, true);
     if (exam.status !== 'published') throw new ConflictException('只能发布有效考试的成绩');
     if (new Date() < exam.endsAt) throw new ConflictException('考试窗口尚未结束，不能统一发布');
@@ -2350,6 +2409,7 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     const result = await this.db.$transaction(async (tx) => {
       await this.lock(tx, `exam-lifecycle:${id}`);
       const current = await tx.exam.findUniqueOrThrow({ where: { id } });
+      this.requireExamGrader(actor, current);
       if (current.status !== 'published' || new Date() < current.endsAt)
         throw new ConflictException('考试已取消或窗口尚未结束，不能统一发布');
       if (current.gradesReleasedAt)
@@ -2499,7 +2559,15 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     const where = {
       ...(this.student(actor) ? { userId: actor.id } : {}),
       ...(query.status ? { status: query.status } : {}),
-      attempt: { exam: { organizationId: actor.organizationId, courseId: query.courseId ?? { in: ids } } },
+      attempt: {
+        exam: {
+          organizationId: actor.organizationId,
+          courseId: query.courseId ?? { in: ids },
+          ...(this.student(actor)
+            ? {}
+            : { OR: [{ graderIds: { isEmpty: true } }, { graderIds: { has: actor.id } }] }),
+        },
+      },
     };
     const [items, total] = await this.db.$transaction([
       this.db.gradeAppeal.findMany({

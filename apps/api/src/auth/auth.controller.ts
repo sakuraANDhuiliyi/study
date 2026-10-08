@@ -9,7 +9,6 @@ import {
   UseGuards,
   UnauthorizedException,
   ForbiddenException,
-  HttpException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiCookieAuth } from '@nestjs/swagger';
 import { randomBytes } from 'node:crypto';
@@ -19,17 +18,20 @@ import { PrismaService } from '../common/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { AuthService, tokenHash } from './auth.service';
 import { AuthGuard, CurrentActor, Actor } from './auth.guard';
-import { hashPassword, verifyPassword } from './password';
+import { hashPasswordAsync, verifyPasswordAsync } from './password';
+import { releaseAuthAttempt, reserveAuthAttempt } from './attempt-limit';
+import { lockSecurityUser } from './security-transaction';
 import { username, password } from '../common/utils';
+import { AccountsService, canUsePersonalRecovery, majorSummarySelect } from '../accounts/accounts.service';
 @ApiTags('认证与个人资料')
 @Controller('auth')
 export class AuthController {
-  private failures = new Map<string, { count: number; expires: number }>();
-  private readonly dummyHash = hashPassword(randomBytes(24).toString('hex'));
+  private readonly dummyHash = hashPasswordAsync(randomBytes(24).toString('hex'));
   constructor(
     private readonly db: PrismaService,
     private readonly auth: AuthService,
     private readonly audit: AuditService,
+    private readonly accounts: AccountsService,
   ) {}
   private cookieOptions() {
     return {
@@ -39,6 +41,10 @@ export class AuthController {
       path: '/',
     };
   }
+  private checkOrigin(req: Request) {
+    if (req.headers.origin && req.headers.origin !== process.env.APP_ORIGIN)
+      throw new ForbiddenException('请求来源不被允许');
+  }
   private async view(actor: Actor) {
     const user = await this.db.user.findUniqueOrThrow({
       where: { id: actor.id },
@@ -47,52 +53,76 @@ export class AuthController {
         name: true,
         username: true,
         organizationId: true,
+        accountMode: true,
+        majorId: true,
+        personalOrganizationId: true,
         roles: { select: { roleId: true } },
       },
     });
+    const major = user.majorId
+      ? await this.db.academicsMajor.findFirst({
+          where: {
+            id: user.majorId,
+            OR: [{ organizationId: null }, { organizationId: user.organizationId }],
+          },
+          select: majorSummarySelect,
+        })
+      : null;
+    if (user.organizationId !== actor.organizationId)
+      throw new UnauthorizedException('账号归属已变化，请重新登录');
+    const { personalOrganizationId, ...publicUser } = user;
     return {
       user: {
-        ...user,
-        roles: user.roles.map((x) => x.roleId),
+        ...publicUser,
+        major,
+        canReturnToPersonal:
+          user.accountMode === 'ORGANIZATION' &&
+          !!personalOrganizationId &&
+          user.roles.length === 1 &&
+          user.roles[0].roleId === 'STUDENT',
+        roles: user.roles
+          .filter((x) => user.accountMode !== 'PERSONAL' || x.roleId === 'STUDENT')
+          .map((x) => x.roleId),
         role: actor.role,
         permissions: actor.permissions,
       },
       csrfToken: actor.csrfToken,
     };
   }
+  @Post('register')
+  @ApiOperation({ summary: '注册个人学习账号，仅创建学生身份及独立个人数据空间' })
+  async register(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    this.checkOrigin(req);
+    const { token, hours } = await this.accounts.register(body, req.ip || 'unknown');
+    const actor = await this.auth.resolveSession(token);
+    if (!actor) throw new UnauthorizedException('账号安全状态已变化，请重新登录');
+    res.cookie('lms_session', token, { ...this.cookieOptions(), maxAge: hours * 3600000 });
+    res.setHeader('Cache-Control', 'no-store');
+    return this.view(actor);
+  }
   @Post('login')
-  @ApiOperation({ summary: '登录；同源 Cookie 会话，失败限流' })
+  @ApiOperation({ summary: '登录；同源 Cookie 会话，共享请求限流' })
   async login(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const data = z.object({ username, password: z.string().min(1).max(128) }).parse(body);
-    if (req.headers.origin && req.headers.origin !== process.env.APP_ORIGIN)
-      throw new ForbiddenException('请求来源不被允许');
-    const key = `${req.ip}:${data.username.toLowerCase()}`;
-    const fail = this.failures.get(key);
-    const ipKey = `ip:${req.ip}`;
-    const ipFail = this.failures.get(ipKey);
-    if (
-      (fail && fail.expires > Date.now() && fail.count >= 8) ||
-      (ipFail && ipFail.expires > Date.now() && ipFail.count >= 50)
-    )
-      throw new HttpException('登录失败次数过多，请 15 分钟后再试', 429);
+    this.checkOrigin(req);
+    const reservation = await reserveAuthAttempt(this.db, req.ip || 'unknown', data.username);
     const user = await this.db.user.findUnique({
       where: { username: data.username.toLowerCase() },
       include: { roles: true },
     });
     const org = user && (await this.db.organization.findUnique({ where: { id: user.organizationId } }));
-    const passwordValid = verifyPassword(data.password, user?.passwordHash || this.dummyHash);
-    if (!user?.active || !org?.active || !user.roles.length || !passwordValid) {
-      this.failures.set(key, {
-        count: fail && fail.expires > Date.now() ? fail.count + 1 : 1,
-        expires: Date.now() + 900000,
-      });
-      this.failures.set(ipKey, {
-        count: ipFail && ipFail.expires > Date.now() ? ipFail.count + 1 : 1,
-        expires: Date.now() + 900000,
-      });
-      if (this.failures.size > 10000)
-        for (const [k, v] of this.failures) if (v.expires < Date.now()) this.failures.delete(k);
-      if (this.failures.size > 20000) this.failures.delete(this.failures.keys().next().value!);
+    const passwordValid = await verifyPasswordAsync(
+      data.password,
+      user?.passwordHash || (await this.dummyHash),
+    );
+    const recovery = user && (await this.db.passwordRecovery.findUnique({ where: { userId: user.id } }));
+    if (
+      !user?.active ||
+      !org?.active ||
+      !user.roles.length ||
+      !passwordValid ||
+      (recovery?.pendingUntil && recovery.pendingUntil > new Date())
+    ) {
       if (user)
         await this.db.auditLog.create({
           data: {
@@ -106,7 +136,6 @@ export class AuthController {
         });
       throw new UnauthorizedException('账号或密码错误，或账号已停用');
     }
-    this.failures.delete(key);
     const policy = await this.db.systemSetting.findUnique({
       where: { organizationId_key: { organizationId: user.organizationId, key: 'loginPolicy' } },
     });
@@ -124,15 +153,17 @@ export class AuthController {
       data: {
         userId: user.id,
         tokenHash: tokenHash(token),
-        role: user.roles[0].roleId,
+        role: user.accountMode === 'PERSONAL' ? 'STUDENT' : user.roles[0].roleId,
         csrfToken: randomBytes(24).toString('hex'),
         authVersion: user.authVersion,
         expiresAt: new Date(Date.now() + hours * 3600000),
       },
     });
     res.cookie('lms_session', token, { ...this.cookieOptions(), maxAge: hours * 3600000 });
-    const actor = (await this.auth.resolveSession(token))!;
+    const actor = await this.auth.resolveSession(token);
+    if (!actor) throw new UnauthorizedException('账号安全状态已变化，请重新登录');
     await this.audit.record(actor, 'login.success', 'Session', session.id);
+    await releaseAuthAttempt(this.db, reservation);
     return this.view(actor);
   }
   @Get('me') @UseGuards(AuthGuard) @ApiCookieAuth() async me(@CurrentActor() actor: Actor) {
@@ -148,6 +179,8 @@ export class AuthController {
   }
   @Post('role') @UseGuards(AuthGuard) async role(@CurrentActor() actor: Actor, @Body() body: unknown) {
     const { role } = z.object({ role: z.enum(['STUDENT', 'TEACHER', 'ADMIN', 'SUPER_ADMIN']) }).parse(body);
+    if (actor.accountMode === 'PERSONAL' && role !== 'STUDENT')
+      throw new ForbiddenException('个人账号仅支持学生身份');
     if (
       !(await this.db.userRole.findUnique({ where: { userId_roleId: { userId: actor.id, roleId: role } } }))
     )
@@ -171,25 +204,30 @@ export class AuthController {
     });
   }
   @Patch('profile') @UseGuards(AuthGuard) async profile(@CurrentActor() actor: Actor, @Body() body: unknown) {
-    const data = z.object({ name: z.string().trim().min(1).max(80) }).parse(body);
-    await this.db.user.update({ where: { id: actor.id }, data });
-    return this.view({ ...actor, name: data.name });
+    await this.accounts.updateProfile(actor, body);
+    return this.view(actor);
   }
   @Post('password') @UseGuards(AuthGuard) async password(
     @CurrentActor() actor: Actor,
     @Body() body: unknown,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const data = z.object({ oldPassword: z.string().max(128), newPassword: password }).parse(body);
     const user = await this.db.user.findUniqueOrThrow({ where: { id: actor.id } });
-    if (!verifyPassword(data.oldPassword, user.passwordHash)) throw new ForbiddenException('原密码不正确');
-    await this.db.$transaction([
-      this.db.user.update({
+    const reservation = await reserveAuthAttempt(this.db, req.ip || 'unknown', actor.id, 'password');
+    if (!(await verifyPasswordAsync(data.oldPassword, user.passwordHash)))
+      throw new ForbiddenException('原密码不正确');
+    const passwordHash = await hashPasswordAsync(data.newPassword);
+    await this.db.$transaction(async (tx) => {
+      await lockSecurityUser(tx, actor, user);
+      await tx.user.update({
         where: { id: actor.id },
-        data: { passwordHash: hashPassword(data.newPassword), authVersion: { increment: 1 } },
-      }),
-      this.db.session.deleteMany({ where: { userId: actor.id } }),
-      this.db.auditLog.create({
+        data: { passwordHash, authVersion: { increment: 1 } },
+      });
+      await tx.session.deleteMany({ where: { userId: actor.id } });
+      await tx.passwordRecovery.deleteMany({ where: { userId: actor.id } });
+      await tx.auditLog.create({
         data: {
           organizationId: actor.organizationId,
           userId: actor.id,
@@ -199,8 +237,133 @@ export class AuthController {
           details: {},
           requestId: actor.requestId,
         },
-      }),
-    ]);
+      });
+    });
+    await releaseAuthAttempt(this.db, reservation);
+    res.clearCookie('lms_session', this.cookieOptions());
+    return { ok: true, loginRequired: true };
+  }
+
+  @Get('recovery') @UseGuards(AuthGuard) async recoveryStatus(@CurrentActor() actor: Actor) {
+    return { configured: !!(await this.db.passwordRecovery.findUnique({ where: { userId: actor.id } })) };
+  }
+
+  @Post('recovery-code') @UseGuards(AuthGuard) async recoveryCode(
+    @CurrentActor() actor: Actor,
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const data = z.object({ oldPassword: z.string().min(1).max(128) }).parse(body);
+    const reservation = await reserveAuthAttempt(this.db, req.ip || 'unknown', actor.id, 'password');
+    const user = await this.db.user.findUniqueOrThrow({ where: { id: actor.id } });
+    if (!(await verifyPasswordAsync(data.oldPassword, user.passwordHash)))
+      throw new ForbiddenException('原密码不正确');
+    const code = `lmsr_${randomBytes(32).toString('base64url')}`;
+    await this.db.$transaction(async (tx) => {
+      await lockSecurityUser(tx, actor, user);
+      await tx.passwordRecovery.upsert({
+        where: { userId: actor.id },
+        create: { userId: actor.id, codeHash: tokenHash(code) },
+        update: {
+          codeHash: tokenHash(code),
+          pendingUntil: null,
+          requestedAuthVersion: null,
+          requestedBy: null,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          organizationId: actor.organizationId,
+          userId: actor.id,
+          action: 'password.recovery-code',
+          resourceType: 'User',
+          resourceId: actor.id,
+          details: {},
+          requestId: actor.requestId,
+        },
+      });
+    });
+    await releaseAuthAttempt(this.db, reservation);
+    res.setHeader('Cache-Control', 'no-store');
+    return { code };
+  }
+
+  @Post('recover') async recover(
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const data = z.object({ username, code: z.string().min(40).max(100), newPassword: password }).parse(body);
+    this.checkOrigin(req);
+    const reservation = await reserveAuthAttempt(this.db, req.ip || 'unknown', data.username, 'recovery');
+    const user = await this.db.user.findUnique({
+      where: { username: data.username.toLowerCase() },
+      include: { roles: true },
+    });
+    const recovery = user && (await this.db.passwordRecovery.findUnique({ where: { userId: user.id } }));
+    const org = user && (await this.db.organization.findUnique({ where: { id: user.organizationId } }));
+    const personal = !!(user && org && canUsePersonalRecovery(user, org));
+    const invalid = () => new UnauthorizedException('恢复码或恢复许可无效');
+    if (
+      !user?.active ||
+      !org?.active ||
+      !user.roles.length ||
+      !recovery ||
+      recovery.codeHash !== tokenHash(data.code) ||
+      (!personal &&
+        (!recovery.pendingUntil ||
+          recovery.pendingUntil <= new Date() ||
+          recovery.requestedAuthVersion !== user.authVersion))
+    )
+      throw invalid();
+    const passwordHash = await hashPasswordAsync(data.newPassword);
+    await this.db.$transaction(async (tx) => {
+      // Lock the user first, consistently with initiation and recovery-code rotation.
+      const [current] = await tx.$queryRaw<
+        {
+          authVersion: number;
+          active: boolean;
+          organizationId: string;
+          accountMode: string;
+          personalOrganizationId: string | null;
+        }[]
+      >`
+        SELECT "authVersion", "active", "organizationId", "accountMode", "personalOrganizationId" FROM "User" WHERE "id" = ${user.id} FOR UPDATE
+      `;
+      if (
+        !current?.active ||
+        current.authVersion !== user.authVersion ||
+        current.organizationId !== user.organizationId
+      )
+        throw invalid();
+      const currentOrg = await tx.organization.findUnique({ where: { id: current.organizationId } });
+      if (!currentOrg?.active || canUsePersonalRecovery(current, currentOrg) !== personal) throw invalid();
+      const consumed = await tx.passwordRecovery.deleteMany({
+        where: {
+          userId: user.id,
+          codeHash: tokenHash(data.code),
+          ...(!personal
+            ? { pendingUntil: { gt: new Date() }, requestedAuthVersion: current.authVersion }
+            : {}),
+        },
+      });
+      if (consumed.count !== 1) throw invalid();
+      await tx.user.update({ where: { id: user.id }, data: { passwordHash, authVersion: { increment: 1 } } });
+      await tx.session.deleteMany({ where: { userId: user.id } });
+      await tx.sensitiveGrant.deleteMany({ where: { userId: user.id } });
+      await tx.auditLog.create({
+        data: {
+          organizationId: user.organizationId,
+          userId: user.id,
+          action: 'password.recovery-complete',
+          resourceType: 'User',
+          resourceId: user.id,
+          details: { requestedBy: recovery.requestedBy },
+        },
+      });
+    });
+    await releaseAuthAttempt(this.db, reservation);
     res.clearCookie('lms_session', this.cookieOptions());
     return { ok: true, loginRequired: true };
   }

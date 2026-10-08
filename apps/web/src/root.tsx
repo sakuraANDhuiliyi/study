@@ -25,6 +25,8 @@ import {
   CalendarDays,
   NotebookPen,
   BrainCircuit,
+  Code2,
+  GraduationCap,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './auth';
@@ -34,6 +36,25 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ def
 const Planner = lazy(() => import('./pages/Planner').then((module) => ({ default: module.Planner })));
 const Notes = lazy(() => import('./pages/Notes').then((module) => ({ default: module.Notes })));
 const AiStudy = lazy(() => import('./pages/AiStudy').then((module) => ({ default: module.AiStudy })));
+const Academics = lazy(() => import('./pages/Academics').then((module) => ({ default: module.Academics })));
+const AcademicWorkbench = lazy(() =>
+  import('./pages/AcademicWorkbench').then((module) => ({ default: module.AcademicWorkbench })),
+);
+const AcademicRecords = lazy(() =>
+  import('./pages/AcademicRecords').then((module) => ({ default: module.AcademicRecords })),
+);
+const AcademicAdmin = lazy(() =>
+  import('./pages/AcademicAdmin').then((module) => ({ default: module.AcademicAdmin })),
+);
+const OrganizationAccess = lazy(() =>
+  import('./pages/OrganizationAccess').then((module) => ({ default: module.OrganizationAccess })),
+);
+const Algorithms = lazy(() =>
+  import('./pages/Algorithms').then((module) => ({ default: module.Algorithms })),
+);
+const AlgorithmDetail = lazy(() =>
+  import('./pages/Algorithms').then((module) => ({ default: module.AlgorithmDetail })),
+);
 const AiAuthoring = lazy(() =>
   import('./pages/AiAuthoring').then((module) => ({ default: module.AiAuthoring })),
 );
@@ -135,9 +156,13 @@ function Shell() {
         { path: '/', title: '学习工作台', icon: LayoutDashboard },
         { path: '/planner', title: '学习日历', icon: CalendarDays },
         { path: '/notes', title: '我的笔记', icon: NotebookPen },
+        ...(user.role === 'STUDENT'
+          ? [{ path: '/academics', title: '专业学习中心', icon: GraduationCap }]
+          : []),
         { path: '/courses', title: isTeacher(user) ? '课程管理' : '我的课程', icon: BookOpen },
         { path: '/assignments', title: isTeacher(user) ? '作业管理' : '我的作业', icon: ClipboardList },
         { path: '/practice', title: '练习中心', icon: PenLine },
+        ...(user.role === 'STUDENT' ? [{ path: '/algorithms', title: '算法练习', icon: Code2 }] : []),
         ...(user.role === 'STUDENT' ? [{ path: '/ai-study', title: 'AI 错题复盘', icon: BrainCircuit }] : []),
         ...(isTeacher(user) ? [{ path: '/questions', title: '题库管理', icon: LibraryBig }] : []),
         ...(user.role === 'TEACHER' ? [{ path: '/ai-authoring', title: 'AI 出题', icon: BrainCircuit }] : []),
@@ -160,6 +185,7 @@ function Shell() {
             items: [
               { path: '/admin/users', title: '用户管理', icon: Users },
               { path: '/admin/organization', title: '组织与教学', icon: Building2 },
+              { path: '/admin/academics', title: '专业与成员申请', icon: GraduationCap },
               { path: '/admin/roles', title: '角色与权限', icon: ShieldCheck },
               { path: '/admin/moderation', title: '内容治理', icon: MessagesSquare },
               { path: '/admin/settings', title: '系统设置', icon: Settings },
@@ -169,8 +195,19 @@ function Shell() {
         ]
       : []),
   ];
+  if (user.accountMode === 'PERSONAL') {
+    const personalPaths = new Set(['/', '/planner', '/notes', '/academics', '/algorithms', '/ai-study']);
+    for (const group of nav) group.items = group.items.filter((item) => personalPaths.has(item.path));
+  }
+  nav[0].items.push({
+    path: '/organization',
+    title: user.accountMode === 'PERSONAL' ? '加入学习组织' : '我的组织',
+    icon: Building2,
+  });
   const navPermissions: Record<string, string[]> = {
     '/practice': ['learning.use'],
+    '/algorithms': ['learning.use'],
+    '/academics': ['learning.use'],
     '/ai-study': ['learning.use'],
     '/ai-authoring': ['question.manage'],
     '/questions': ['question.manage'],
@@ -179,6 +216,7 @@ function Shell() {
     '/appeals': ['assessment.grade', 'learning.use'],
     '/admin/users': ['users.manage'],
     '/admin/organization': ['org.manage'],
+    '/admin/academics': ['org.manage'],
     '/admin/roles': ['users.manage'],
     '/admin/moderation': ['communication.moderate'],
     '/admin/settings': ['settings.org'],
@@ -187,7 +225,9 @@ function Shell() {
   for (const group of nav)
     group.items = group.items.filter(
       (item) =>
-        !navPermissions[item.path] || navPermissions[item.path].some((p) => user.permissions.includes(p)),
+        (item.path !== '/admin/academics' ||
+          ['org.manage', 'users.manage'].every((permission) => user.permissions.includes(permission))) &&
+        (!navPermissions[item.path] || navPermissions[item.path].some((p) => user.permissions.includes(p))),
     );
   const activePath = /^\/(exam-attempts|attempts|grading)\//.test(location.pathname)
     ? '/exams'
@@ -245,32 +285,34 @@ function Shell() {
         </Link>
         <div className="workspace-label">
           <span className="workspace-dot" />
-          {label(user.role)}工作空间
+          {user.accountMode === 'PERSONAL' ? '个人学习空间' : `${label(user.role)}工作空间`}
           <ChevronsRight size={14} />
         </div>
         <nav aria-label="主导航">
-          {nav.map((group) => (
-            <div className="nav-group" key={group.group}>
-              <div className="nav-group-name">{group.group}</div>
-              {group.items.map((item) => (
-                <NavLink
-                  end={item.path === '/'}
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobile(false)}
-                  className={({ isActive }) =>
-                    `nav-item ${isActive || (item.path === '/exams' && activePath === '/exams') ? 'active' : ''}`
-                  }
-                >
-                  <item.icon size={18} />
-                  <span>{item.title}</span>
-                  {item.path === '/notifications' && notifications.data?.unreadCount > 0 && (
-                    <span className="nav-count">{notifications.data.unreadCount}</span>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+          {nav
+            .filter((group) => group.items.length)
+            .map((group) => (
+              <div className="nav-group" key={group.group}>
+                <div className="nav-group-name">{group.group}</div>
+                {group.items.map((item) => (
+                  <NavLink
+                    end={item.path === '/'}
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobile(false)}
+                    className={({ isActive }) =>
+                      `nav-item ${isActive || (item.path === '/exams' && activePath === '/exams') ? 'active' : ''}`
+                    }
+                  >
+                    <item.icon size={18} />
+                    <span>{item.title}</span>
+                    {item.path === '/notifications' && notifications.data?.unreadCount > 0 && (
+                      <span className="nav-count">{notifications.data.unreadCount}</span>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            ))}
         </nav>
         <div className="sidebar-bottom">
           <button className="sidebar-account" onClick={() => navigate('/profile')}>
@@ -348,7 +390,23 @@ function Shell() {
           </div>
         </header>
         <main className="main-content" id="main-content" tabIndex={-1}>
-          <Outlet />
+          {user.accountMode === 'PERSONAL' &&
+          !/^\/(?:$|academics(?:\/|$)|planner$|notes$|algorithms(?:\/|$)|ai-study$|profile$|organization$|notifications$)/.test(
+            location.pathname,
+          ) ? (
+            <Result
+              status="403"
+              title="此功能属于组织教学空间"
+              subTitle="你的个人学习模块仍可正常使用。加入组织并获得授权后，可使用对应的课程与教学功能。"
+              extra={
+                <Link to="/academics">
+                  <Button type="primary">前往专业学习中心</Button>
+                </Link>
+              }
+            />
+          ) : (
+            <Outlet />
+          )}
         </main>
         <footer className="app-footer">
           <span>知学学习平台 · 让成长有迹可循</span>
@@ -374,6 +432,59 @@ export function Root() {
             <Route index element={<Dashboard />} />
             <Route path="planner" element={<Planner />} />
             <Route path="notes" element={<Notes />} />
+            <Route path="organization" element={<OrganizationAccess />} />
+            <Route
+              path="academics"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <Academics />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="academics/modules/:id"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <AcademicWorkbench />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="academics/records"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <AcademicRecords />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="admin/academics"
+              element={
+                <RequirePermission
+                  anyOf={['org.manage']}
+                  allOf={['users.manage']}
+                  roles={['ADMIN', 'SUPER_ADMIN']}
+                >
+                  <AcademicAdmin />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="algorithms"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <Algorithms />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="algorithms/:id"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <AlgorithmDetail />
+                </RequirePermission>
+              }
+            />
             <Route
               path="ai-authoring"
               element={
@@ -552,15 +663,18 @@ export function Root() {
 
 function RequirePermission({
   anyOf,
+  allOf = [],
   roles,
   children,
 }: {
   anyOf: string[];
+  allOf?: string[];
   roles?: string[];
   children: React.ReactNode;
 }) {
   const { user } = useAuth();
   return (!roles || (!!user && roles.includes(user.role))) &&
+    allOf.every((permission) => user?.permissions.includes(permission)) &&
     anyOf.some((p) => user?.permissions.includes(p)) ? (
     <>{children}</>
   ) : (

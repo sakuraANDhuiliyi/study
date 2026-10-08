@@ -4,6 +4,7 @@ import { resolve, isAbsolute } from 'node:path';
 import { parseDocument } from 'yaml';
 import { z } from 'zod';
 import type { AiStudyStatus } from './ai-study.schemas';
+import { judgeConfigurationSchema } from '../algorithms/judge.config.schema';
 
 const apiUrl = z
   .string()
@@ -35,6 +36,7 @@ const model = z
   .regex(/^[a-zA-Z0-9._:/-]+$/);
 const configSchema = z
   .object({
+    judge0: judgeConfigurationSchema.default({}),
     ai: z
       .object({
         enabled: z.boolean().default(true),

@@ -1,0 +1,82 @@
+model AlgorithmDraft {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  problemId      String
+  language       String
+  code           String
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([organizationId, userId, problemId])
+  @@index([userId])
+}
+
+model AlgorithmSubmission {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  problemId      String
+  language       String
+  code           String
+  mode           String
+  customInput    Boolean @default(false)
+  status         String @default("running")
+  passed         Int @default(0)
+  total          Int @default(0)
+  runtimeMs      Int?
+  memoryKb       Int?
+  compileOutput  String?
+  error          String?
+  results        Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId, userId, problemId, createdAt, id], map: "AlgorithmSubmission_owner_problem_history_idx")
+  @@index([organizationId, userId, mode, status])
+  @@index([userId])
+}
+
+model AlgorithmAnalysis {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  problemId      String
+  language       String
+  code           String
+  mode           String
+  submissionId   String?
+  status         String @default("pending")
+  content        Json?
+  error          String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId, userId, problemId, createdAt, id], map: "AlgorithmAnalysis_owner_problem_history_idx")
+  @@index([userId])
+}
+
+model AlgorithmOperation {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  kind           String
+  submissionId   String?
+  analysisId     String?
+  status         String @default("pending")
+  leaseExpiresAt DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  completedAt    DateTime? @db.Timestamptz(3)
+  @@index([organizationId, userId, kind, createdAt])
+  @@index([organizationId, userId, status, leaseExpiresAt], map: "AlgorithmOperation_owner_status_lease_idx")
+}
+
+model AlgorithmLearningState {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  problemId      String
+  favorite       Boolean @default(false)
+  reviewStatus   String @default("none")
+  note           String @default("")
+  revision       Int @default(0)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([organizationId, userId, problemId], map: "AlgorithmLearningState_owner_problem_key")
+  @@index([userId])
+}
