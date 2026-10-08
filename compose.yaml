@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: lms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deployment environment}
+      POSTGRES_DB: zhixue
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U lms -d zhixue']
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+  migrate:
+    build: .
+    command: [./node_modules/.bin/prisma, migrate, deploy, --schema, prisma]
+    environment:
+      DATABASE_URL: postgresql://lms:${POSTGRES_PASSWORD}@db:5432/zhixue?schema=public
+    depends_on:
+      db: { condition: service_healthy }
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+      BIND_HOST: 0.0.0.0
+      DATABASE_URL: postgresql://lms:${POSTGRES_PASSWORD}@db:5432/zhixue?schema=public
+      APP_ORIGIN: ${APP_ORIGIN:?Set public HTTPS origin}
+      COOKIE_SECURE: 'true'
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      MAX_JSON_MB: ${MAX_JSON_MB:-2}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      MAX_ASSIGNMENT_EXPORT_MB: ${MAX_ASSIGNMENT_EXPORT_MB:-100}
+      MAX_WEBSOCKETS_PER_USER: ${MAX_WEBSOCKETS_PER_USER:-20}
+      MAX_WEBSOCKETS_TOTAL: ${MAX_WEBSOCKETS_TOTAL:-2000}
+    ports: ['127.0.0.1:3001:3001']
+    volumes:
+      - uploads:/app/uploads
+      - type: bind
+        source: ./config.yaml
+        target: /app/config.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+volumes:
+  postgres-data:
+  uploads:

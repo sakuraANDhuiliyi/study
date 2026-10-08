@@ -1,0 +1,21 @@
+{
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M1",
+    "cores": 8,
+    "memoryGB": 16,
+    "node": "v22.17.0"
+  },
+  "endpoint": "GET /api/courses (authenticated)",
+  "concurrency": 10,
+  "requests": 100,
+  "errors": 0,
+  "elapsedMs": 227,
+  "latencyMs": {
+    "p50": 21,
+    "p95": 33,
+    "max": 51
+  },
+  "note": "Local measurement only. Does not claim production capacity or distributed exam load."
+}

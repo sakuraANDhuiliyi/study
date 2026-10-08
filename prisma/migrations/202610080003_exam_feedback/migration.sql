@@ -1,0 +1,3 @@
+ALTER TABLE "Exam" ADD COLUMN "commentReleaseAt" TIMESTAMPTZ(3);
+ALTER TABLE "ExamAttempt" ADD COLUMN "feedback" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "GradingRecord" ADD COLUMN "comment" TEXT NOT NULL DEFAULT '';

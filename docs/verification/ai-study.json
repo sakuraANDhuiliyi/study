@@ -1,0 +1,258 @@
+{
+  "verifiedAt": "2026-10-08T08:40:02.457Z",
+  "features": [
+    "private_mistake_analysis",
+    "error_pattern_summary",
+    "review_plan",
+    "explicit_web_search",
+    "cited_sources",
+    "report_and_source_downloads",
+    "server_yaml_configuration"
+  ],
+  "checks": {
+    "typecheck": true,
+    "eslint": true,
+    "productionBuild": true
+  },
+  "unit": {
+    "tests": 89,
+    "pass": 89,
+    "fail": 0,
+    "skipped": 0
+  },
+  "http": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0,
+    "realDatabase": true,
+    "realHttp": true,
+    "provider": "isolated local mock HTTP server",
+    "externalAiAccountUsed": false
+  },
+  "browser": {
+    "regression": {
+      "passed": 16,
+      "realBackendCases": 12,
+      "mockedAiContractCases": 4
+    },
+    "affectedContractRerunAfterPostCsrfChange": {
+      "passed": 4
+    },
+    "affectedAccessibilityAndRoleCheckRerun": {
+      "passed": 1
+    },
+    "note": "Follow-up runs overlap the original tests and are not additional distinct test cases.",
+    "desktopWidth": 1440,
+    "mobileWidths": [390],
+    "browser": "local Chrome"
+  },
+  "demo": {
+    "verifiedAt": "2026-10-08T08:39:52.285Z",
+    "mockedApi": false,
+    "realAiCalled": false,
+    "health": true,
+    "missingKeyState": true,
+    "reportList": true,
+    "mistakeCount": 1,
+    "teacherRejected": true,
+    "openapiUpdated": true,
+    "browser": {
+      "pageErrors": [],
+      "missingKeyVisible": true
+    }
+  },
+  "cleanStart": {
+    "verifiedAt": "2026-10-08T08:26:27.269Z",
+    "emptyDatabaseMigration": true,
+    "repeatableSeed": true,
+    "preservesRevokedPermissions": true,
+    "controlledProductionBootstrap": true,
+    "health": true,
+    "roleLogins": ["student", "teacher", "admin", "superadmin"],
+    "counts": {
+      "users": 7,
+      "courses": 4,
+      "questions": 8,
+      "assignments": 1,
+      "exams": 2,
+      "messages": 2
+    },
+    "note": "Fresh disposable PostgreSQL database using installed locked dependencies and compiled API. Docker and fresh dependency download are separate checks."
+  },
+  "migrations": {
+    "total": 7,
+    "added": ["202610080007_ai_study"],
+    "reviewApplied": true,
+    "demoApplied": true
+  },
+  "liveSourceDownloads": {
+    "checkedAt": "2026-10-08T08:31:01.577Z",
+    "verifiedBy": "Official source URLs verified with web search and open before download",
+    "limits": {
+      "maxBytes": 5242880,
+      "timeoutMs": 15000
+    },
+    "results": [
+      {
+        "kind": "pdf",
+        "title": "清华大学出版社：高等数学练习册公开样章",
+        "url": "https://www.tup.tsinghua.edu.cn/upload/books/yz/084530-01.pdf",
+        "success": true,
+        "finalUrl": "https://www.tup.tsinghua.edu.cn/upload/books/yz/084530-01.pdf",
+        "bytes": 272898,
+        "contentType": "application/pdf",
+        "sha256": "b50bbb7942cc549797e99f19eef15374e1999fb779960be57c0a34d21327d127",
+        "elapsedMs": 1531
+      },
+      {
+        "kind": "html",
+        "title": "北京大学数学科学学院：计算概论作业",
+        "url": "https://math.pku.edu.cn/teachers/qiuzy/computing/execises.htm",
+        "success": false,
+        "httpStatus": 415,
+        "reason": "仅支持安全的 PDF、纯文本或可转换的网页资料",
+        "elapsedMs": 2128,
+        "diagnostic": {
+          "contentType": "text/html",
+          "contentEncoding": null,
+          "metaCharsets": ["gb2312"],
+          "examinedPrefixBytes": 16384,
+          "checkedAt": "2026-10-08T08:33:14.897Z"
+        }
+      },
+      {
+        "kind": "html",
+        "title": "清华大学出版社：高中数学一课一练公开介绍",
+        "url": "https://www.tup.tsinghua.edu.cn/booksCenter/book_10285601.html",
+        "success": true,
+        "finalUrl": "https://www.tup.tsinghua.edu.cn/booksCenter/book_10285601.html",
+        "bytes": 8343,
+        "contentType": "text/plain; charset=utf-8",
+        "sha256": "bc55a7b19116cc65c149de42ec85d8286d5b0abb02e2b02c30ac04bab0efb3c2",
+        "elapsedMs": 612,
+        "checkedAt": "2026-10-08T08:34:01.520Z"
+      },
+      {
+        "kind": "html",
+        "title": "北京大学数学科学学院：计算概论作业（meta charset 修复后重试）",
+        "url": "https://math.pku.edu.cn/teachers/qiuzy/computing/execises.htm",
+        "retryAfter": "HTML meta charset support",
+        "success": true,
+        "finalUrl": "https://math.pku.edu.cn/teachers/qiuzy/computing/execises.htm",
+        "bytes": 21715,
+        "contentType": "text/plain; charset=utf-8",
+        "sha256": "1d2a2950b6167abcd4c6ef7ced44d6272b0c6345a66fc2c0ddf78ef0e883d14d",
+        "elapsedMs": 505,
+        "checkedAt": "2026-10-08T08:37:59.270Z"
+      }
+    ]
+  },
+  "protections": [
+    "Only the current student can access their reports; organization, course, original wrong answer, question availability and exam-answer release are rechecked.",
+    "Authentication, role, feature flags and content access are checked again after external calls.",
+    "Database leases and a unique pending-operation index bound concurrency; failed attempts and downloads count toward the Beijing-time daily limit.",
+    "Source download requires POST with CSRF; GET/HEAD and missing-CSRF requests do not consume quota or perform outbound requests.",
+    "Sources come from provider tool records; only filtered, limited sources are persisted.",
+    "Downloads resolve and validate every DNS result, pin the connection address and recheck redirects; no credentials or cookies are forwarded.",
+    "Output size, timeout, MIME type, file signatures and text encodings are validated. HTML is exported as plain text.",
+    "Configuration secrets are excluded from Git, Docker build context, status endpoints, logs and browser output."
+  ],
+  "screenshots": [
+    {
+      "path": "docs/screenshots/ai-study-live-unconfigured.png",
+      "kind": "real demo backend, blank API keys"
+    },
+    {
+      "path": "docs/screenshots/ai-study-compose-desktop.png",
+      "kind": "explicit mocked API contract fixture"
+    },
+    {
+      "path": "docs/screenshots/ai-study-report-desktop.png",
+      "kind": "explicit mocked API contract fixture"
+    },
+    {
+      "path": "docs/screenshots/ai-study-sources-desktop.png",
+      "kind": "explicit mocked API contract fixture"
+    },
+    {
+      "path": "docs/screenshots/ai-study-compose-mobile.png",
+      "kind": "explicit mocked API contract fixture"
+    },
+    {
+      "path": "docs/screenshots/ai-study-report-mobile.png",
+      "kind": "explicit mocked API contract fixture"
+    }
+  ],
+  "sources": [
+    "https://developers.openai.com/api/docs/guides/tools-web-search",
+    "https://developers.openai.com/api/docs/guides/structured-outputs",
+    "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+    "https://docs.tavily.com/documentation/api-reference/endpoint/search",
+    "https://eemeli.org/yaml/"
+  ],
+  "limitations": [
+    "API keys were intentionally left blank. Real AI credentials, model support, quotas and AI/search quality have not been verified.",
+    "Live public PDF and HTML download checks do not exercise a real AI search account.",
+    "TAP totals include parent tests. Follow-up browser counts overlap the full browser regression.",
+    "Remote CI and Docker were not executed during this feature verification.",
+    "PDF checks are bounded format checks, not antivirus scanning; authenticated/paywalled sources are not bypassed.",
+    "Earlier integration and security suites were not all repeated; the new AI HTTP suite, unit suite and full browser regression were run."
+  ],
+  "deepseekTavilyUpdate": {
+    "verifiedAt": "2026-10-08T08:57:17.743Z",
+    "configuration": {
+      "apiStyle": "deepseek",
+      "model": "deepseek-flash",
+      "structuredOutput": "json_object",
+      "baseUrl": "https://api.deepseek.com",
+      "searchProvider": "tavily",
+      "searchBaseUrl": "https://api.tavily.com"
+    },
+    "checks": {
+      "apiProductionBuild": true,
+      "changedGatewayFilesLint": true,
+      "documentationExamplesParsed": true,
+      "integrationFixtureLint": true
+    },
+    "unit": {
+      "tests": 91,
+      "pass": 91,
+      "fail": 0,
+      "skipped": 0
+    },
+    "gatewayContractSubset": {
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "skipped": 0
+    },
+    "liveServerStatus": {
+      "checkedAt": "2026-10-08T08:54:22.084Z",
+      "model": "deepseek-flash",
+      "searchProvider": "tavily",
+      "analysisConfigured": false,
+      "searchConfigured": false,
+      "realExternalCall": false
+    },
+    "realAiOrSearchAccountCalled": false,
+    "browserRegressionRepeated": false,
+    "sources": [
+      "https://api-docs.deepseek.com/",
+      "https://api-docs.deepseek.com/api/create-chat-completion/",
+      "https://api-docs.deepseek.com/guides/json_mode/",
+      "https://api-docs.deepseek.com/guides/thinking_mode/",
+      "https://docs.tavily.com/documentation/api-reference/endpoint/search"
+    ],
+    "http": {
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "skipped": 0,
+      "realDatabase": true,
+      "realHttp": true,
+      "providers": "local mock DeepSeek Chat Completions and Tavily Search",
+      "externalAccountsCalled": false
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "recordedAt": "2026-10-08T04:22:43.717Z",
+  "results": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "tests": 37,
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "coreIntegration",
+      "command": "npm run test:e2e",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "assessmentIntegration",
+      "command": "npm run test:assessment",
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "communicationIntegration",
+      "command": "npm run test:communication",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "browser",
+      "command": "npm run test:browser",
+      "passed": 7,
+      "failed": 0
+    }
+  ],
+  "checks": {
+    "typecheck": true,
+    "lint": true,
+    "productionBuild": true
+  },
+  "note": "TAP totals include parent tests where shown; these are observed local runs, not a production coverage guarantee."
+}

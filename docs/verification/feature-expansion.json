@@ -1,0 +1,116 @@
+{
+  "verifiedAt": "2026-10-08T07:35:13.284Z",
+  "features": ["learning_calendar_and_private_tasks", "private_lesson_notes", "exam_item_analysis"],
+  "checks": {
+    "typecheck": true,
+    "eslint": true,
+    "productionBuild": true
+  },
+  "unit": {
+    "tests": 48,
+    "passed": 48,
+    "failed": 0,
+    "skipped": 0
+  },
+  "httpExtensions": {
+    "tests": 28,
+    "passed": 28,
+    "failed": 0,
+    "skipped": 0
+  },
+  "browser": {
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "desktopWidth": 1440,
+    "mobileWidths": [320, 390],
+    "browser": "local Chrome",
+    "database": "isolated review database"
+  },
+  "freshInstall": {
+    "verifiedAt": "2026-10-08T07:31:56.741Z",
+    "emptyDatabaseMigration": true,
+    "repeatableSeed": true,
+    "preservesRevokedPermissions": true,
+    "controlledProductionBootstrap": true,
+    "health": true,
+    "roleLogins": ["student", "teacher", "admin", "superadmin"],
+    "counts": {
+      "users": 7,
+      "courses": 4,
+      "questions": 8,
+      "assignments": 1,
+      "exams": 2,
+      "messages": 2
+    },
+    "note": "Fresh disposable PostgreSQL database using installed locked dependencies and compiled API. Docker and fresh dependency download are separate checks."
+  },
+  "demo": {
+    "verifiedAt": "2026-10-08T07:34:39.768Z",
+    "health": true,
+    "roles": [
+      {
+        "username": "student",
+        "login": true,
+        "planner": true,
+        "notes": true
+      },
+      {
+        "username": "teacher",
+        "login": true,
+        "planner": true,
+        "notes": true
+      },
+      {
+        "username": "admin",
+        "login": true,
+        "planner": true,
+        "notes": true
+      },
+      {
+        "username": "superadmin",
+        "login": true,
+        "planner": true,
+        "notes": true
+      }
+    ],
+    "browser": {
+      "studentPlanner": true,
+      "studentNotes": true,
+      "lessonNoteEditor": true,
+      "pageErrors": []
+    },
+    "openapiUpdated": true
+  },
+  "migrations": {
+    "total": 6,
+    "added": ["202610080004_personal_tasks", "202610080005_lesson_notes", "202610080006_text_byte_limits"],
+    "reviewApplied": true,
+    "demoApplied": true
+  },
+  "privacyAndCorrectness": [
+    "User and organization isolation",
+    "Current course and lesson authorization",
+    "Compare-and-swap revisions and note recreation protection",
+    "Assignment extensions and cross-month exams",
+    "Beijing time independent of browser timezone",
+    "Real item snapshots and latest finished submission",
+    "Objective correctness independent of manual scores",
+    "Pending grading is not zero",
+    "Chinese maximum-length inputs"
+  ],
+  "sources": [
+    "https://developerdocs.instructure.com/services/canvas/resources/planner",
+    "https://docs.moodle.org/501/en/Calendar",
+    "https://docs.openedx.org/en/latest/learners/SFD_notes.html",
+    "https://docs.moodle.org/501/en/Quiz_statistics_report",
+    "https://community.instructure.com/en/kb/articles/580197-new-quizzes-quiz-and-item-analysis"
+  ],
+  "limitations": [
+    "TAP totals include parent tests.",
+    "Remote CI and Docker were not executed in this expansion verification.",
+    "Calendar sources are capped at 500 per type with an explicit truncation notice.",
+    "Statistics are descriptive, without reliability or discrimination estimates.",
+    "Existing integration/security suites were not all repeated in this turn; full browser regression and new HTTP cases were run."
+  ]
+}

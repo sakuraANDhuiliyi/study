@@ -1,0 +1,242 @@
+{
+  "verifiedAt": "2026-10-08T10:02:23.547Z",
+  "features": [
+    "teacher_question_generation",
+    "teacher_paper_generation",
+    "five_question_types",
+    "editable_private_drafts",
+    "atomic_question_and_paper_commit",
+    "idempotent_save",
+    "shared_ai_quota"
+  ],
+  "checks": {
+    "typecheck": {
+      "passed": true,
+      "evidence": ".data/ai-authoring-typecheck.log"
+    },
+    "eslint": {
+      "passed": true,
+      "evidence": ".data/ai-authoring-lint.log"
+    },
+    "productionBuild": {
+      "passed": true,
+      "evidence": ".data/ai-authoring-build.log"
+    },
+    "finalWebRebuild": {
+      "status": "passed",
+      "evidence": ".data/ai-authoring-web-final-build.log",
+      "note": "Includes the question-bank mobile toolbar wrapping fix and final shared-quota/privacy copy."
+    }
+  },
+  "unit": {
+    "tests": 107,
+    "pass": 107,
+    "fail": 0,
+    "skipped": 0,
+    "teacherAuthoringSubset": 16,
+    "evidence": ".data/ai-authoring-all-unit.log"
+  },
+  "teacherHttp": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0,
+    "childTests": 12,
+    "includesParentTest": true,
+    "realDatabase": true,
+    "realHttp": true,
+    "provider": "isolated local mock DeepSeek HTTP server",
+    "externalAiAccountCalled": false,
+    "evidence": ".data/ai-authoring-integration.log"
+  },
+  "studentHttpRegression": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0,
+    "childTests": 12,
+    "includesParentTest": true,
+    "realDatabase": true,
+    "realHttp": true,
+    "providers": ["local mock DeepSeek", "local mock Tavily"],
+    "externalAccountsCalled": false,
+    "evidence": ".data/ai-authoring-student-regression.log"
+  },
+  "browser": {
+    "fullRegression": {
+      "passed": 21,
+      "realBackendCases": 12,
+      "mockedApiContractCases": 9,
+      "teacherMockedCases": 5,
+      "studentMockedCases": 4,
+      "evidence": ".data/ai-authoring-browser-full.log"
+    },
+    "responsiveFollowup": {
+      "passed": 1,
+      "overlapsFullRegression": true,
+      "additionalDistinctCases": 0,
+      "evidence": ".data/ai-authoring-responsive-check.log"
+    },
+    "note": "Real backend browser cases and mocked API contracts are distinct evidence classes; mocked AI previews are not live model output.",
+    "liveSavedPaper": {
+      "checkedAt": "2026-10-08T10:01:25.435Z",
+      "mockedApi": false,
+      "providerRequests": 0,
+      "savedRealModelDraftVisible": true,
+      "pageErrors": [],
+      "evidence": ".data/ai-authoring-live-preview.json"
+    }
+  },
+  "demo": {
+    "checkedAt": "2026-10-08T10:00:59.718Z",
+    "mockedApi": false,
+    "realModelCalled": false,
+    "teacherRead": true,
+    "analysisConfigured": true,
+    "studentRejected": true,
+    "openapiUpdated": true,
+    "teacherEntry": true,
+    "mobileQuestionBank": {
+      "viewport": 390,
+      "document": 390
+    },
+    "pageErrors": [],
+    "readOnly": true,
+    "evidence": ".data/ai-authoring-demo-smoke.json"
+  },
+  "realProvider": {
+    "status": "passed",
+    "checkedAt": "2026-10-08T09:59:24.774Z",
+    "mockedApi": false,
+    "provider": "DeepSeek",
+    "providerRequests": 1,
+    "database": "isolated review",
+    "examPublished": false,
+    "model": "deepseek-flash",
+    "elapsedMs": 1161,
+    "httpStatus": 201,
+    "generationStatus": "ready",
+    "sample": {
+      "stem": "2 + 3 的结果是？",
+      "type": "single",
+      "answer": ["C"],
+      "options": [
+        {
+          "id": "A",
+          "text": "3"
+        },
+        {
+          "id": "B",
+          "text": "4"
+        },
+        {
+          "id": "C",
+          "text": "5"
+        },
+        {
+          "id": "D",
+          "text": "6"
+        }
+      ],
+      "difficulty": 1,
+      "scoreCents": 500,
+      "explanation": "将 2 和 3 相加，得到 5，因此正确选项是 C。",
+      "knowledgePoints": ["整数加法"]
+    },
+    "passed": true,
+    "initialVerificationCorrection": "Smoke assertion corrected from uppercase PRIVATE to actual lowercase private enum; no additional provider request.",
+    "privateQuestion": true,
+    "practiceDisabled": true,
+    "paperSaved": true,
+    "persistenceVerifiedAt": "2026-10-08T10:00:25.464Z",
+    "scenario": "One real arithmetic single-choice question generation and private question/paper commit",
+    "manualSampleReview": {
+      "equation": "2 + 3 = 5",
+      "correctOption": "C",
+      "answerAndExplanationConsistent": true
+    },
+    "scope": "Single targeted arithmetic integration check; not a claim of broad question quality.",
+    "evidence": ".data/ai-authoring-live-model.json"
+  },
+  "cleanStart": {
+    "verifiedAt": "2026-10-08T09:48:42.222Z",
+    "emptyDatabaseMigration": true,
+    "repeatableSeed": true,
+    "preservesRevokedPermissions": true,
+    "controlledProductionBootstrap": true,
+    "health": true,
+    "roleLogins": ["student", "teacher", "admin", "superadmin"],
+    "counts": {
+      "users": 7,
+      "courses": 4,
+      "questions": 8,
+      "assignments": 1,
+      "exams": 2,
+      "messages": 2
+    },
+    "note": "Fresh disposable PostgreSQL database using installed locked dependencies and compiled API. Docker and fresh dependency download are separate checks.",
+    "evidence": ".data/ai-authoring-clean-start.log"
+  },
+  "migrations": {
+    "total": 8,
+    "added": ["202610080008_ai_authoring"],
+    "reviewApplied": true,
+    "demoApplied": true,
+    "deploymentStateSource": "Coordinator-confirmed migration state"
+  },
+  "protections": [
+    "Only the current teacher identity with question.manage and course.read can access owned drafts; generation and commit also require course.manage, active teaching assignment and a non-archived course.",
+    "Paper drafts additionally require assessment.manage; owner, organization, course and chapter are checked, and revoked drafts are filtered before pagination.",
+    "Session and permission checks run again after model calls and at commit. Row locks and a single transaction protect atomic question and paper creation; repeated saves return existing saved IDs.",
+    "Generated content is rejected for invalid answers, question counts/types, duplicate stems, HTML/control characters, missing explanations and unsupported fields. Scoring/difficulty come from the teacher blueprint.",
+    "All new questions are private and practice-disabled. The model cannot choose ownership, course, creator or release state.",
+    "Teacher materials remain user JSON data. Requests omit internal course/chapter IDs and identity fields; generation supplies no browsing tools.",
+    "Teacher generation shares the Beijing-time per-user attempt quota and single pending operation with student AI operations; failures count and deleting a draft does not reset quota.",
+    "Secrets are omitted from public configuration responses, error text, logs and screenshots."
+  ],
+  "screenshots": [
+    {
+      "path": "docs/screenshots/ai-authoring-live-demo.png",
+      "kind": "real configured demo backend, read-only page",
+      "status": "available"
+    },
+    {
+      "path": "docs/screenshots/ai-authoring-live-question-bank-mobile.png",
+      "kind": "real demo backend, 390px question bank",
+      "status": "available"
+    },
+    {
+      "path": "docs/screenshots/ai-authoring-compose-desktop.png",
+      "kind": "explicit mocked API contract fixture",
+      "status": "available"
+    },
+    {
+      "path": "docs/screenshots/ai-authoring-compose-mobile.png",
+      "kind": "explicit mocked API contract fixture",
+      "status": "available"
+    },
+    {
+      "path": "docs/screenshots/ai-authoring-preview-desktop.png",
+      "kind": "explicit mocked API contract fixture",
+      "status": "available"
+    },
+    {
+      "path": "docs/screenshots/ai-authoring-preview-mobile.png",
+      "kind": "explicit mocked API contract fixture",
+      "status": "available"
+    },
+    {
+      "path": "docs/screenshots/ai-authoring-live-saved-paper.png",
+      "kind": "real review backend displaying the saved result of one real provider request",
+      "status": "available"
+    }
+  ],
+  "sources": ["https://api-docs.deepseek.com/guides/json_mode/"],
+  "limitations": [
+    "Exactly one real DeepSeek request generated one arithmetic question and a private paper in the isolated review database. This targeted success does not establish broad subject-matter quality.",
+    "Question validation enforces structure and storage rules, not subject-matter correctness; teachers must review before publishing.",
+    "TAP HTTP totals include parent tests. The one-test responsive follow-up overlaps the 21-case browser regression.",
+    "The demo smoke is read-only and did not call a real model. Its analysisConfigured=true reflects configured capability, not an empty-key state.",
+    "Docker, fresh dependency download and remote CI were not executed as part of this verification."
+  ]
+}

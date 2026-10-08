@@ -1,0 +1,62 @@
+name: build-and-verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://lms:lms_local_only@127.0.0.1:55432/zhixue_review_ci?schema=public
+      TEST_BASE_URL: http://127.0.0.1:3001
+      TEST_API_URL: http://127.0.0.1:3001/api
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lms
+          POSTGRES_PASSWORD: lms_local_only
+          POSTGRES_DB: zhixue_review_ci
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd "pg_isready -U lms -d zhixue_review_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: cp .env.example .env
+      - run: npm run db:generate && npm run db:migrate && npm run db:seed
+      - run: npm run typecheck && npm run lint && npm test && npm run build
+      - name: Start application and run real database integration
+        run: |
+          npm run start > /tmp/zhixue-api.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3001/api/health; then break; fi
+            sleep 1
+          done
+          npm run test:e2e
+          npm run test:assessment
+          npm run test:communication
+          npm run test:security
+          npm run test:extensions
+          npm run test:ai-study
+          npm run test:ai-authoring
+          npm run test:clean-start
+      - name: Browser workflow verification
+        run: |
+          npx playwright install --with-deps chromium
+          npm run dev -w apps/web > /tmp/zhixue-web.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:5173 > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: verification-diagnostics
+          path: |
+            /tmp/zhixue-api.log
+            /tmp/zhixue-web.log
+            test-results
+            playwright-report

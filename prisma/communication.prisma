@@ -1,0 +1,137 @@
+model DiscussionPost {
+  id String @id @default(cuid())
+  organizationId String
+  courseId String
+  authorId String
+  title String
+  body String
+  attachmentIds String[] @default([])
+  linkType String?
+  linkId String?
+  pinned Boolean @default(false)
+  featured Boolean @default(false)
+  closed Boolean @default(false)
+  solved Boolean @default(false)
+  hidden Boolean @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([courseId,hidden,pinned,createdAt,id])
+  @@index([organizationId,authorId,createdAt])
+}
+
+model DiscussionReply {
+  id String @id @default(cuid())
+  organizationId String
+  postId String
+  authorId String
+  body String
+  attachmentIds String[] @default([])
+  quoteReplyId String?
+  hidden Boolean @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([postId,hidden,createdAt,id])
+}
+
+model Conversation {
+  id String @id @default(cuid())
+  organizationId String
+  kind String
+  title String
+  directKey String? @unique
+  classId String? @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,updatedAt,id])
+}
+
+model ConversationMember {
+  id String @id @default(cuid())
+  conversationId String
+  userId String
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([conversationId,userId])
+  @@index([userId,conversationId])
+}
+
+model Message {
+  id String @id @default(cuid())
+  organizationId String
+  conversationId String
+  senderId String
+  body String
+  attachmentIds String[] @default([])
+  clientId String
+  retractedAt DateTime? @db.Timestamptz(3)
+  hidden Boolean @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([conversationId,senderId,clientId])
+  @@index([conversationId,createdAt,id])
+}
+
+model MessageReadCursor {
+  id String @id @default(cuid())
+  conversationId String
+  userId String
+  messageId String
+  messageCreatedAt DateTime @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([conversationId,userId])
+}
+
+model ContentReport {
+  id String @id @default(cuid())
+  organizationId String
+  reporterId String
+  targetType String
+  targetId String
+  courseId String?
+  classId String?
+  isPrivate Boolean @default(false)
+  reason String
+  status String @default("PENDING")
+  resolution String?
+  resolvedBy String?
+  resolvedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([organizationId,status,createdAt,id])
+}
+
+model CommunicationBlock {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  blockedUserId String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([userId,blockedUserId])
+}
+
+model CommunicationMute {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  courseId String?
+  classId String?
+  expiresAt DateTime @db.Timestamptz(3)
+  reason String
+  createdBy String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([organizationId,userId,expiresAt])
+}
+
+model Attachment {
+  id String @id @default(cuid())
+  organizationId String
+  ownerId String
+  courseId String?
+  conversationId String?
+  assignmentId String?
+  exportJobId String? @unique
+  originalName String
+  storageKey String @unique
+  mime String
+  size Int
+  sha256 String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([organizationId,ownerId,createdAt])
+  @@index([courseId])
+}

@@ -1,0 +1,14 @@
+model PersonalTask {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  title String
+  description String @default("")
+  dueAt DateTime @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  revision Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,userId,dueAt,id])
+  @@index([userId])
+}

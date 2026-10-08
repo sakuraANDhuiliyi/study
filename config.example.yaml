@@ -1,0 +1,32 @@
+# 复制为项目根目录 config.yaml；只在服务器上填写，不要提交密钥。
+# config.yaml 已被 Git 和 Docker 构建忽略；修改后下一次请求即可生效。
+ai:
+  enabled: true
+  # DeepSeek Chat Completions：使用max_tokens，关闭额外思考模式。
+  apiStyle: deepseek
+  # DeepSeek使用JSON模式，服务端继续校验完整结构和错题ID。
+  structuredOutput: json_object
+  baseUrl: https://api.deepseek.com
+  # 在这里填写DeepSeek密钥。
+  apiKey: ''
+  model: deepseek-flash
+  timeoutMs: 60000
+  maxOutputTokens: 6000
+
+webSearch:
+  enabled: true
+  # 搜索使用独立的Tavily密钥，不复用DeepSeek密钥。
+  provider: tavily
+  maxResults: 6
+  # 可选：仅搜索这些站点及子域，例如 [openstax.org, khanacademy.org]
+  allowedDomains: []
+  tavily:
+    baseUrl: https://api.tavily.com
+    # 在这里填写Tavily密钥。
+    apiKey: ''
+
+limits:
+  # 每人每日（北京时间）的错题分析、教师出题、搜索、来源下载尝试总数；失败也计入。
+  dailyRequests: 20
+  maxDownloadMb: 10
+  downloadTimeoutMs: 15000

@@ -1,0 +1,49 @@
+model AiStudyReport {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  status         String @default("pending")
+  reflection     String @default("")
+  mistakes       Json
+  analysis       Json?
+  search         Json?
+  error          String?
+  searchError    String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  sources        AiStudyReportSource[]
+  @@index([organizationId, userId, createdAt, id])
+  @@index([userId])
+}
+
+model AiStudyReportSource {
+  reportId          String
+  mistakeId         String
+  courseId          String
+  questionId        String
+  questionVersionId String
+  practiceAnswerId  String
+  report            AiStudyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  @@id([reportId, mistakeId])
+  @@index([mistakeId])
+  @@index([courseId])
+  @@index([questionId])
+  @@index([questionVersionId])
+  @@index([practiceAnswerId])
+}
+
+model AiStudyOperation {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  reportId       String?
+  kind           String
+  status         String @default("pending")
+  leaseExpiresAt DateTime @db.Timestamptz(3)
+  errorCode      String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  completedAt    DateTime? @db.Timestamptz(3)
+  @@index([organizationId, userId, createdAt])
+  @@index([userId, status, leaseExpiresAt])
+  @@index([reportId])
+}

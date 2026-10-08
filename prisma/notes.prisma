@@ -1,0 +1,16 @@
+model LessonNote {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  courseId String
+  lessonId String
+  body String
+  pinned Boolean @default(false)
+  revision Int @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([userId,lessonId])
+  @@index([organizationId,userId,pinned,updatedAt,id])
+  @@index([courseId,userId])
+  @@index([lessonId])
+}

@@ -1,0 +1,78 @@
+{
+  "verifiedAt": "2026-10-08T06:26:11.057Z",
+  "environment": {
+    "os": "macOS arm64",
+    "node": "v22.17.0",
+    "database": "PostgreSQL 18.1",
+    "isolatedDatabase": true
+  },
+  "results": [
+    {
+      "name": "unit",
+      "tests": 40,
+      "passed": 40,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "coreIntegration",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "assessmentIntegration",
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "communicationIntegration",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "securityRegression",
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "browser",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "checks": {
+    "typecheck": true,
+    "lint": true,
+    "apiProductionBuild": true,
+    "webProductionBuild": true,
+    "developmentWatch": true,
+    "fullDependencyAuditVulnerabilities": 0,
+    "updatedDemoHealth": true,
+    "optimizedChartsRender": true
+  },
+  "chartBundleKB": {
+    "before": {
+      "raw": 1135.53,
+      "gzip": 382.15
+    },
+    "after": {
+      "raw": 537.59,
+      "gzip": 183.56
+    }
+  },
+  "limitations": [
+    "Docker and Linux CI not executed locally",
+    "No claim of production-scale capacity",
+    "TAP totals include parent scenarios"
+  ]
+}

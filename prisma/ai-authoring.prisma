@@ -1,0 +1,25 @@
+model AiAuthoringDraft {
+  id               String @id @default(cuid())
+  organizationId   String
+  userId           String
+  courseId         String
+  chapterId        String?
+  operationId      String @unique
+  mode             String
+  status           String @default("pending")
+  title            String
+  input            Json
+  questions        Json
+  revision         Int @default(0)
+  error            String?
+  model            String
+  savedQuestionIds String[] @default([])
+  savedPaperId     String?
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId, userId, createdAt, id])
+  @@index([userId, status])
+  @@index([courseId])
+  @@index([chapterId])
+  @@index([savedPaperId])
+}

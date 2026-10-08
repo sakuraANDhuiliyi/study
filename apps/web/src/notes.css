@@ -1,0 +1,134 @@
+.note-entry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #dce1e7;
+  border-radius: 6px;
+  background: #f6f8fb;
+}
+.note-entry > span,
+.note-source,
+.note-card-actions > span,
+.note-editor-footer > span {
+  color: #626976;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.note-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 0;
+  color: #626976;
+}
+.note-alert {
+  margin: 16px 0;
+}
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+.note-editor > label {
+  color: #182433;
+  font-weight: 600;
+  margin-bottom: -8px;
+}
+.note-editor > .ant-checkbox-wrapper {
+  margin-top: 8px;
+}
+.note-editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #dce1e7;
+}
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.note-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.note-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.note-card-heading h2 {
+  margin-top: 6px;
+  color: #182433;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.note-card-heading .ant-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+.note-source {
+  overflow-wrap: anywhere;
+}
+.note-preview {
+  margin: 20px 0;
+  color: #182433;
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.note-card-actions {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #dce1e7;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.note-card-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.notes-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+.note-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 800px) {
+  .notes-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

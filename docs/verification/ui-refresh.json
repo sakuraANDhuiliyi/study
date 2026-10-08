@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-08",
+  "theme": "Tabler inspired light",
+  "sources": [
+    "https://preview.tabler.io/layout-vertical.html?theme=light",
+    "https://preview.tabler.io/sign-in.html"
+  ],
+  "dashboard": [
+    {
+      "username": "student",
+      "heading": "学习工作台",
+      "cards": 4,
+      "desktopOverflow": false,
+      "mobileOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "username": "teacher",
+      "heading": "教学工作台",
+      "cards": 4,
+      "desktopOverflow": false,
+      "mobileOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "username": "admin",
+      "heading": "机构工作台",
+      "cards": 4,
+      "desktopOverflow": false,
+      "mobileOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "username": "superadmin",
+      "heading": "平台工作台",
+      "cards": 4,
+      "desktopOverflow": false,
+      "mobileOverflow": false,
+      "pageErrors": []
+    }
+  ],
+  "mobileTables": [
+    {
+      "tag": "teacher-questions-390",
+      "viewport": 390,
+      "document": 390,
+      "client": 320,
+      "scroll": 680,
+      "scrollLeft": 360,
+      "overflow": "auto"
+    },
+    {
+      "tag": "teacher-exams-390",
+      "viewport": 390,
+      "document": 390,
+      "client": 320,
+      "scroll": 680,
+      "scrollLeft": 360,
+      "overflow": "auto"
+    },
+    {
+      "tag": "admin-admin-users-390",
+      "viewport": 390,
+      "document": 390,
+      "client": 320,
+      "scroll": 680,
+      "scrollLeft": 360,
+      "overflow": "auto"
+    },
+    {
+      "tag": "student-analytics-390",
+      "viewport": 390,
+      "document": 390,
+      "client": 320,
+      "scroll": 680,
+      "scrollLeft": 360,
+      "overflow": "auto"
+    }
+  ],
+  "browserRegression": {
+    "passed": 7,
+    "total": 7,
+    "isolatedDatabase": true
+  },
+  "mobileFollowUp": {
+    "passed": 1,
+    "total": 1
+  },
+  "loginMinimumViewport": 320
+}

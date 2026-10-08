@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-10-08T04:22:06.591Z",
+  "health": true,
+  "openapi": true,
+  "builtFrontend": true,
+  "roleChecks": [
+    {
+      "username": "student",
+      "login": true,
+      "dashboard": true,
+      "consoleErrors": 0
+    },
+    {
+      "username": "teacher",
+      "login": true,
+      "dashboard": true,
+      "consoleErrors": 0
+    },
+    {
+      "username": "admin",
+      "login": true,
+      "dashboard": true,
+      "consoleErrors": 0
+    },
+    {
+      "username": "superadmin",
+      "login": true,
+      "dashboard": true,
+      "consoleErrors": 0
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-08T04:10:37.173Z",
+  "emptyDatabaseMigration": true,
+  "repeatableSeed": true,
+  "preservesRevokedPermissions": true,
+  "controlledProductionBootstrap": true,
+  "health": true,
+  "roleLogins": ["student", "teacher", "admin", "superadmin"],
+  "counts": {
+    "users": 7,
+    "courses": 4,
+    "questions": 8,
+    "assignments": 1,
+    "exams": 2,
+    "messages": 2
+  },
+  "note": "Fresh disposable PostgreSQL database using installed locked dependencies and compiled API. Docker and fresh dependency download are separate checks."
+}

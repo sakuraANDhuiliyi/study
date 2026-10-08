@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model Organization {
+  id String @id @default(cuid())
+  name String
+  active Boolean @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+model User {
+  id String @id @default(cuid())
+  organizationId String
+  username String @unique
+  studentNo String?
+  name String
+  passwordHash String
+  active Boolean @default(true)
+  authVersion Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  roles UserRole[]
+  @@unique([organizationId, studentNo])
+  @@index([organizationId,active,createdAt,id])
+}
+model Role {
+  id String @id
+  name String
+  description String
+  users UserRole[]
+  permissions RolePermission[]
+}
+model Permission {
+  id String @id
+  name String
+  sensitive Boolean @default(false)
+  roles RolePermission[]
+}
+model UserRole {
+  userId String
+  roleId String
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  role Role @relation(fields:[roleId],references:[id],onDelete:Restrict)
+  @@id([userId,roleId])
+}
+model RolePermission {
+  roleId String
+  permissionId String
+  role Role @relation(fields:[roleId],references:[id],onDelete:Restrict)
+  permission Permission @relation(fields:[permissionId],references:[id],onDelete:Restrict)
+  @@id([roleId,permissionId])
+}
+model SensitiveGrant {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  permissionId String
+  grantedBy String
+  reason String
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([userId,permissionId])
+}
+model Session {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  role String
+  csrfToken String
+  authVersion Int
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([userId])
+  @@index([expiresAt])
+}
+model AcademicTerm {
+  id String @id @default(cuid())
+  organizationId String
+  name String
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt DateTime @db.Timestamptz(3)
+  @@unique([organizationId,name])
+}
+model Class {
+  id String @id @default(cuid())
+  organizationId String
+  name String
+  grade String
+  termId String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([organizationId,name])
+}
+model ClassMember {
+  id String @id @default(cuid())
+  classId String
+  userId String
+  active Boolean @default(true)
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([classId,userId])
+  @@index([userId,active])
+}
+model Course {
+  id String @id @default(cuid())
+  organizationId String
+  title String
+  description String @default("")
+  cover String?
+  category String @default("通识课程")
+  status String @default("DRAFT")
+  teacherId String
+  termId String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,status,createdAt,id])
+}
+model TeachingAssignment {
+  id String @id @default(cuid())
+  courseId String
+  userId String
+  active Boolean @default(true)
+  @@unique([courseId,userId])
+  @@index([userId,active])
+}
+model CourseClass {
+  id String @id @default(cuid())
+  courseId String
+  classId String
+  name String
+  @@unique([courseId,classId])
+}
+model Enrollment {
+  id String @id @default(cuid())
+  courseId String
+  userId String
+  active Boolean @default(true)
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([courseId,userId])
+  @@index([userId,active])
+}
+model Chapter {
+  id String @id @default(cuid())
+  courseId String
+  title String
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([courseId,sortOrder,id])
+}
+model Lesson {
+  id String @id @default(cuid())
+  chapterId String
+  courseId String
+  title String
+  content String @default("")
+  type String @default("TEXT")
+  resourceUrl String?
+  attachmentId String?
+  attachmentIds String[] @default([])
+  relatedTasks Json @default("[]")
+  opensAt DateTime? @db.Timestamptz(3)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([courseId,opensAt])
+  @@index([chapterId,sortOrder,id])
+}
+model LearningProgress {
+  id String @id @default(cuid())
+  userId String
+  lessonId String
+  courseId String
+  completed Boolean @default(false)
+  positionSeconds Int @default(0)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([userId,lessonId])
+  @@index([courseId,userId])
+}
+model Notification {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  type String
+  title String
+  body String
+  link String
+  eventKey String
+  readAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([userId,eventKey])
+  @@index([userId,readAt,createdAt,id])
+}
+model Announcement {
+  id String @id @default(cuid())
+  organizationId String
+  courseId String?
+  title String
+  content String
+  authorId String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([organizationId,createdAt,id])
+}
+model AuditLog {
+  id String @id @default(cuid())
+  organizationId String
+  userId String?
+  action String
+  resourceType String
+  resourceId String
+  details Json @default("{}")
+  requestId String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([organizationId,createdAt,id])
+  @@index([action,createdAt])
+}
+model SystemSetting {
+  id String @id @default(cuid())
+  organizationId String
+  key String
+  value Json
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([organizationId,key])
+}
+model BackgroundJob {
+  id String @id @default(cuid())
+  organizationId String
+  kind String
+  eventKey String @unique
+  payload Json
+  status String @default("PENDING")
+  attempts Int @default(0)
+  runAt DateTime @default(now()) @db.Timestamptz(3)
+  lockedAt DateTime? @db.Timestamptz(3)
+  lastError String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([status,runAt])
+}

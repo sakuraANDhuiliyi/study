@@ -1,0 +1,189 @@
+# 知学 · 学习管理系统
+
+简体中文响应式学习平台，使用真实 PostgreSQL 存储课程、学习进度、作业提交、练习、考试答卷、交流消息和审计记录。React 前端通过同源 NestJS API 完成业务，不使用前端假数据。可选的 AI 错题复盘默认使用 DeepSeek，联网检索使用 Tavily，两项服务的密钥由部署者分别填写。
+
+实现范围及实际验证结果以 [验收记录](docs/acceptance.md) 为准。架构、权限矩阵、实体关系、状态与统计口径见 [架构文档](docs/architecture.md)。
+
+## 环境要求
+
+- Node.js 22.11+（建议 Node 22 LTS）、npm 10+。
+- PostgreSQL 17/18；开发可使用随 npm 安装的本地 PostgreSQL 二进制，无需预装数据库。
+- Docker Compose 是生产部署选项。本地 PostgreSQL 辅助工具仅用于开发。
+
+## 本地启动
+
+```sh
+npm ci
+cp .env.example .env
+```
+
+修改 `.env` 的 `DEV_SEED_PASSWORD` 为自己设置的开发密码（至少 12 字符）。示例密码仅用于本地，绝不可用于生产。
+
+终端一启动持久化本地 PostgreSQL（数据位于 `.data/postgres`，仅监听 127.0.0.1）：
+
+```sh
+npm run db:local
+```
+
+终端二执行迁移与初始化：
+
+```sh
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+如果使用自己的 PostgreSQL，直接配置 `DATABASE_URL`，跳过 `db:local`。
+
+AI 错题复盘、联网找同类题及来源下载使用根目录 `config.yaml`：新环境先 `cp config.example.yaml config.yaml`，分别在 `ai.apiKey` 填写 DeepSeek 密钥，在 `webSearch.tavily.apiKey` 填写 Tavily 密钥。默认模型为 `deepseek-flash`（`apiStyle: deepseek`、`structuredOutput: json_object`），搜索提供方为 `tavily`；仍保留 Responses 和 Chat Completions 兼容接入。空密钥时其他学习功能照常运行。本次配置切换没有调用真实 DeepSeek 或 Tavily 账号，实际认证、配额和效果需填写密钥后核验。完整示例、官方参考和使用流程见 [AI 错题复盘接入说明](docs/ai-study.md)。
+
+教师可在“题库与试卷”或侧栏“AI 出题”中生成题目与试卷初稿，编辑确认后保存到私有题库和固定版本试卷，再在考试中心选用。沿用同一 DeepSeek 配置，支持单选、多选、判断、填空和简答；说明见 [教师 AI 出题](docs/ai-authoring.md)。
+
+前端：<http://localhost:5173>；API：<http://127.0.0.1:3001/api>；Swagger：<http://127.0.0.1:3001/api/docs>。Vite 会代理 API 与 WebSocket。浏览器地址必须与 `APP_ORIGIN` 一致，否则写请求会被 Origin 检查拒绝。
+
+种子可重复执行，不覆盖已有账号密码或业务操作。开发账号如下，密码均为 `.env` 配置的 `DEV_SEED_PASSWORD`：
+
+| 账号                               | 身份           | 入口                                   |
+| ---------------------------------- | -------------- | -------------------------------------- |
+| `student`                          | 学生           | 工作台、课程、作业、练习、考试、交流   |
+| `teacher`                          | 教师           | 课程管理、题库试卷、作业批改、考试阅卷 |
+| `admin`                            | 机构管理员     | 用户、班级、机构配置、内容治理、审计   |
+| `superadmin`                       | 超级管理员     | 机构、权限模板、独立敏感授权、平台配置 |
+| `student2`、`teacher2`、`outsider` | 权限验收用账号 | 同学、其他授课教师、其他机构学生       |
+
+同一登录入口根据当前已授予角色生成菜单。可切换已授予身份，服务端每次请求重新验证权限。
+
+## 测试与构建
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+启动 API、迁移并运行开发种子后，执行真实数据库与 HTTP 集成测试：
+
+```sh
+npm run test:e2e
+npm run test:assessment
+npm run test:communication
+npm run test:security
+npm run test:clean-start
+npm run test:performance
+```
+
+集成测试会在开发数据库中创建带唯一名称的验收记录并保留审计，禁止用于生产数据库。测试中的时间边界通过仅调整本次创建考试的数据库时刻验证，以避免等待完整考试窗口。性能脚本输出环境、请求数、并发、延迟和失败数，不等同于生产容量承诺。
+
+浏览器验收（API 与 Vite 都须运行）：`npm run test:browser`。macOS 默认使用本机 Chrome；Linux／CI 先执行 `npx playwright install --with-deps chromium`。浏览器报告在 `playwright-report`，截图在 `test-results`。
+
+`test:clean-start` 建立独立临时空数据库，迁移、重复初始化、启动独立 API 并验证四角色登录；完成后只删除本脚本创建的临时数据库。
+
+安全回归：`test:security` 顺序执行附件授权、机构功能开关、模板权限边界、考试并发和统计筛选用例。请使用独立开发数据库；可用 `DOTENV_CONFIG_PATH` 指定测试配置，`TEST_BASE_URL` 指向 API 根地址，交流测试的 `TEST_API_URL` 指向 `/api`。浏览器测试支持 `WEB_BASE_URL`，Vite 支持 `API_PROXY_TARGET`，可在独立端口连接测试库，不必污染演示库。
+
+新增功能回归 `test:extensions` 和完整浏览器回归要求隔离验证环境：数据库名称包含 `review`，本机 API 使用 loopback 3002。先在该库执行迁移与种子，另起 API 3002 和代理它的 Vite 5174；测试配置文件应包含 `DATABASE_URL`、`DEV_SEED_PASSWORD`、`APP_ORIGIN=http://localhost:5174`、`TEST_BASE_URL=http://127.0.0.1:3002` 和 `TEST_API_URL=http://127.0.0.1:3002/api`。然后执行：
+
+```sh
+DOTENV_CONFIG_PATH=.data/review.env npm run test:extensions
+DOTENV_CONFIG_PATH=.data/review.env npm run test:ai-study
+DOTENV_CONFIG_PATH=.data/review.env npm run test:ai-authoring
+DOTENV_CONFIG_PATH=.data/review.env WEB_BASE_URL=http://localhost:5174 npm run test:browser
+```
+
+考试题目分析的测试夹具会拒绝演示库和非本机地址；CI 已配置独立 `review` 数据库，允许在 `CI=true` 下使用3001。
+
+开发 API 使用 Node 22 原生 `--watch` 自动重启；无需 nodemon。依赖检查使用 `npm audit` 覆盖开发和生产依赖，CI 拒绝 high/critical 等级公告。
+
+格式化：`npm run format`。首次开发运行不要跳过 Prisma Client 生成。迁移源在 `prisma/migrations`；不要在生产执行 `db push`、`migrate reset` 或开发种子。
+
+## Docker 部署
+
+1. 准备域名和 HTTPS 反向代理，把同一域名的 HTTP 和 WebSocket 流量转发至本机 3001。
+2. 在部署环境安全设置 `POSTGRES_PASSWORD`（使用 URL 安全字符或正确编码连接串）与 `APP_ORIGIN=https://你的域名`。不要将真实凭据提交到仓库。
+3. 首次部署先复制 `config.example.yaml` 为 `config.yaml`，填写所需 AI 密钥，并确保容器用户（UID 1000）可读取该文件；文件以只读方式挂载。执行 `docker compose up --build -d`。`migrate` 服务先等待数据库，再应用迁移；应用等待迁移成功。
+4. 生产禁用演示种子，通过受控环境创建管理员：
+
+```sh
+# 使用你所在环境的密钥管理方式注入这两个变量，避免把密码写进 shell 历史。
+docker compose run --rm \
+  -e BOOTSTRAP_USERNAME \
+  -e BOOTSTRAP_PASSWORD \
+  app ./node_modules/.bin/tsx scripts/bootstrap.ts
+```
+
+`BOOTSTRAP_PASSWORD` 至少 16 字符，初始化拒绝覆盖已存在账号，创建后清除初始化变量。可指定 `BOOTSTRAP_ORGANIZATION_ID` 和 `BOOTSTRAP_ORGANIZATION_NAME`；默认 `org-main`。多机构公开品牌可设置 `PUBLIC_ORGANIZATION_ID`。生产登录必须 HTTPS，`COOKIE_SECURE=true`。
+
+数据卷分别保存 PostgreSQL 与私有上传文件。应用以非 root 用户运行，只暴露回环地址端口。`/api/health` 会实际查询数据库。
+
+Nginx 示例（TLS 证书配置请使用部署环境的证书）：
+
+```nginx
+location / {
+  proxy_pass http://127.0.0.1:3001;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "upgrade";
+  client_max_body_size 50m;
+}
+```
+
+此示例只有一层可信 Nginx；Compose 默认 `TRUST_PROXY_HOPS=1`，应用端口仅绑定回环地址，Nginx 必须覆盖而非直接信任客户端传入的 `X-Forwarded-For`。本地直连默认值为 0。更复杂的代理链应明确配置实际可信层数并限制直连，否则登录限流可能误将全体用户视作同一来源，或信任伪造的 IP。
+
+## 升级
+
+先暂停写入并备份数据库及文件，检出经验证的新版本，运行 `npm ci` 与构建；部署时先执行 `prisma migrate deploy --schema prisma`。确认健康检查、登录、提交和文件下载后恢复流量。数据库版本升级或不可逆迁移前，应在独立数据库恢复备份并完整演练。不要只回滚应用镜像而忽略数据库兼容性。
+
+## 备份与恢复
+
+备份与恢复需要单独提供 PostgreSQL 客户端工具 `pg_dump` 和 `pg_restore`，不能假定用于开发数据库启动的 `embedded-postgres` 包含这两个程序。请通过 PostgreSQL 官方安装方式或官方源码安装客户端，客户端主版本须不低于服务端，建议两个工具使用同一套版本。将实际安装的 `bin` 目录设为环境变量 `PG_BIN`（绝对路径），或将工具加入 `PATH`；脚本优先使用 `PG_BIN`。生产也可以在数据库容器内运行对应的备份、恢复命令。脚本不会把连接密码写入清单或输出。
+
+本次本机验证的客户端从 PostgreSQL 18.1 官方源码构建，位于 `.data/pg-tools/install/bin`。该目录属于本机验证产物，不随仓库交付，也不保证在其他机器存在；新环境应使用自己的客户端安装目录。
+
+暂停写入及后台任务后：
+
+```sh
+# 先确保 PG_BIN 指向实际客户端 bin 目录，或 PATH 中已有 pg_dump/pg_restore。
+node scripts/backup.mjs backup .data/backups/manual
+node scripts/backup.mjs verify .data/backups/manual
+```
+
+备份包含数据库自定义格式 dump、上传目录 tar.gz 和 SHA-256 清单。`verify` 在开发环境建立独立临时数据库恢复，比较核心表数量和每个附件的 SHA-256，最后删除自己创建的临时数据库。它不会覆盖工作数据库。
+
+真实恢复必须明确设置 **空数据库** `RESTORE_DATABASE_URL` 和 **空目录** `RESTORE_UPLOAD_DIR`，然后运行：
+
+```sh
+node scripts/backup.mjs restore .data/backups/manual --confirm
+```
+
+脚本拒绝覆盖非空目标。恢复后调整应用连接串及上传目录，验证健康、登录、关键历史记录和授权文件下载，再恢复服务。备份本身包含个人数据，应加密、限制访问并按保留策略离线存放。
+
+## 接口与规则文档
+
+- [基础接口、身份与管理](docs/core-api.md)
+- [题库、作业、练习、考试和成绩](docs/assessment-api.md)
+- [讨论、私信、通知、文件与导出](docs/communication-api.md)
+- [权限、数据库关系、状态和统计口径](docs/architecture.md)
+- [实际验收结果、未完成项和已知限制](docs/acceptance.md)
+- [追加安全审查与优化记录](docs/security-review.md)
+- [Tabler 浅色界面参考、主题规则与新版截图](docs/ui-refresh.md)
+- [官方平台功能调研及学习日历、私人笔记、题目分析扩展](docs/feature-expansion.md)
+- [DeepSeek 错题复盘、Tavily 检索与来源下载配置](docs/ai-study.md)
+
+## 常见问题
+
+- **登录后操作提示安全校验失败**：检查浏览器来源是否严格匹配 `APP_ORIGIN`；角色切换会更新 CSRF。前后端需同源部署。
+- **教师没有课程**：后台分配有效 TeachingAssignment；`teacherId` 字段本身不是权限通行证。
+- **管理员看不到个人成绩或不能导出**：这是独立授权要求。由拥有 `grants.manage` 的另一管理员通过 `/admin/grants` 限时授予模板允许的 `analysis.sensitive`／`data.export`。不能自授，也不默认允许浏览私信。
+- **练习题不能加入考试**：已开放练习的答案可能已被学生看到，系统要求使用独立保密题。需要另外创建考试专用题。
+- **考试保存冲突**：另一个页面已经更新了答案。读取服务器最新版本再继续，客户端不会静默覆盖。
+- **学生看不到分数／答案**：批阅完成、成绩发布以及各自公开时间分别生效。
+- **实时连接数量**：默认每用户最多 20 个连接、单进程最多 2000 个；可通过 `MAX_WEBSOCKETS_PER_USER`、`MAX_WEBSOCKETS_TOTAL` 调整。页面仍可使用受控 REST 请求；这些限制不代替网关限流或容量测试。
+- **通知稍有延迟**：后台每 5 秒处理持久任务，失败会重试；通知投递不阻塞提交。
+- **端口占用**：先停止本项目对应服务，或统一修改 `.env` 和 Vite 代理；不要误停其他项目服务。
+- **npm 下载停滞**：重试时可使用 `npm install --prefer-offline --fetch-timeout=30000`；保留 lockfile，不绕过校验或禁用安全连接。
+
+AI 错题复盘需填写相应服务密钥后使用。直播、付费课程、商城、小程序和摄像头监考尚未启用，属于可选扩展。

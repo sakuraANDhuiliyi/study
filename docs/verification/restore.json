@@ -1,0 +1,13 @@
+{
+  "verifiedAt": "2026-10-08T04:19:14.586Z",
+  "databaseCounts": {
+    "users": 23,
+    "courses": 16,
+    "assignments": 15,
+    "attempts": 24,
+    "messages": 14,
+    "attachments": 16
+  },
+  "verifiedFiles": 16,
+  "checksums": true
+}
