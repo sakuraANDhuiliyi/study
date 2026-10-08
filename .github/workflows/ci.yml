@@ -49,6 +49,7 @@ jobs:
           npm run test:accounts
           npm run test:academics
           npm run test:academic-goals
+          npm run test:academic-records-export
           npm run test:clean-start
       - name: Browser workflow verification
         run: |

@@ -8,11 +8,12 @@ import { api, date, queryString, useData } from '../api';
 import { EmptyState, PageTitle, Panel, QueryState } from '../components/shared';
 import { RecordEditor } from '../components/academics/RecordEditor';
 import { ResultView } from '../components/academics/ResultView';
+import { RecordsExport, type RecordStatusFilter } from '../components/academics/RecordsExport';
 import type { Catalog, LearningRecord } from '../components/academics/types';
 import '../academics.css';
 export function AcademicRecords({ notes = false }: { notes?: boolean }) {
   const { user } = useAuth();
-  return <Records key={`${user?.organizationId}:${user?.id}`} notes={notes} />;
+  return <Records key={`${user?.organizationId}:${user?.id}:${user?.role}`} notes={notes} />;
 }
 function Records({ notes }: { notes: boolean }) {
   const { user } = useAuth();
@@ -21,13 +22,23 @@ function Records({ notes }: { notes: boolean }) {
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const moduleId = params.get('moduleId') || undefined;
+  const status: RecordStatusFilter = ['DRAFT', 'COMPLETED'].includes(params.get('status') || '')
+    ? (params.get('status') as RecordStatusFilter)
+    : 'all';
   const query = useData<{ items: LearningRecord[]; total: number }>(
-    `/academics/records?${queryString({ moduleId, page, pageSize: 12 })}`,
+    `/academics/records?${queryString({ moduleId, status, page, pageSize: 12 })}`,
   );
   const catalog = useData<Catalog>('/academics/catalog');
   const { message } = App.useApp();
   const [detail, setDetail] = useState<LearningRecord | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  function filter(key: string, value?: string) {
+    const next = new URLSearchParams(params);
+    if (value && value !== 'all') next.set(key, value);
+    else next.delete(key);
+    setParams(next);
+    setPage(1);
+  }
   async function remove(id: string) {
     setDeleting(id);
     try {
@@ -56,11 +67,19 @@ function Records({ notes }: { notes: boolean }) {
         title={notes ? '我的学习笔记' : '学习记录与笔记'}
         description="保存实验结果、练习思考与自由笔记，所有内容仅自己可见。"
         extra={
-          <Link to="/academics/modules/study-notebook">
-            <Button type="primary" icon={<Plus size={16} />}>
-              写一篇学习笔记
-            </Button>
-          </Link>
+          <div className="academic-record-actions">
+            <RecordsExport
+              moduleId={moduleId}
+              moduleName={catalog.data?.modules.find((item) => item.id === moduleId)?.title}
+              status={status}
+              total={query.isError || query.isPending ? undefined : query.data?.total}
+            />
+            <Link to="/academics/modules/study-notebook">
+              <Button type="primary" icon={<Plus size={16} />}>
+                写一篇学习笔记
+              </Button>
+            </Link>
+          </div>
         }
       />
       <div className="academic-filter-bar">
@@ -70,10 +89,17 @@ function Records({ notes }: { notes: boolean }) {
           allowClear
           placeholder="全部学习模块"
           options={catalog.data?.modules.map((item) => ({ value: item.id, label: item.title }))}
-          onChange={(value) => {
-            setParams(value ? { moduleId: value } : {});
-            setPage(1);
-          }}
+          onChange={(value) => filter('moduleId', value)}
+        />
+        <Select
+          aria-label="筛选记录状态"
+          value={status}
+          options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'COMPLETED', label: '已完成' },
+            { value: 'DRAFT', label: '继续研究' },
+          ]}
+          onChange={(value) => filter('status', value)}
         />
         <Button onClick={() => query.refetch()}>刷新记录</Button>
         <span>共 {query.data?.total ?? '—'} 条</span>
@@ -155,9 +181,7 @@ function Records({ notes }: { notes: boolean }) {
                 setDetail(record);
                 void query.refetch();
               }}
-              onRefresh={async () =>
-                (await query.refetch()).data?.items.find((item) => item.id === detail.id)
-              }
+              onRefresh={() => api<LearningRecord>(`/academics/records/${detail.id}`).catch(() => undefined)}
             />
             <Link to={`/academics/modules/${detail.moduleId}`}>
               <Button>回到模块继续练习</Button>

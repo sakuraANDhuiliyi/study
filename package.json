@@ -37,6 +37,7 @@
     "test:accounts": "node --import tsx --test --test-concurrency=1 tests/accounts.integration.ts",
     "test:academics": "node --import tsx --test --test-concurrency=1 tests/academics.integration.ts",
     "test:academic-goals": "node --import tsx --test --test-concurrency=1 tests/academic-goals.integration.ts",
+    "test:academic-records-export": "node --import tsx --test --test-concurrency=1 tests/academic-records-export.integration.ts",
     "verify:iteration": "node scripts/verify-iteration.mjs",
     "test:algorithm-references": "node scripts/verify-algorithm-references.mjs"
   },

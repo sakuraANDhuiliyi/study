@@ -4,6 +4,7 @@ import * as a from '../assessment/assessment.schemas';
 import * as c from '../communication/communication.schemas';
 import * as academic from '../academics/academics.schemas';
 import * as goals from '../academics/goals.schemas';
+import { academicRecordExportInput } from '../academics/records-export.schemas';
 import { courseInput, lessonInput } from '../courses/courses.controller';
 import { newUser } from '../admin/admin.controller';
 import {
@@ -81,6 +82,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ['post', '/ai-study/reports', createAiReportInput],
     ['patch', '/academics/preferences', academic.academicPreferencesInput],
     ['post', '/academics/goals', goals.academicGoalCreate],
+    ['post', '/academics/records/export', academicRecordExportInput],
     ['patch', '/academics/goals/{id}', goals.academicGoalPatch],
     ['delete', '/academics/goals/{id}', goals.academicGoalDelete],
     ['post', '/academics/modules/{id}/evaluate', academic.academicEvaluationInput],
@@ -262,6 +264,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       { in: 'query', name: 'status', schema: { type: 'string', enum: ['todo', 'attempted', 'solved'] } },
     ];
   const aiExport = doc.paths['/api/ai-study/reports/{id}/export']?.get;
+  const recordExport = doc.paths['/api/academics/records/export']?.post;
   const academicRecords = doc.paths['/api/academics/records']?.get;
   const academicGoals = doc.paths['/api/academics/goals']?.get;
   if (academicGoals)
@@ -277,9 +280,35 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     academicRecords.parameters = [
       ...(academicRecords.parameters || []),
       { in: 'query', name: 'moduleId', schema: { type: 'string', maxLength: 100 } },
+      {
+        in: 'query',
+        name: 'status',
+        schema: { type: 'string', enum: ['all', 'DRAFT', 'COMPLETED'], default: 'all' },
+      },
       { in: 'query', name: 'page', schema: { type: 'integer', minimum: 1, maximum: 10000, default: 1 } },
       { in: 'query', name: 'pageSize', schema: { type: 'integer', minimum: 1, maximum: 20, default: 12 } },
     ];
+  if (recordExport)
+    recordExport.responses = {
+      '200': {
+        description: '当前空间本人已保存的学习记录附件；按创建时间倒序，最多返回请求的 limit 条',
+        headers: {
+          'Content-Disposition': { schema: { type: 'string' }, description: '服务器生成的安全附件文件名' },
+          'X-Export-Matched-Count': { schema: { type: 'integer' }, description: '符合当前筛选的记录总数' },
+          'X-Export-Record-Count': { schema: { type: 'integer' }, description: '文件包含的实际记录条数' },
+          'X-Export-Truncated': {
+            schema: { type: 'string', enum: ['true', 'false'] },
+            description: '是否仅包含匹配记录中最新的 limit 条；不截断单条正文',
+          },
+        },
+        content: {
+          'text/csv': { schema: { type: 'string', format: 'binary' } },
+          'text/markdown': { schema: { type: 'string', format: 'binary' } },
+        },
+      },
+      '413': { description: '完整文件超过 8 MiB，请缩小数量或筛选范围' },
+      '429': { description: '本人当前空间一分钟内已成功导出 5 次，请稍后重试' },
+    };
   if (aiExport)
     aiExport.parameters = [
       ...(aiExport.parameters || []),

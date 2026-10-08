@@ -378,8 +378,14 @@ async function stopProcess(child) {
   children.delete(child);
 }
 
+export function stageEnvironment(id, env) {
+  // Vite preserves an inherited NODE_ENV even for `vite build`. Keep test mode
+  // for fixtures/servers, but compile the same production web bundle we ship.
+  return id === 'build' ? { ...env, NODE_ENV: 'production' } : env;
+}
+
 async function commandResult(stage, env) {
-  const process = startProcess(stage.command, stage.args, env);
+  const process = startProcess(stage.command, stage.args, stageEnvironment(stage.id, env));
   let timer;
   const result = await Promise.race([
     process.closed,

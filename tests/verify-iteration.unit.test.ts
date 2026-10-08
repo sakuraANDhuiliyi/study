@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -12,6 +13,7 @@ import {
   redactOutput,
   runStages,
   safeSummary,
+  stageEnvironment,
   validateEnvironment,
 } from '../scripts/verify-iteration.mjs';
 
@@ -145,6 +147,32 @@ test('iteration never promotes a failed, skipped or incomplete check to passing'
       .exitCode,
     0,
   );
+});
+
+test('iteration builds a production Vite bundle while keeping fixtures and servers in test mode', () => {
+  const env = { ...process.env, NODE_ENV: 'test' };
+  const buildEnv = stageEnvironment('build', env);
+  assert.equal(buildEnv.NODE_ENV, 'production');
+  assert.equal(env.NODE_ENV, 'test');
+  const stages = buildStages(parseOptions([]), { units: ['example.unit.test.ts'], integrations: [] });
+  for (const stage of stages.filter((item: any) => item.id !== 'build')) {
+    assert.equal(stageEnvironment(stage.id, env).NODE_ENV, 'test', stage.id);
+  }
+  // Resolve the installed Vite compiler's real production flags in a separate
+  // process; this does not build assets or mutate the unit runner's environment.
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      `import { resolveConfig } from 'vite';
+       const config = await resolveConfig({ configFile: false, envFile: false }, 'build', 'production', 'production');
+       process.stdout.write(JSON.stringify({ nodeEnv: process.env.NODE_ENV, production: config.isProduction, prod: config.env.PROD, dev: config.env.DEV }));`,
+    ],
+    { env: buildEnv, encoding: 'utf8', timeout: 15000 },
+  );
+  assert.deepEqual(JSON.parse(output), { nodeEnv: 'production', production: true, prod: true, dev: false });
+  assert.equal(env.NODE_ENV, 'test');
 });
 
 test('failure logs redact configured and unknown credential URLs plus authentication fields', () => {

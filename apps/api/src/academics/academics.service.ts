@@ -228,7 +228,11 @@ export class AcademicsService {
     await this.access(actor);
     const input = academicRecordQuery.parse(query);
     if (input.moduleId) this.module(input.moduleId);
-    const where = { ...this.scope(actor), ...(input.moduleId ? { moduleId: input.moduleId } : {}) };
+    const where = {
+      ...this.scope(actor),
+      ...(input.moduleId ? { moduleId: input.moduleId } : {}),
+      ...(input.status === 'all' ? {} : { status: input.status }),
+    };
     const [items, total] = await this.db.$transaction([
       this.db.academicsRecord.findMany({
         where,

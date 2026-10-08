@@ -20,6 +20,7 @@ export const academicEvaluationInput = z
 export const academicRecordQuery = z
   .object({
     moduleId: text(100, 1).optional(),
+    status: z.enum(['all', 'DRAFT', 'COMPLETED']).default('all'),
     page: z.coerce.number().int().min(1).max(10000).default(1),
     pageSize: z.coerce.number().int().min(1).max(20).default(12),
   })

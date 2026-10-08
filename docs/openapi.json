@@ -12736,6 +12736,19 @@
           },
           {
             "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "DRAFT",
+                "COMPLETED"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "schema": {
               "type": "integer",
@@ -13651,6 +13664,140 @@
                 "required": [
                   "revision"
                 ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/academics/records/export": {
+      "post": {
+        "operationId": "AcademicRecordExportController_export",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前空间本人已保存的学习记录附件；按创建时间倒序，最多返回请求的 limit 条",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "服务器生成的安全附件文件名"
+              },
+              "X-Export-Matched-Count": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "符合当前筛选的记录总数"
+              },
+              "X-Export-Record-Count": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "文件包含的实际记录条数"
+              },
+              "X-Export-Truncated": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true",
+                    "false"
+                  ]
+                },
+                "description": "是否仅包含匹配记录中最新的 limit 条；不截断单条正文"
+              }
+            },
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "text/markdown": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          },
+          "413": {
+            "description": "完整文件超过 8 MiB，请缩小数量或筛选范围"
+          },
+          "429": {
+            "description": "本人当前空间一分钟内已成功导出 5 次，请稍后重试"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "专业学习记录导出"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "csv",
+                      "md"
+                    ],
+                    "default": "csv"
+                  },
+                  "moduleId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "DRAFT",
+                      "COMPLETED"
+                    ],
+                    "default": "all"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5000
+                  }
+                },
+                "required": [],
                 "additionalProperties": false
               }
             }
