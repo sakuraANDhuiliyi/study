@@ -1,14 +1,14 @@
 {
-  "iteration": 6,
-  "feature": "original minimum spanning tree exercise, detailed proofs and four-language programs",
+  "iteration": 7,
+  "feature": "stratified proportions and Simpson reversal classroom experiment",
   "date": "2026-10-09",
   "local": {
     "version": 1,
     "profile": "full",
     "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-08T21:49:46.721Z",
-    "finishedAt": "2026-10-08T21:56:04.244Z",
+    "startedAt": "2026-10-08T22:28:40.992Z",
+    "finishedAt": "2026-10-08T22:35:26.293Z",
     "passed": true,
     "apiPort": 3002,
     "previewPort": 3003,
@@ -16,52 +16,52 @@
       {
         "id": "generate",
         "status": "passed",
-        "startedAt": "2026-10-08T21:49:46.728Z",
-        "durationMs": 502,
+        "startedAt": "2026-10-08T22:28:40.999Z",
+        "durationMs": 498,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "migrate",
         "status": "passed",
-        "startedAt": "2026-10-08T21:49:47.230Z",
-        "durationMs": 311,
+        "startedAt": "2026-10-08T22:28:41.497Z",
+        "durationMs": 314,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "seed",
         "status": "passed",
-        "startedAt": "2026-10-08T21:49:47.542Z",
-        "durationMs": 1264,
+        "startedAt": "2026-10-08T22:28:41.812Z",
+        "durationMs": 1255,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "typecheck",
         "status": "passed",
-        "startedAt": "2026-10-08T21:49:48.806Z",
-        "durationMs": 4083,
+        "startedAt": "2026-10-08T22:28:43.067Z",
+        "durationMs": 4157,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "lint",
         "status": "passed",
-        "startedAt": "2026-10-08T21:49:52.889Z",
-        "durationMs": 1666,
+        "startedAt": "2026-10-08T22:28:47.225Z",
+        "durationMs": 1688,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "unit",
         "status": "passed",
-        "startedAt": "2026-10-08T21:49:54.555Z",
-        "durationMs": 8911,
+        "startedAt": "2026-10-08T22:28:48.914Z",
+        "durationMs": 9065,
         "exitCode": 0,
         "summary": {
-          "tests": 302,
-          "pass": 302,
+          "tests": 314,
+          "pass": 314,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -71,16 +71,16 @@
       {
         "id": "build",
         "status": "passed",
-        "startedAt": "2026-10-08T21:50:03.466Z",
-        "durationMs": 20956,
+        "startedAt": "2026-10-08T22:28:57.979Z",
+        "durationMs": 21209,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "audit",
         "status": "passed",
-        "startedAt": "2026-10-08T21:50:24.422Z",
-        "durationMs": 1055,
+        "startedAt": "2026-10-08T22:29:19.189Z",
+        "durationMs": 1089,
         "exitCode": 0,
         "summary": {
           "info": 0,
@@ -94,8 +94,8 @@
       {
         "id": "trusted-references",
         "status": "passed",
-        "startedAt": "2026-10-08T21:50:25.477Z",
-        "durationMs": 30985,
+        "startedAt": "2026-10-08T22:29:20.279Z",
+        "durationMs": 31465,
         "exitCode": 0,
         "summary": {
           "programsPassed": 76,
@@ -107,15 +107,15 @@
       {
         "id": "servers",
         "status": "passed",
-        "startedAt": "2026-10-08T21:50:56.462Z",
-        "durationMs": 1441,
+        "startedAt": "2026-10-08T22:29:51.745Z",
+        "durationMs": 1652,
         "exitCode": 0
       },
       {
         "id": "e2e",
         "status": "passed",
-        "startedAt": "2026-10-08T21:50:57.904Z",
-        "durationMs": 9910,
+        "startedAt": "2026-10-08T22:29:53.398Z",
+        "durationMs": 9912,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -129,8 +129,8 @@
       {
         "id": "integration:academic-goals.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:07.815Z",
-        "durationMs": 4779,
+        "startedAt": "2026-10-08T22:30:03.310Z",
+        "durationMs": 4766,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -144,8 +144,8 @@
       {
         "id": "integration:academic-records-export.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:12.594Z",
-        "durationMs": 7369,
+        "startedAt": "2026-10-08T22:30:08.077Z",
+        "durationMs": 7209,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -159,8 +159,8 @@
       {
         "id": "integration:academics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:19.963Z",
-        "durationMs": 5066,
+        "startedAt": "2026-10-08T22:30:15.286Z",
+        "durationMs": 5060,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -174,8 +174,8 @@
       {
         "id": "integration:accounts.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:25.029Z",
-        "durationMs": 4465,
+        "startedAt": "2026-10-08T22:30:20.346Z",
+        "durationMs": 4453,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -189,8 +189,8 @@
       {
         "id": "integration:ai-authoring.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:29.495Z",
-        "durationMs": 4070,
+        "startedAt": "2026-10-08T22:30:24.800Z",
+        "durationMs": 4073,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -204,8 +204,8 @@
       {
         "id": "integration:ai-study.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:33.565Z",
-        "durationMs": 4013,
+        "startedAt": "2026-10-08T22:30:28.873Z",
+        "durationMs": 4008,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -219,8 +219,8 @@
       {
         "id": "integration:algorithms.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:37.579Z",
-        "durationMs": 4274,
+        "startedAt": "2026-10-08T22:30:32.881Z",
+        "durationMs": 4281,
         "exitCode": 0,
         "summary": {
           "tests": 14,
@@ -234,8 +234,8 @@
       {
         "id": "integration:analytics.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:41.853Z",
-        "durationMs": 340,
+        "startedAt": "2026-10-08T22:30:37.162Z",
+        "durationMs": 336,
         "exitCode": 0,
         "summary": {
           "tests": 2,
@@ -249,8 +249,8 @@
       {
         "id": "integration:assessment.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:42.193Z",
-        "durationMs": 5886,
+        "startedAt": "2026-10-08T22:30:37.498Z",
+        "durationMs": 1304,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -264,8 +264,8 @@
       {
         "id": "integration:assessment.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:48.079Z",
-        "durationMs": 1196,
+        "startedAt": "2026-10-08T22:30:38.802Z",
+        "durationMs": 1198,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -279,8 +279,8 @@
       {
         "id": "integration:auth-fixes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:49.275Z",
-        "durationMs": 935,
+        "startedAt": "2026-10-08T22:30:40.000Z",
+        "durationMs": 943,
         "exitCode": 0,
         "summary": {
           "tests": 3,
@@ -294,8 +294,8 @@
       {
         "id": "integration:auth.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:50.211Z",
-        "durationMs": 879,
+        "startedAt": "2026-10-08T22:30:40.943Z",
+        "durationMs": 890,
         "exitCode": 0,
         "summary": {
           "tests": 4,
@@ -309,8 +309,8 @@
       {
         "id": "integration:communication.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:51:51.090Z",
-        "durationMs": 15793,
+        "startedAt": "2026-10-08T22:30:41.833Z",
+        "durationMs": 15800,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -324,8 +324,8 @@
       {
         "id": "integration:communication.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:06.884Z",
-        "durationMs": 702,
+        "startedAt": "2026-10-08T22:30:57.634Z",
+        "durationMs": 695,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -339,8 +339,8 @@
       {
         "id": "integration:digital-logic.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:07.586Z",
-        "durationMs": 4350,
+        "startedAt": "2026-10-08T22:30:58.329Z",
+        "durationMs": 4349,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -354,8 +354,8 @@
       {
         "id": "integration:exam-insights.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:11.937Z",
-        "durationMs": 620,
+        "startedAt": "2026-10-08T22:31:02.678Z",
+        "durationMs": 604,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -369,8 +369,8 @@
       {
         "id": "integration:minimum-spanning-tree.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:12.557Z",
-        "durationMs": 4739,
+        "startedAt": "2026-10-08T22:31:03.282Z",
+        "durationMs": 4714,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -384,8 +384,8 @@
       {
         "id": "integration:notes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:17.297Z",
-        "durationMs": 484,
+        "startedAt": "2026-10-08T22:31:07.997Z",
+        "durationMs": 481,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -399,8 +399,8 @@
       {
         "id": "integration:planner.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:17.781Z",
-        "durationMs": 361,
+        "startedAt": "2026-10-08T22:31:08.478Z",
+        "durationMs": 355,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -414,8 +414,8 @@
       {
         "id": "integration:population-genetics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:18.142Z",
-        "durationMs": 5083,
+        "startedAt": "2026-10-08T22:31:08.833Z",
+        "durationMs": 5091,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -427,10 +427,25 @@
         }
       },
       {
+        "id": "integration:simpson-paradox.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-08T22:31:13.924Z",
+        "durationMs": 5433,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
         "id": "integration:upload-security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:23.226Z",
-        "durationMs": 4561,
+        "startedAt": "2026-10-08T22:31:19.358Z",
+        "durationMs": 4567,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -444,15 +459,15 @@
       {
         "id": "clean-start",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:27.788Z",
-        "durationMs": 7341,
+        "startedAt": "2026-10-08T22:31:23.925Z",
+        "durationMs": 7336,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "performance",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:35.130Z",
+        "startedAt": "2026-10-08T22:31:31.262Z",
         "durationMs": 189,
         "exitCode": 0,
         "summary": {
@@ -469,12 +484,12 @@
       {
         "id": "browser",
         "status": "passed",
-        "startedAt": "2026-10-08T21:52:35.319Z",
-        "durationMs": 208912,
+        "startedAt": "2026-10-08T22:31:31.451Z",
+        "durationMs": 234829,
         "exitCode": 0,
         "summary": {
-          "total": 101,
-          "passed": 101,
+          "total": 109,
+          "passed": 109,
           "skipped": 0,
           "failedOrIncomplete": []
         }
@@ -482,52 +497,47 @@
     ],
     "fullPassed": true,
     "testCounts": {
-      "total": 603,
-      "passed": 603,
+      "total": 633,
+      "passed": 633,
       "failedOrIncomplete": 0,
       "skipped": 0
     }
   },
   "contentVerification": {
-    "catalog": "Append stable minimum-spanning-tree ID as problem19, retaining all original18 IDs, order and numbers. Four existing plans retained; trees-graphs gains its third chapter, six problems and suggested16days. No schema, API or migration added.",
-    "contract": "Undirected graph, n1..100000, m0..100000, integer weights within plus/minus1e9; loops, parallel edges, zero and negative weights allowed. A tree must connect all nodes with exactlyn-1 edges and no cycle. Singleton empty tree0, disconnected IMPOSSIBLE, legitimate total-1 distinct from failure; only total judged, equal-weight optimal trees may differ.",
-    "teaching": "Original progressive hints, small-graph enumeration, Kruskal and lazy Prim comparison, compatible optimal-tree cut exchange proof that handles equal weights, six steps of the public8 result with cycle rejection, and shortest-path-tree9 counterexample. Full arithmetic bounds, complexities including m0, edge cases, mistakes, follow-ups and related problems.",
-    "oracle": "Independent adjacency-list/heap Prim evaluates all10 new canonical cases.180 deterministic small multigraphs cross-checked against exhaustive n-1 edge subsets with DFS connectivity. Permutation, vertex renaming, duplicate edge, arbitrary loop, negative cycle/required bridge, equal optimum, zero/disconnected/singleton and decimal lexer boundaries verified. Both100k limits have exact totals plus/minus99999000000000.",
-    "trustedPrograms": "Four original repository reference programs use Kruskal with iterative path compression and union by size; C++/Java64-bit, Python integer, JavaScript safe Number. Actual offline compiler/execution verified all76 repository programs/612 cases across4 languages, separate from HTTP protocol fixtures. Max new input2377809bytes, case JSON4467445bytes,10cases within unchanged budgets.",
-    "realHTTP": "Own random loopback review database, all19 migrations, seeded permissions/roles, owned API and local Judge0 protocol fixture with independent Prim stdout. Fixture verifies network disabled and no expected-output disclosure, does not execute student source. New sample/custom runs and wrong formal submissions leave old plan5of6; accepted formal submission moves6of6; repeat acceptance does not inflate solved count.",
-    "privacy": "Only public cases exposed on run; hidden inputs, expected outputs and diagnostics removed in immediate, list and detail responses. Teacher, CSRF, strict fields, feature, other user and same user other-space checks pass. Private draft and learning-note CAS checked; no external AI calls.",
-    "liveBrowser": "Production390px real personal registration, search to problem19, third-chapter link, original statement and complete explanations, Python/JavaScript confirmation loading, persisted draft and notes, no submissions or AI requests, no CSP errors or whole-page overflow. Random user/account, DB fixtures, services and private directories cleaned.",
+    "catalog": "54 modules including32 calculators,15 subjects and76 majors. Append simpson-paradox to four public major templates: statistics, data-science, economics, marketing; no new table or endpoint.",
+    "input": "Eight strict integer counts in two strata for A and B. Every total1..1000000; success0..its total. Missing, unknown, strings, fractions, non-finite, excess success and extra request fields rejected without records.",
+    "arithmetic": "Private reduced BigInt rational arithmetic for every ratio, weight, contribution, difference and comparison. Conversion at DTO display boundary only, approximately11 significant digits. No BigInt in JSON; tiny nonzero differences remain, even when the displayed rates coincide.",
+    "classification": "Strict reversal requires two identical nonzero stratum directions and strictly opposite raw aggregate direction. Other categories distinguish stratum tie, mixed strata, aggregate tie and consistent direction.",
+    "commonWeights": "w_i=(n_Ai+n_Bi)/(N_A+N_B). Shared weights are derived from pooled sample sizes, not always one-half. Separate original own weights, pooled weights/contributions and observed counts from the standardized calculated indicator. No causal, significance, effectiveness or choice recommendation.",
+    "originalExamples": "Six independently written neutral count examples: strict reversal, swap A/B, unequal pooled weights21/32 and11/32, matching composition, ties and mixed directions. Default raw29/110 vs81/110, common55% vs45%; unequal common65.9375% vs55.9375%.",
+    "presentation": "Three complete tables and four comparison categories with two bar series; percentage axis and percentage-point differences explicitly labeled. Reuse existing validated category chart, preserve old numerical charts and no-chart history.",
+    "oracle": "Independent integer-grid expansion and cross products,625 small count combinations and160 large-denominator cases; exact common-weight cancellation minus5e-17 percentage points. HTTP independently checks math through production endpoint and PostgreSQL storage.",
+    "migration": "020 staged after019 in a fresh random review DB. Only four matching organizationId-null templates lacking module append and increment revision; order, already-included item, every other public/template row, organization custom major, personal/institution preferences and assigned major unchanged. Repeated deploy stable. All20 migrations and fresh/repeated seed covered by full verification.",
+    "privacy": "Student-only access, CSRF, feature/permission revocation, other-user and other-space reads/writes denied. Notes CAS, immutable historical result snapshots and experiment-count goals retain existing semantics. COMPLETED means one experiment, not ability or a correct choice.",
+    "exports": "Actual CSV overview and Markdown complete persisted inputs/results including chart JSON and notes downloaded and checked. No records from another owner or space.",
+    "liveBrowser": "Production390px personal registration, freely selecting module, default and unequal samples, all8 chart values, invalid success exceeding total with no record, saved notes/history, actual CSV/Markdown bytes and CSP/layout checked. Real traces, videos and screenshots disabled; random user/account/resources cleaned.",
     "targetedCases": {
-      "newUnitTests": 8,
-      "unitCatalogEditorialTotal": 13,
-      "newDatabaseTestsIncludingParent": 8,
-      "newMockBrowserTests": 6,
+      "newUnitTests": 12,
+      "unitSciencePopulationTotal": 51,
+      "newDatabaseTestsIncludingParent": 10,
+      "newMockBrowserTests": 7,
       "newLiveBrowserTests": 1
     },
     "harnessCorrections": [
-      "Scope selectors to the exact inner learning/result panel to avoid ancestor and repeated sample-label matches; use the visible AntD language control.",
-      "Local Judge0 fixture initially returned unrequested message; strict gateway correctly rejected it. Fixture now returns only requested fields; production schema unchanged.",
-      "Oracle validates decimal integer syntax before Number conversion to reject hex, exponent and fractional literal mistakes in canonical input."
+      "InputNumber clamps total0 to its minimum1 in real UI; mock test now checks reachable success>total and fractional input. Zero totals remain strictly400 in unit and real HTTP, without changing the product control.",
+      "One-off live wrapper incorrectly waited twice for a signal-terminated server because exitCode stays null with signalCode set; browser1/1 had passed. Root confirmed owned PID absent and exact temporary config identity before cleanup. Complete verification uses its own lifecycle and finished exit0."
     ],
     "fullVerificationAttempts": 1
   },
   "screenshots": {
-    "kind": "Safe mock fixtures at native desktop and390px viewports; root visually inspected. Real production API/browser flow separately verified with trace, screenshot and video disabled.",
-    "files": [
-      "docs/screenshots/minimum-spanning-tree-desktop.png",
-      "docs/screenshots/minimum-spanning-tree-mobile.png"
-    ]
+    "kind": "Safe mocked data at native desktop and390px viewports, root visually inspected. Real service/browser flow separately verified without screenshots, trace or video.",
+    "files": ["docs/screenshots/simpson-paradox-desktop.png", "docs/screenshots/simpson-paradox-mobile.png"]
   },
   "externalServices": {
-    "judge0LiveExecution": "not tested; actual service URL and credentials remain user supplied",
-    "aiLiveRequests": "not tested; external AI disabled for automated verification"
+    "judge0LiveExecution": "not tested; user-supplied service URL/credentials remain necessary",
+    "aiLiveRequests": "not tested; external providers disabled during automated verification"
   },
   "remoteCI": {
-    "commit": "bcd98367e9683d151e6f765881e27ba53bcd8459",
-    "runId": 37850427115,
-    "conclusion": "success",
-    "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37850427115",
-    "completedAt": "2026-10-08T22:11:32Z",
-    "coverage": "Ubuntu Node22/PostgreSQL17; audit, full unit, production build, Python/JavaScript references, all database integrations and all browsers passed. Conditional failure artifact upload skipped; no tests skipped."
+    "status": "pending exact pushed commit verification; next iteration cannot begin until terminal success"
   }
 }

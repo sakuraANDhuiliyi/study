@@ -51,6 +51,7 @@ const major = (
       ...(['biology', 'ecology', 'agronomy', 'horticulture', 'animal-science'].includes(id)
         ? ['population-genetics']
         : []),
+      ...(['statistics', 'data-science', 'economics', 'marketing'].includes(id) ? ['simpson-paradox'] : []),
     ]),
   ],
 });

@@ -1,4 +1,5 @@
 import { result, table, type StudyResult, type ResultCell } from './academics.types';
+import { evaluateSimpsonParadox } from './tools-simpson';
 import {
   choice,
   ensureJson,
@@ -17,6 +18,16 @@ const fields: Record<string, string[]> = {
   'matrix-lab': ['operation', 'a', 'b'],
   'calculus-lab': ['coefficients', 'x', 'left', 'right', 'intervals'],
   'statistics-lab': ['x', 'y'],
+  'simpson-paradox': [
+    'aSuccess1',
+    'aTotal1',
+    'bSuccess1',
+    'bTotal1',
+    'aSuccess2',
+    'aTotal2',
+    'bSuccess2',
+    'bTotal2',
+  ],
   'probability-lab': ['trials', 'successes', 'probability'],
   'physics-motion': ['mode', 'speed', 'acceleration', 'time', 'angle', 'gravity'],
   'chemistry-balance': ['equation'],
@@ -1103,6 +1114,8 @@ export function evaluateScienceModule(moduleId: string, values: Inputs): StudyRe
       return calculusTool(values);
     case 'statistics-lab':
       return statisticsTool(values);
+    case 'simpson-paradox':
+      return evaluateSimpsonParadox(values);
     case 'probability-lab':
       return probabilityTool(values);
     case 'physics-motion':

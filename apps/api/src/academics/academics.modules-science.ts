@@ -111,6 +111,167 @@ export const scienceModules: StudyModule[] = [
     defaultValues: { x: '[1,2,3,4,5]', y: '[2,4,5,4,5]' },
   }),
   m({
+    id: 'simpson-paradox',
+    title: '分层与汇总比例：辛普森反转',
+    kind: 'calculator',
+    subjectIds: [...science, 'subject-economics', 'subject-management', 'subject-interdisciplinary'],
+    tags: ['统计', '数据分析', '加权比例', '辛普森反转'],
+    estimatedMinutes: 25,
+    description:
+      '输入两个方案在两个分层中的达成数与总数，比较分层比例、原始汇总和共同权重指标，观察样本构成如何改变比较方向。',
+    learningObjectives: [
+      '从计数核算比例，区分达成数、总数和百分点差值',
+      '解释为什么各层同向的比较可能在汇总时反转',
+      '用合并样本构成建立共同权重，并说明算术比较的适用边界',
+    ],
+    concepts: [
+      {
+        title: '比例汇总需要权重',
+        content:
+          '每层比例为达成数/总数。方案A的原始汇总为两层达成数之和除以两层总数之和，也等于按A自己的分层总数占比加权；方案B使用B自己的占比。两方案的权重可以不同，直接平均两个百分数通常不等于原始汇总。',
+      },
+      {
+        title: '本实验的严格反转定义',
+        content:
+          '只有两个分层中A相对B均严格较高、汇总却严格较低，或两个分层中均严格较低、汇总却严格较高，才标为严格辛普森反转。分层持平、分层方向混合或汇总持平分别说明，不混称为严格反转。',
+      },
+      {
+        title: '共同权重是一种指定口径',
+        content:
+          '合并两方案得到共同权重wᵢ=(n_Ai+n_Bi)/(N_A+N_B)，再分别计算Σwᵢ·r_Ai与Σwᵢ·r_Bi。两层合并人数相同才各占一半。标准化指标不是新增观察人数，也不能单凭该指标断定因果、显著性或应该采用的方案。',
+      },
+    ],
+    instructions: [
+      '先预测：在两个分层中分别比较A与B，猜测把计数合并后方向是否会保持。',
+      '输入四组达成数与总数。每个总数为1至1000000的整数，达成数为0至对应总数的整数。',
+      '核对原始表：先用整数相加求两方案的汇总分子和分母，再计算比例，不直接平均百分数。',
+      '阅读自身分层权重、共同权重与贡献表，解释为什么两种汇总口径可能不同；对照四组柱形及A−B百分点差值。',
+      '更换非等权、持平或混向示例后，将预测、实际方向、样本构成与不能推出的结论写进学习笔记。',
+    ],
+    fields: [
+      { ...n('aSuccess1', '分层1 · A 达成数', 0, 1e6), step: 1 },
+      { ...n('aTotal1', '分层1 · A 总数', 1, 1e6), step: 1 },
+      { ...n('bSuccess1', '分层1 · B 达成数', 0, 1e6), step: 1 },
+      { ...n('bTotal1', '分层1 · B 总数', 1, 1e6), step: 1 },
+      { ...n('aSuccess2', '分层2 · A 达成数', 0, 1e6), step: 1 },
+      { ...n('aTotal2', '分层2 · A 总数', 1, 1e6), step: 1 },
+      { ...n('bSuccess2', '分层2 · B 达成数', 0, 1e6), step: 1 },
+      { ...n('bTotal2', '分层2 · B 总数', 1, 1e6), step: 1 },
+    ],
+    defaultValues: {
+      aSuccess1: 9,
+      aTotal1: 10,
+      bSuccess1: 80,
+      bTotal1: 100,
+      aSuccess2: 20,
+      aTotal2: 100,
+      bSuccess2: 1,
+      bTotal2: 10,
+    },
+    examples: [
+      {
+        title: '分层同向却汇总反转',
+        values: {
+          aSuccess1: 9,
+          aTotal1: 10,
+          bSuccess1: 80,
+          bTotal1: 100,
+          aSuccess2: 20,
+          aTotal2: 100,
+          bSuccess2: 1,
+          bTotal2: 10,
+        },
+        explanation:
+          '两个分层分别为A的90%对B的80%、A的20%对B的10%，但原始汇总为A的29/110对B的81/110。合并样本在两层都是110，共同权重各半，得到55%对45%。记录是哪一方案在较低比例层中占了更大权重。',
+      },
+      {
+        title: '交换两个方案',
+        values: {
+          aSuccess1: 80,
+          aTotal1: 100,
+          bSuccess1: 9,
+          bTotal1: 10,
+          aSuccess2: 1,
+          aTotal2: 10,
+          bSuccess2: 20,
+          bTotal2: 100,
+        },
+        explanation:
+          '仅交换上一例的A/B标签：分层都变为B较高，原始汇总却A较高，共同权重结果为45%对55%。严格反转不偏向某个标签，所有A−B差值应变号。',
+      },
+      {
+        title: '共同权重并非各半',
+        values: {
+          aSuccess1: 9,
+          aTotal1: 10,
+          bSuccess1: 160,
+          bTotal1: 200,
+          aSuccess2: 20,
+          aTotal2: 100,
+          bSuccess2: 1,
+          bTotal2: 10,
+        },
+        explanation:
+          '两层比例仍是90%对80%、20%对10%，但合并人数为210与110，共同权重为21/32与11/32。共同权重结果为65.9375%对55.9375%，不能沿用各半的55%对45%；原始汇总仍严格反转。',
+      },
+      {
+        title: '相同样本构成',
+        values: {
+          aSuccess1: 9,
+          aTotal1: 10,
+          bSuccess1: 8,
+          bTotal1: 10,
+          aSuccess2: 20,
+          aTotal2: 100,
+          bSuccess2: 10,
+          bTotal2: 100,
+        },
+        explanation:
+          '两方案自身权重都是1/11与10/11，共同权重也相同。原始汇总29/110与18/110正好等于各自的共同权重指标；各层A较高，汇总也保持这个方向。',
+      },
+      {
+        title: '各层与汇总都持平',
+        values: {
+          aSuccess1: 1,
+          aTotal1: 2,
+          bSuccess1: 3,
+          bTotal1: 6,
+          aSuccess2: 2,
+          aTotal2: 4,
+          bSuccess2: 5,
+          bTotal2: 10,
+        },
+        explanation:
+          '四组观察比例均为50%，即使总数和自身权重不同，原始汇总与共同权重也都是50%。A−B差值精确为0；持平不满足严格反转定义。',
+      },
+      {
+        title: '分层方向不同',
+        values: {
+          aSuccess1: 9,
+          aTotal1: 10,
+          bSuccess1: 8,
+          bTotal1: 10,
+          aSuccess2: 1,
+          aTotal2: 10,
+          bSuccess2: 2,
+          bTotal2: 10,
+        },
+        explanation:
+          '第一层A较高，第二层B较高，原始汇总与共同权重都是50%对50%。这是分层方向混合，不能概括为每层同向后的反转；解释时应保留两层的差别。',
+      },
+    ],
+    resources: [
+      {
+        title: 'Simpson（1951）：列联表中的交互解释',
+        url: 'https://rss.onlinelibrary.wiley.com/doi/10.1111/j.2517-6161.1951.tb00088.x',
+      },
+      {
+        title: 'Pearl：Understanding Simpson’s Paradox',
+        url: 'https://ftp.cs.ucla.edu/pub/stat_ser/r414.pdf',
+      },
+    ],
+  }),
+  m({
     id: 'probability-lab',
     title: '二项分布与概率试验',
     kind: 'calculator',

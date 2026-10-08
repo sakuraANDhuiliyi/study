@@ -34,8 +34,8 @@ function allNumbersFinite(input: unknown): boolean {
   if (input && typeof input === 'object') return Object.values(input).every(allNumbersFinite);
   return true;
 }
-test('十三个课程默认示例均产生可保存的完整有限结果，未知模块不接管', () => {
-  assert.equal(scienceModules.length, 13);
+test('十四个课程默认示例均产生可保存的完整有限结果，未知模块不接管', () => {
+  assert.equal(scienceModules.length, 14);
   for (const module of scienceModules) {
     const output = run(module.id);
     assert.ok(output.summary.length && output.metrics.length && output.sections.length);
