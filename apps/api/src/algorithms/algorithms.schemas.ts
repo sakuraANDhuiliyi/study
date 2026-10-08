@@ -15,6 +15,30 @@ export const algorithmPagination = z
     pageSize: z.coerce.number().int().min(1).max(50).default(20),
   })
   .strict();
+// Preserve scalar pagination coercion while excluding array/object/boolean query values.
+const submissionPage = (maximum: number, fallback: number) =>
+  z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(maximum)).default(fallback);
+export const algorithmSubmissionQuery = z
+  .object({
+    page: submissionPage(10000, 1),
+    pageSize: submissionPage(50, 20),
+    kind: z.enum(['submit', 'examples', 'custom']).optional(),
+    language: algorithmLanguage.optional(),
+    status: z
+      .enum([
+        'running',
+        'accepted',
+        'wrong_answer',
+        'compile_error',
+        'runtime_error',
+        'time_limit',
+        'memory_limit',
+        'system_error',
+      ])
+      .optional(),
+  })
+  .strict();
+export type AlgorithmSubmissionQuery = z.infer<typeof algorithmSubmissionQuery>;
 export const algorithmProblemQuery = algorithmPagination.extend({
   q: text(100).default(''),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),

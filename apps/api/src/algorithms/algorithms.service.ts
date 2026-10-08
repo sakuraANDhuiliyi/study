@@ -24,6 +24,7 @@ import { getAlgorithmEditorial } from './algorithms.editorials';
 import {
   type AlgorithmAnalysisInput,
   type AlgorithmSubmissionInput,
+  type AlgorithmSubmissionQuery,
   type AlgorithmLanguage,
   type algorithmProblemQuery,
   type AlgorithmLearningInput,
@@ -31,7 +32,6 @@ import {
 import { JudgeGateway, type JudgeExecutionRequest, type JudgeExecutionResult } from './judge.gateway';
 
 type Tx = Prisma.TransactionClient;
-type Pagination = { page: number; pageSize: number };
 const json = (value: unknown) => JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 const EXPIRED = '上次请求已超时，请重新发起。';
 const bounded = (value: unknown) => (typeof value === 'string' ? value.slice(0, 16000) : '');
@@ -618,21 +618,43 @@ export class AlgorithmsService {
     await this.freshActor(actor);
     return this.submission(actor, operation.submissionId!);
   }
-  async submissions(actor: Actor, problemId: string, query: Pagination) {
+  async submissions(actor: Actor, problemId: string, query: AlgorithmSubmissionQuery) {
     await this.access(actor);
     this.catalog(problemId);
     await this.recoverPending(actor);
-    const where = { ...this.scope(actor), problemId };
-    const [items, total] = await this.db.$transaction([
-      this.db.algorithmSubmission.findMany({
-        where,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
-      }),
-      this.db.algorithmSubmission.count({ where }),
-    ]);
-    return { items: items.map((item) => this.submissionDto(item)), total, ...query };
+    const { page, pageSize, kind, language, status } = query;
+    const where: Prisma.AlgorithmSubmissionWhereInput = {
+      ...this.scope(actor),
+      problemId,
+      ...(language ? { language } : {}),
+      ...(status ? { status } : {}),
+    };
+    if (kind) {
+      where.mode = kind === 'submit' ? 'submit' : 'run';
+      if (kind !== 'submit') where.customInput = kind === 'custom';
+    }
+    // Both reads observe one snapshot even when a running submission finishes between them.
+    const [items, total] = await this.db.$transaction(
+      [
+        this.db.algorithmSubmission.findMany({
+          where,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        this.db.algorithmSubmission.count({ where }),
+      ],
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+    return {
+      items: items.map((item) => this.submissionDto(item)),
+      total,
+      page,
+      pageSize,
+      ...(kind ? { kind } : {}),
+      ...(language ? { language } : {}),
+      ...(status ? { status } : {}),
+    };
   }
   async submission(actor: Actor, id: string) {
     await this.access(actor);

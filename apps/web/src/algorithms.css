@@ -834,6 +834,31 @@
 .algo-history-heading h3 {
   margin: 0;
 }
+.algo-history-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0 12px;
+}
+.algo-history-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: #52677e;
+}
+.algo-history-filters .ant-select {
+  width: 100%;
+  min-width: 0;
+}
+.algo-history-filter-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 @media (min-width: 1600px) {
   .algo-code-editor {
     height: 460px;
@@ -887,6 +912,9 @@
   }
 }
 @media (max-width: 600px) {
+  .algo-history-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .algo-overview {
     padding: 20px;
     gap: 22px;

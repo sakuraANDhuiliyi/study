@@ -112,6 +112,12 @@ type Analysis = {
   } | null;
 };
 type Page<T> = { items: T[]; total: number; page: number; pageSize: number };
+type HistoryQuery = {
+  page: number;
+  kind?: 'submit' | 'examples' | 'custom';
+  language?: Language;
+  status?: Verdict;
+};
 type LocalDraft = {
   language: Language;
   codes: Partial<Record<Language, string>>;
@@ -451,14 +457,56 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const inspectSequence = useRef(0);
   const executionSequence = useRef<number | null>(null);
   const inspectController = useRef<AbortController | null>(null);
-  const [historyPage, setHistoryPage] = useState(1);
+  const [historyQuery, setHistoryQuery] = useState<HistoryQuery>({ page: 1 });
   const [analysisBusy, setAnalysisBusy] = useState<AnalysisMode | null>(null);
   const [analysisError, setAnalysisError] = useState('');
   const [activeAnalysis, setActiveAnalysis] = useState<Analysis | null>(null);
   const histories = useData<Page<Submission>>(
-    `/algorithms/problems/${id}/submissions?page=${historyPage}&pageSize=8`,
+    `/algorithms/problems/${id}/submissions?${queryString({
+      page: historyQuery.page,
+      pageSize: 8,
+      kind: historyQuery.kind,
+      language: historyQuery.language,
+      status: historyQuery.status,
+    })}`,
     initialized,
   );
+  const historyFiltered = !!(historyQuery.kind || historyQuery.language || historyQuery.status);
+  const historyLastPage = Math.max(1, Math.ceil((histories.data?.total || 0) / 8));
+  const historyPageOutOfRange =
+    !!histories.data &&
+    !histories.error &&
+    !histories.isFetching &&
+    histories.data.page === historyQuery.page &&
+    historyQuery.page > historyLastPage;
+  function changeHistoryFilter(update: Partial<Omit<HistoryQuery, 'page'>>) {
+    setHistoryQuery((current) => ({ ...current, ...update, page: 1 }));
+  }
+  useEffect(() => {
+    if (!historyPageOutOfRange) return;
+    // Correct only the successful request's own snapshot. A late response must
+    // never move a newer filter or page selection.
+    const snapshot = historyQuery;
+    const corrected = { ...snapshot, page: historyLastPage };
+    // The destination may still be considered fresh even though this response
+    // proves its cached count obsolete. Mark only that scoped page stale before
+    // mounting its observer, so one refresh also retrieves the corrected page.
+    void client.invalidateQueries({
+      queryKey: [
+        `/algorithms/problems/${id}/submissions?${queryString({
+          page: corrected.page,
+          pageSize: 8,
+          kind: corrected.kind,
+          language: corrected.language,
+          status: corrected.status,
+        })}`,
+        scope,
+      ],
+      exact: true,
+      refetchType: 'none',
+    });
+    setHistoryQuery((current) => (current === snapshot ? corrected : current));
+  }, [historyPageOutOfRange, historyLastPage, historyQuery, client, id, scope]);
   const analyses = useData<{ items: Analysis[] }>(
     `/algorithms/problems/${id}/analyses`,
     initialized && tab === 'ai',
@@ -664,7 +712,7 @@ function AlgorithmWorkspace({ id }: { id: string }) {
             ? { submissionId: submitted.id, expected: expectedOutput }
             : null,
         );
-        setHistoryPage(1);
+        setHistoryQuery((current) => ({ ...current, page: 1 }));
       }
       await refreshRecords();
     } catch (err) {
@@ -937,7 +985,73 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                         <div className="algo-tab-content">
                           <p className="algo-muted">
                             运行和正式提交都会保留。仅正式提交通过全部用例后计为已解决。
+                            自定义运行的“执行完成”仅表示程序正常退出。
                           </p>
+                          <div className="algo-history-filters" role="group" aria-label="提交记录筛选">
+                            <label>
+                              <span>记录类型</span>
+                              <Select<NonNullable<HistoryQuery['kind']> | ''>
+                                aria-label="提交记录类型"
+                                value={historyQuery.kind || ''}
+                                onChange={(value) => changeHistoryFilter({ kind: value || undefined })}
+                                options={[
+                                  { value: '', label: '全部类型' },
+                                  { value: 'submit', label: '正式提交' },
+                                  { value: 'examples', label: '样例运行' },
+                                  { value: 'custom', label: '自定义运行' },
+                                ]}
+                              />
+                            </label>
+                            <label>
+                              <span>代码语言</span>
+                              <Select<Language | ''>
+                                aria-label="提交记录语言"
+                                value={historyQuery.language || ''}
+                                onChange={(value) => changeHistoryFilter({ language: value || undefined })}
+                                options={[{ value: '', label: '全部语言' }, ...languages]}
+                              />
+                            </label>
+                            <label>
+                              <span>执行结果</span>
+                              <Select<Verdict | ''>
+                                aria-label="提交记录结果"
+                                value={historyQuery.status || ''}
+                                onChange={(value) => changeHistoryFilter({ status: value || undefined })}
+                                options={[
+                                  { value: '', label: '全部结果' },
+                                  ...Object.entries(verdicts).map(([value, label]) => ({
+                                    value,
+                                    label:
+                                      value === 'accepted'
+                                        ? historyQuery.kind === 'submit'
+                                          ? '正式通过'
+                                          : historyQuery.kind === 'examples'
+                                            ? '样例通过'
+                                            : historyQuery.kind === 'custom'
+                                              ? '执行完成'
+                                              : '通过／执行完成'
+                                        : label,
+                                  })),
+                                ]}
+                              />
+                            </label>
+                          </div>
+                          <div className="algo-history-filter-meta">
+                            <span className="algo-muted" role="status" aria-label="提交记录匹配数量">
+                              {histories.data
+                                ? `${histories.error ? '上次加载' : ''}匹配 ${histories.data.total} 条`
+                                : histories.error
+                                  ? '匹配数量暂不可用'
+                                  : '正在加载匹配记录…'}
+                            </span>
+                            <Button
+                              size="small"
+                              disabled={!historyFiltered && historyQuery.page === 1}
+                              onClick={() => setHistoryQuery({ page: 1 })}
+                            >
+                              重置筛选
+                            </Button>
+                          </div>
                           <div className="algo-history-heading">
                             <h3>最近提交</h3>
                             <Button
@@ -950,7 +1064,12 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                             </Button>
                           </div>
                           <QueryState query={histories}>
-                            {histories.data?.items.length ? (
+                            {historyPageOutOfRange ? (
+                              <div className="algo-working">
+                                <Spin size="small" />
+                                <span>正在调整记录页码…</span>
+                              </div>
+                            ) : histories.data?.items.length ? (
                               <div className="algo-history">
                                 {histories.data.items.map((item) => (
                                   <button
@@ -980,17 +1099,29 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                                   </button>
                                 ))}
                               </div>
+                            ) : (histories.data?.total || 0) > 0 ? (
+                              <Alert
+                                type="info"
+                                showIcon
+                                message="记录正在更新"
+                                description="当前页暂时没有可展示的记录，请刷新后查看。"
+                                action={<Button onClick={() => histories.refetch()}>刷新记录</Button>}
+                              />
+                            ) : historyFiltered ? (
+                              <EmptyState description="没有符合当前条件的记录">
+                                <Button onClick={() => setHistoryQuery({ page: 1 })}>清除筛选</Button>
+                              </EmptyState>
                             ) : (
                               <EmptyState description="还没有提交记录，先运行一次样例吧" />
                             )}
                             {!!histories.data?.total && (
                               <Pagination
                                 size="small"
-                                current={historyPage}
+                                current={historyQuery.page}
                                 pageSize={8}
                                 total={histories.data.total}
                                 showSizeChanger={false}
-                                onChange={setHistoryPage}
+                                onChange={(page) => setHistoryQuery((current) => ({ ...current, page }))}
                               />
                             )}
                           </QueryState>

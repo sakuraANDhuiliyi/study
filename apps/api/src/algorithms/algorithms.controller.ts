@@ -5,7 +5,7 @@ import { AlgorithmsService } from './algorithms.service';
 import {
   algorithmAnalysisInput,
   algorithmDraftInput,
-  algorithmPagination,
+  algorithmSubmissionQuery,
   algorithmProblemQuery,
   algorithmSubmissionInput,
   algorithmLearningInput,
@@ -59,7 +59,7 @@ export class AlgorithmsController {
     @Param('id') id: string,
     @Query() query: unknown,
   ) {
-    return this.service.submissions(actor, id, algorithmPagination.parse(query));
+    return this.service.submissions(actor, id, algorithmSubmissionQuery.parse(query));
   }
   @Get('submissions/:id') submission(@CurrentActor() actor: Actor, @Param('id') id: string) {
     return this.service.submission(actor, id);

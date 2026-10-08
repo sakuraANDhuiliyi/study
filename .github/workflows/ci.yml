@@ -47,6 +47,7 @@ jobs:
           npm run test:ai-authoring
           npm run test:algorithms
           npm run test:minimum-spanning-tree
+          npm run test:algorithm-history-filters
           npm run test:accounts
           npm run test:academics
           npm run test:academic-goals

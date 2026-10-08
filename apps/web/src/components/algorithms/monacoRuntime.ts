@@ -1,5 +1,10 @@
 import { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor/editor';
+// TypeScript's lazy worker module also loads editor contributions. Their service
+// singletons must be registered before the first editor initializes its services.
+import 'monaco-editor/features/documentSymbols/register.js';
+import 'monaco-editor/features/codelens/register.js';
+import 'monaco-editor/features/dropOrPasteInto/register.js';
 import 'monaco-editor/features/codeEditor/register.js';
 import 'monaco-editor/features/codicon/register.js';
 import 'monaco-editor/features/tokenization/register.js';

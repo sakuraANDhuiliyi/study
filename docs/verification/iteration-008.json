@@ -1,14 +1,19 @@
 {
-  "iteration": 7,
-  "feature": "stratified proportions and Simpson reversal classroom experiment",
+  "iteration": 8,
+  "feature": "private per-problem submission history filters",
   "date": "2026-10-09",
   "local": {
     "version": 1,
     "profile": "full",
-    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "requestedReferenceLanguages": [
+      "python",
+      "javascript",
+      "cpp",
+      "java"
+    ],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-08T22:28:40.992Z",
-    "finishedAt": "2026-10-08T22:35:26.293Z",
+    "startedAt": "2026-10-08T23:36:19.377Z",
+    "finishedAt": "2026-10-08T23:43:37.912Z",
     "passed": true,
     "apiPort": 3002,
     "previewPort": 3003,
@@ -16,52 +21,52 @@
       {
         "id": "generate",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:40.999Z",
-        "durationMs": 498,
+        "startedAt": "2026-10-08T23:36:19.384Z",
+        "durationMs": 604,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "migrate",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:41.497Z",
-        "durationMs": 314,
+        "startedAt": "2026-10-08T23:36:19.989Z",
+        "durationMs": 318,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "seed",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:41.812Z",
-        "durationMs": 1255,
+        "startedAt": "2026-10-08T23:36:20.308Z",
+        "durationMs": 1231,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "typecheck",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:43.067Z",
-        "durationMs": 4157,
+        "startedAt": "2026-10-08T23:36:21.539Z",
+        "durationMs": 4139,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "lint",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:47.225Z",
-        "durationMs": 1688,
+        "startedAt": "2026-10-08T23:36:25.678Z",
+        "durationMs": 1957,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "unit",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:48.914Z",
-        "durationMs": 9065,
+        "startedAt": "2026-10-08T23:36:27.635Z",
+        "durationMs": 9072,
         "exitCode": 0,
         "summary": {
-          "tests": 314,
-          "pass": 314,
+          "tests": 322,
+          "pass": 322,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -71,16 +76,16 @@
       {
         "id": "build",
         "status": "passed",
-        "startedAt": "2026-10-08T22:28:57.979Z",
-        "durationMs": 21209,
+        "startedAt": "2026-10-08T23:36:36.708Z",
+        "durationMs": 20683,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "audit",
         "status": "passed",
-        "startedAt": "2026-10-08T22:29:19.189Z",
-        "durationMs": 1089,
+        "startedAt": "2026-10-08T23:36:57.392Z",
+        "durationMs": 1127,
         "exitCode": 0,
         "summary": {
           "info": 0,
@@ -94,28 +99,33 @@
       {
         "id": "trusted-references",
         "status": "passed",
-        "startedAt": "2026-10-08T22:29:20.279Z",
-        "durationMs": 31465,
+        "startedAt": "2026-10-08T23:36:58.520Z",
+        "durationMs": 31197,
         "exitCode": 0,
         "summary": {
           "programsPassed": 76,
           "casesPassed": 612,
-          "languages": ["python", "javascript", "cpp", "java"],
+          "languages": [
+            "python",
+            "javascript",
+            "cpp",
+            "java"
+          ],
           "failures": 0
         }
       },
       {
         "id": "servers",
         "status": "passed",
-        "startedAt": "2026-10-08T22:29:51.745Z",
-        "durationMs": 1652,
+        "startedAt": "2026-10-08T23:37:29.718Z",
+        "durationMs": 1649,
         "exitCode": 0
       },
       {
         "id": "e2e",
         "status": "passed",
-        "startedAt": "2026-10-08T22:29:53.398Z",
-        "durationMs": 9912,
+        "startedAt": "2026-10-08T23:37:31.367Z",
+        "durationMs": 9921,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -129,8 +139,8 @@
       {
         "id": "integration:academic-goals.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:03.310Z",
-        "durationMs": 4766,
+        "startedAt": "2026-10-08T23:37:41.288Z",
+        "durationMs": 4760,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -144,8 +154,8 @@
       {
         "id": "integration:academic-records-export.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:08.077Z",
-        "durationMs": 7209,
+        "startedAt": "2026-10-08T23:37:46.049Z",
+        "durationMs": 7036,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -159,8 +169,8 @@
       {
         "id": "integration:academics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:15.286Z",
-        "durationMs": 5060,
+        "startedAt": "2026-10-08T23:37:53.086Z",
+        "durationMs": 5047,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -174,8 +184,8 @@
       {
         "id": "integration:accounts.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:20.346Z",
-        "durationMs": 4453,
+        "startedAt": "2026-10-08T23:37:58.133Z",
+        "durationMs": 4558,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -189,8 +199,8 @@
       {
         "id": "integration:ai-authoring.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:24.800Z",
-        "durationMs": 4073,
+        "startedAt": "2026-10-08T23:38:02.692Z",
+        "durationMs": 4065,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -204,8 +214,8 @@
       {
         "id": "integration:ai-study.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:28.873Z",
-        "durationMs": 4008,
+        "startedAt": "2026-10-08T23:38:06.758Z",
+        "durationMs": 4003,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -217,10 +227,25 @@
         }
       },
       {
+        "id": "integration:algorithm-history-filters.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-08T23:38:10.762Z",
+        "durationMs": 5022,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
         "id": "integration:algorithms.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:32.881Z",
-        "durationMs": 4281,
+        "startedAt": "2026-10-08T23:38:15.785Z",
+        "durationMs": 4268,
         "exitCode": 0,
         "summary": {
           "tests": 14,
@@ -234,8 +259,8 @@
       {
         "id": "integration:analytics.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:37.162Z",
-        "durationMs": 336,
+        "startedAt": "2026-10-08T23:38:20.053Z",
+        "durationMs": 337,
         "exitCode": 0,
         "summary": {
           "tests": 2,
@@ -249,8 +274,8 @@
       {
         "id": "integration:assessment.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:37.498Z",
-        "durationMs": 1304,
+        "startedAt": "2026-10-08T23:38:20.390Z",
+        "durationMs": 1309,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -264,8 +289,8 @@
       {
         "id": "integration:assessment.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:38.802Z",
-        "durationMs": 1198,
+        "startedAt": "2026-10-08T23:38:21.699Z",
+        "durationMs": 1192,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -279,8 +304,8 @@
       {
         "id": "integration:auth-fixes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:40.000Z",
-        "durationMs": 943,
+        "startedAt": "2026-10-08T23:38:22.891Z",
+        "durationMs": 949,
         "exitCode": 0,
         "summary": {
           "tests": 3,
@@ -294,8 +319,8 @@
       {
         "id": "integration:auth.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:40.943Z",
-        "durationMs": 890,
+        "startedAt": "2026-10-08T23:38:23.840Z",
+        "durationMs": 888,
         "exitCode": 0,
         "summary": {
           "tests": 4,
@@ -309,8 +334,8 @@
       {
         "id": "integration:communication.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:41.833Z",
-        "durationMs": 15800,
+        "startedAt": "2026-10-08T23:38:24.728Z",
+        "durationMs": 15801,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -324,8 +349,8 @@
       {
         "id": "integration:communication.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:57.634Z",
-        "durationMs": 695,
+        "startedAt": "2026-10-08T23:38:40.530Z",
+        "durationMs": 700,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -339,8 +364,8 @@
       {
         "id": "integration:digital-logic.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:30:58.329Z",
-        "durationMs": 4349,
+        "startedAt": "2026-10-08T23:38:41.231Z",
+        "durationMs": 4355,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -354,8 +379,8 @@
       {
         "id": "integration:exam-insights.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:02.678Z",
-        "durationMs": 604,
+        "startedAt": "2026-10-08T23:38:45.586Z",
+        "durationMs": 609,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -369,8 +394,8 @@
       {
         "id": "integration:minimum-spanning-tree.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:03.282Z",
-        "durationMs": 4714,
+        "startedAt": "2026-10-08T23:38:46.195Z",
+        "durationMs": 4740,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -384,8 +409,8 @@
       {
         "id": "integration:notes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:07.997Z",
-        "durationMs": 481,
+        "startedAt": "2026-10-08T23:38:50.935Z",
+        "durationMs": 480,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -399,8 +424,8 @@
       {
         "id": "integration:planner.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:08.478Z",
-        "durationMs": 355,
+        "startedAt": "2026-10-08T23:38:51.415Z",
+        "durationMs": 410,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -414,8 +439,8 @@
       {
         "id": "integration:population-genetics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:08.833Z",
-        "durationMs": 5091,
+        "startedAt": "2026-10-08T23:38:51.825Z",
+        "durationMs": 5098,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -429,8 +454,8 @@
       {
         "id": "integration:simpson-paradox.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:13.924Z",
-        "durationMs": 5433,
+        "startedAt": "2026-10-08T23:38:56.924Z",
+        "durationMs": 5419,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -444,8 +469,8 @@
       {
         "id": "integration:upload-security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:19.358Z",
-        "durationMs": 4567,
+        "startedAt": "2026-10-08T23:39:02.344Z",
+        "durationMs": 4561,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -459,16 +484,16 @@
       {
         "id": "clean-start",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:23.925Z",
-        "durationMs": 7336,
+        "startedAt": "2026-10-08T23:39:06.906Z",
+        "durationMs": 7348,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "performance",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:31.262Z",
-        "durationMs": 189,
+        "startedAt": "2026-10-08T23:39:14.255Z",
+        "durationMs": 195,
         "exitCode": 0,
         "summary": {
           "requests": 100,
@@ -476,20 +501,20 @@
           "concurrency": 10,
           "latencyMs": {
             "p50": 9,
-            "p95": 16,
-            "max": 17
+            "p95": 17,
+            "max": 18
           }
         }
       },
       {
         "id": "browser",
         "status": "passed",
-        "startedAt": "2026-10-08T22:31:31.451Z",
-        "durationMs": 234829,
+        "startedAt": "2026-10-08T23:39:14.450Z",
+        "durationMs": 263449,
         "exitCode": 0,
         "summary": {
-          "total": 109,
-          "passed": 109,
+          "total": 119,
+          "passed": 119,
           "skipped": 0,
           "failedOrIncomplete": []
         }
@@ -497,52 +522,53 @@
     ],
     "fullPassed": true,
     "testCounts": {
-      "total": 633,
-      "passed": 633,
+      "total": 661,
+      "passed": 661,
       "failedOrIncomplete": 0,
       "skipped": 0
     }
   },
   "contentVerification": {
-    "catalog": "54 modules including32 calculators,15 subjects and76 majors. Append simpson-paradox to four public major templates: statistics, data-science, economics, marketing; no new table or endpoint.",
-    "input": "Eight strict integer counts in two strata for A and B. Every total1..1000000; success0..its total. Missing, unknown, strings, fractions, non-finite, excess success and extra request fields rejected without records.",
-    "arithmetic": "Private reduced BigInt rational arithmetic for every ratio, weight, contribution, difference and comparison. Conversion at DTO display boundary only, approximately11 significant digits. No BigInt in JSON; tiny nonzero differences remain, even when the displayed rates coincide.",
-    "classification": "Strict reversal requires two identical nonzero stratum directions and strictly opposite raw aggregate direction. Other categories distinguish stratum tie, mixed strata, aggregate tie and consistent direction.",
-    "commonWeights": "w_i=(n_Ai+n_Bi)/(N_A+N_B). Shared weights are derived from pooled sample sizes, not always one-half. Separate original own weights, pooled weights/contributions and observed counts from the standardized calculated indicator. No causal, significance, effectiveness or choice recommendation.",
-    "originalExamples": "Six independently written neutral count examples: strict reversal, swap A/B, unequal pooled weights21/32 and11/32, matching composition, ties and mixed directions. Default raw29/110 vs81/110, common55% vs45%; unequal common65.9375% vs55.9375%.",
-    "presentation": "Three complete tables and four comparison categories with two bar series; percentage axis and percentage-point differences explicitly labeled. Reuse existing validated category chart, preserve old numerical charts and no-chart history.",
-    "oracle": "Independent integer-grid expansion and cross products,625 small count combinations and160 large-denominator cases; exact common-weight cancellation minus5e-17 percentage points. HTTP independently checks math through production endpoint and PostgreSQL storage.",
-    "migration": "020 staged after019 in a fresh random review DB. Only four matching organizationId-null templates lacking module append and increment revision; order, already-included item, every other public/template row, organization custom major, personal/institution preferences and assigned major unchanged. Repeated deploy stable. All20 migrations and fresh/repeated seed covered by full verification.",
-    "privacy": "Student-only access, CSRF, feature/permission revocation, other-user and other-space reads/writes denied. Notes CAS, immutable historical result snapshots and experiment-count goals retain existing semantics. COMPLETED means one experiment, not ability or a correct choice.",
-    "exports": "Actual CSV overview and Markdown complete persisted inputs/results including chart JSON and notes downloaded and checked. No records from another owner or space.",
-    "liveBrowser": "Production390px personal registration, freely selecting module, default and unequal samples, all8 chart values, invalid success exceeding total with no record, saved notes/history, actual CSV/Markdown bytes and CSP/layout checked. Real traces, videos and screenshots disabled; random user/account/resources cleaned.",
+    "scope": "Owner, current learning space and problem predicates precede all filter, count and pagination operations. Existing endpoint and owner/problem/time index retained; no new table or migration.",
+    "filters": "Optional kind=submit/examples/custom, four existing code languages and eight existing verdict statuses. Examples means run/customInput=false; custom means run/customInput=true. Conditions intersect. Only supplied parsed filters echoed; unfiltered response shape unchanged.",
+    "validation": "Strict rejection of unknown keys, duplicated/array/object parameters, booleans, null, empty or invalid enums and invalid page bounds. Existing valid scalar numeric pagination strings and page1/pageSize20 defaults retained. Eight contract test groups cover96 filter combinations.",
+    "snapshot": "Short read-only Prisma array transaction uses PostgreSQL RepeatableRead for the same filtered rows/count snapshot, stable createdAt/id descending. Catalog/access/expired-operation recovery remain outside. Different requests can observe newly changed history.",
+    "ui": "Three accessible controls, clear/reset, atomic filter change and page1, server matched totals, no-match guidance, cached-error retry and manual refresh for inconsistent empty pages. Full canonical query and identity in existing query cache key; delayed results cannot replace active filters.",
+    "pageCorrection": "When a successful response proves the current page out of range, invalidate only the corrected target query without immediate refetch before switching pages. This fixes the fresh20-second target-page cache retaining removed rows and old counts. Live flow refreshes once after deleting6 of12 matches and automatically returns to current6 rows.",
+    "codePreservation": "Changing filters retains main editor language/code, unsynced draft, execution result, selected historical source and read-only comparison. It triggers no draft writes, Judge0 or AI. Running resets page1 while retaining filters. Success labels distinguish formal acceptance, sample acceptance and completed custom execution.",
+    "coldJavaScriptDiff": "Actual cold production JavaScript diff exposed missing Monaco services. Installed Monaco0.57.0 TypeScript lazy worker static dependency closure registers document-symbol, codelens-cache and tree-view drag services after StandaloneServices initialization. Public documentSymbols/codelens/dropOrPasteInto preloads register them before first editor initialization. Two independent static AST dependency audits leave zero missing singleton files; no full feature bundle, fallback or suppressed page error. Final real browser asserts errors=[] with unchanged business assertions.",
+    "databaseOracle": "True isolated random loopback PostgreSQL database and independent semantic filter oracle cover96 intersections, all statuses/languages/types, deterministic same-time ordering, default and filtered DTOs, strict400, over-last page and empty results.20 interleaved read rounds and40 atomic writes check one-response count/row consistency with repeated subsequent writes; they do not claim a guaranteed commit between the two SQL statements.",
+    "privacyAndOperations": "Student-only permission/feature/session gates, teacher/admin rejection, other owner/problem/space exclusions and hidden-test privacy. Reads do not create execution, draft, note or solved-progress changes. Expired pending operation becomes failed before creating one legal active operation; unique per-owner pending gate remains enforced.",
+    "liveBrowser": "Production390px personal-account flow with real private history: combinations, pagination, reset, readonly unsynced comparison, preservation when filtered out, confirmed restoration and current database counts after single refresh. Actual stored code/draft/status checks, CSP and no whole-page overflow. Random accounts/resources cleaned; real trace/video/screenshots disabled.",
     "targetedCases": {
-      "newUnitTests": 12,
-      "unitSciencePopulationTotal": 51,
+      "newUnitTests": 8,
+      "unitIncludingExistingAlgorithmTests": 17,
       "newDatabaseTestsIncludingParent": 10,
-      "newMockBrowserTests": 7,
+      "newMockBrowserTests": 9,
       "newLiveBrowserTests": 1
     },
-    "harnessCorrections": [
-      "InputNumber clamps total0 to its minimum1 in real UI; mock test now checks reachable success>total and fractional input. Zero totals remain strictly400 in unit and real HTTP, without changing the product control.",
-      "One-off live wrapper incorrectly waited twice for a signal-terminated server because exitCode stays null with signalCode set; browser1/1 had passed. Root confirmed owned PID absent and exact temporary config identity before cleanup. Complete verification uses its own lifecycle and finished exit0."
+    "targetedRepairs": [
+      "Initial real HTTP fixture created two pending operations for one owner/kind and correctly hit the existing unique gate; fixed the fixture to expire/recover first, then create active operation. Production constraint unchanged.",
+      "Initial mock run exposed the real out-of-range-page fresh-cache bug; fixed only corrected target-query invalidation and retained exact row/count assertions.",
+      "Virtual Select keyboard helper now waits each real active option change; retry locator permits AntD inserted whitespace and refresh locator permits the leaving loading icon while requiring non-loading state.",
+      "Real cold JavaScript comparison successively exposed missing IOutlineModelService, ICodeLensCache and treeViewsDndService; preloaded the three public registration features and independently audited the installed dependency graph.",
+      "A warm Vite mock run suffered a dependency-optimizer full document reload proven by safe mock trace and changed dependency hash. No product/test assertion was relaxed; final9 mock cases ran against the compiled production service, also used for the full local browser suite."
     ],
     "fullVerificationAttempts": 1
   },
   "screenshots": {
-    "kind": "Safe mocked data at native desktop and390px viewports, root visually inspected. Real service/browser flow separately verified without screenshots, trace or video.",
-    "files": ["docs/screenshots/simpson-paradox-desktop.png", "docs/screenshots/simpson-paradox-mobile.png"]
+    "kind": "Safe mocked data at native desktop and390px viewports, root visually inspected. Real service flow separately verified without screenshot, trace or video.",
+    "files": [
+      "docs/screenshots/algorithm-history-filters-desktop.png",
+      "docs/screenshots/algorithm-history-filters-mobile.png"
+    ]
   },
   "externalServices": {
     "judge0LiveExecution": "not tested; user-supplied service URL/credentials remain necessary",
     "aiLiveRequests": "not tested; external providers disabled during automated verification"
   },
   "remoteCI": {
-    "commit": "d44dc8db6686bb7109a6b0647acd69ab46c62b92",
-    "runId": 37854751056,
-    "conclusion": "success",
-    "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37854751056",
-    "completedAt": "2026-10-08T22:52:42Z",
-    "coverage": "Ubuntu Node22/PostgreSQL17; audit, unit, production build, Python/JavaScript trusted references, all database integration commands and browser workflow steps completed successfully.16 steps succeeded; only the conditional failure artifact upload skipped. Local full verification separately confirms633 tests with no skips."
+    "conclusion": "pending",
+    "coverage": "Exact pushed commit workflow will be checked before the next feature starts. Local full verification confirms661 tests with no failures or skips."
   }
 }
