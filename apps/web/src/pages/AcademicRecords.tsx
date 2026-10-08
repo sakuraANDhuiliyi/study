@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { App, Button, Modal, Pagination, Popconfirm, Select, Tag } from 'antd';
 import { Plus, Trash2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -15,6 +16,8 @@ export function AcademicRecords({ notes = false }: { notes?: boolean }) {
 }
 function Records({ notes }: { notes: boolean }) {
   const { user } = useAuth();
+  const client = useQueryClient();
+  const scope = [user?.organizationId, user?.id, user?.role].join(':');
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const moduleId = params.get('moduleId') || undefined;
@@ -29,6 +32,10 @@ function Records({ notes }: { notes: boolean }) {
     setDeleting(id);
     try {
       await api(`/academics/records/${id}`, { method: 'DELETE' });
+      void client.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[1] === scope && String(query.queryKey[0]).startsWith('/academics/goals'),
+      });
       try {
         localStorage.removeItem(`academic-record-note:${user?.organizationId}:${user?.id}:${id}`);
       } catch {

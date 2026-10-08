@@ -37,6 +37,8 @@ import { AccountController, AdminAccountController } from './accounts/accounts.c
 import { AccountsService } from './accounts/accounts.service';
 import { AcademicsController } from './academics/academics.controller';
 import { AcademicsService } from './academics/academics.service';
+import { AcademicGoalsController } from './academics/goals.controller';
+import { AcademicGoalsService } from './academics/goals.service';
 @Controller('health')
 class HealthController {
   constructor(private db: PrismaService) {}
@@ -116,6 +118,7 @@ class CatalogController {
     AccountController,
     AdminAccountController,
     AcademicsController,
+    AcademicGoalsController,
   ],
   providers: [
     PrismaService,
@@ -139,6 +142,7 @@ class CatalogController {
     JudgeGateway,
     AccountsService,
     AcademicsService,
+    AcademicGoalsService,
   ],
 })
 export class AppModule {}

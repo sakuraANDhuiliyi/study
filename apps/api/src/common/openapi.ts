@@ -3,6 +3,7 @@ import type { OpenAPIObject } from '@nestjs/swagger';
 import * as a from '../assessment/assessment.schemas';
 import * as c from '../communication/communication.schemas';
 import * as academic from '../academics/academics.schemas';
+import * as goals from '../academics/goals.schemas';
 import { courseInput, lessonInput } from '../courses/courses.controller';
 import { newUser } from '../admin/admin.controller';
 import {
@@ -79,6 +80,9 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ['post', '/ai-authoring/drafts/{id}/commit', authoringCommitInput],
     ['post', '/ai-study/reports', createAiReportInput],
     ['patch', '/academics/preferences', academic.academicPreferencesInput],
+    ['post', '/academics/goals', goals.academicGoalCreate],
+    ['patch', '/academics/goals/{id}', goals.academicGoalPatch],
+    ['delete', '/academics/goals/{id}', goals.academicGoalDelete],
     ['post', '/academics/modules/{id}/evaluate', academic.academicEvaluationInput],
     ['patch', '/academics/records/{id}', academic.academicRecordPatch],
     ['post', '/academics/admin/subjects', academic.academicSubjectCreate],
@@ -259,6 +263,16 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ];
   const aiExport = doc.paths['/api/ai-study/reports/{id}/export']?.get;
   const academicRecords = doc.paths['/api/academics/records']?.get;
+  const academicGoals = doc.paths['/api/academics/goals']?.get;
+  if (academicGoals)
+    academicGoals.parameters = [
+      ...(academicGoals.parameters || []),
+      {
+        in: 'query',
+        name: 'status',
+        schema: { type: 'string', enum: ['active', 'archived', 'all'], default: 'active' },
+      },
+    ];
   if (academicRecords)
     academicRecords.parameters = [
       ...(academicRecords.parameters || []),

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Alert, App, Button, Input, Popconfirm, Select } from 'antd';
 import { ApiError, send } from '../../api';
 import { useAuth } from '../../auth';
@@ -15,6 +16,8 @@ export function RecordEditor({
   onRefresh: () => Promise<LearningRecord | undefined>;
 }) {
   const { user } = useAuth();
+  const client = useQueryClient();
+  const scope = [user?.organizationId, user?.id, user?.role].join(':');
   const storageKey = `academic-record-note:${user?.organizationId}:${user?.id}:${record.id}`;
   const [draft] = useState(() => {
     try {
@@ -96,6 +99,10 @@ export function RecordEditor({
         }
       }
       onSaved(saved);
+      void client.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[1] === scope && String(query.queryKey[0]).startsWith('/academics/goals'),
+      });
       message.success('学习记录已保存');
     } catch (err) {
       if (!live.current) return;

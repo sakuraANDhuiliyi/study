@@ -9,6 +9,7 @@ import { EmptyState, PageTitle, Panel, QueryState, useUnsavedWarning } from '../
 import { ModuleFields, formValues } from '../components/academics/ModuleForm';
 import { ResultView } from '../components/academics/ResultView';
 import { RecordEditor } from '../components/academics/RecordEditor';
+import { GoalCreateButton } from '../components/academics/Goals';
 import { kindLabels } from '../components/academics/types';
 import type { LearningModule, LearningRecord, LearningResult } from '../components/academics/types';
 import '../academics.css';
@@ -136,7 +137,12 @@ function Workbench({ id }: { id: string }) {
               eyebrow={kindLabels[module.kind]}
               title={module.title}
               description={module.description}
-              extra={<Tag color="blue">约 {module.estimatedMinutes} 分钟</Tag>}
+              extra={
+                <Space wrap>
+                  <Tag color="blue">约 {module.estimatedMinutes} 分钟</Tag>
+                  <GoalCreateButton module={module} />
+                </Space>
+              }
             />
             <div className="academic-workspace-grid">
               <aside className="academic-guidance">

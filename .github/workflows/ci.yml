@@ -7,6 +7,7 @@ jobs:
       DATABASE_URL: postgresql://lms:lms_local_only@127.0.0.1:55432/zhixue_review_ci?schema=public
       TEST_BASE_URL: http://127.0.0.1:3001
       TEST_API_URL: http://127.0.0.1:3001/api
+      WEB_BASE_URL: http://localhost:5173
     services:
       postgres:
         image: postgres:17
@@ -47,6 +48,7 @@ jobs:
           npm run test:algorithms
           npm run test:accounts
           npm run test:academics
+          npm run test:academic-goals
           npm run test:clean-start
       - name: Browser workflow verification
         run: |

@@ -16,6 +16,7 @@ import { useAuth } from '../auth';
 import { date, useData } from '../api';
 import { EmptyState, PageTitle, Panel, QueryState } from '../components/shared';
 import { LearningPreferences } from '../components/academics/Preferences';
+import { LearningGoals } from '../components/academics/Goals';
 import { kindLabels } from '../components/academics/types';
 import type { AcademicHomeData, Catalog, ModuleSummary } from '../components/academics/types';
 import '../academics.css';
@@ -136,6 +137,7 @@ function LearningCenter({ home }: { home: boolean }) {
                 </div>
               </div>
             </section>
+            <LearningGoals modules={catalog.data?.modules || []} />
             <div className="academic-quicklinks">
               <Link to="/planner">
                 <CalendarDays size={19} />

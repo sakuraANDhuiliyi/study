@@ -71,6 +71,21 @@ export type AcademicHomeData = Preferences & {
   recentRecords: LearningRecord[];
   recommendations: ModuleSummary[];
 };
+export type LearningGoal = {
+  id: string;
+  moduleId: string;
+  title: string;
+  targetCount: number;
+  dueDate: string | null;
+  archived: boolean;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+  progressCount: number;
+  completed: boolean;
+  unit: '次' | '题';
+  overdue: boolean;
+};
 export const kindLabels: Record<ModuleKind, string> = {
   calculator: '计算实验',
   quiz: '概念练习',

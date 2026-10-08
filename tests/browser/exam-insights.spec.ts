@@ -41,7 +41,7 @@ test('Teacher sees real item analysis and option frequencies at desktop and 320p
   await page.screenshot({ path: 'test-results/exam-item-analysis-mobile.png', fullPage: true });
 
   const studentContext = await browser.newContext({
-    baseURL: process.env.WEB_BASE_URL || 'http://localhost:5174',
+    baseURL: process.env.WEB_BASE_URL || new URL(page.url()).origin,
   });
   const studentPage = await studentContext.newPage();
   await login(studentPage, 'student');
