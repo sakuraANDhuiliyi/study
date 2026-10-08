@@ -297,6 +297,94 @@ export const scienceModules: StudyModule[] = [
     resources: [open('biology-2e/pages/12-2-characteristics-and-traits', 'OpenStax：遗传性状')],
   }),
   m({
+    id: 'population-genetics',
+    title: '群体等位基因频率与模型期望',
+    kind: 'calculator',
+    subjectIds: [...science, 'subject-agriculture'],
+    tags: ['生物', '群体遗传', 'Hardy–Weinberg'],
+    estimatedMinutes: 25,
+    description:
+      '从 AA、Aa、aa 三种观察计数计算等位基因频率，逐行比较 Hardy–Weinberg 理想随机结合模型的期望数量与频率。',
+    learningObjectives: [
+      '由二倍体基因型计数得到 A/a 的份数与频率',
+      '用 p²、2pq、q² 计算模型期望，并保留小数数量',
+      '区分观察差值、模型假设与统计结论',
+    ],
+    concepts: [
+      {
+        title: '个体数与等位基因份数',
+        content:
+          'N 是三种基因型计数之和；同一位点的等位基因总份数为 2N。每个 AA 提供两份 A，每个 Aa 各提供一份 A 和 a，每个 aa 提供两份 a。因此 p=(2AA+Aa)/(2N)，q=(2aa+Aa)/(2N)。A/a 只是标签，不要求显隐性关系。',
+      },
+      {
+        title: '从频率到模型期望',
+        content:
+          '把两份等位基因视为按 p、q 独立随机结合：AA 对应 p²，Aa 对应 pq+qp，aa 对应 q²。三者之和为1；各自乘以 N 得到期望个体数。期望是平均数量，可以小于1或不是整数，不应先取整再比较。',
+      },
+      {
+        title: '模型与观察的界线',
+        content:
+          '本实验针对二倍体、常染色体、双等位基因位点。理想跨代稳定还要求随机交配、大群体以及无选择、突变和迁移等条件。观察与期望相差多少只是本次算术比较，不是显著性检验，也不据此判断群体达标或预测个人性状。',
+      },
+    ],
+    instructions: [
+      '输入三种基因型的观察个体数：每项为0至1000000的整数，总和必须大于0。',
+      '先手工算 N、A 与 a 的份数，核对两类等位基因份数之和是否为 2N。',
+      '用未舍入的 p、q 计算三种期望频率，再乘以 N；核对频率和为1、期望数量和为 N。',
+      '逐行阅读观察减期望的差值，再对照分类柱状图；零高度仍是一项有效结果。',
+      '载入小样本或稀有等位基因示例，解释为何期望会出现小数，并把模型条件写入学习笔记。',
+    ],
+    fields: [
+      { ...n('countAA', 'AA 观察计数', 0, 1e6), step: 1 },
+      { ...n('countAa', 'Aa 观察计数', 0, 1e6), step: 1 },
+      { ...n('countaa', 'aa 观察计数', 0, 1e6), step: 1 },
+    ],
+    defaultValues: { countAA: 36, countAa: 48, countaa: 16 },
+    examples: [
+      {
+        title: '比例吻合的课堂样本',
+        values: { countAA: 36, countAa: 48, countaa: 16 },
+        explanation:
+          '100个体提供120份 A 和80份 a；p=0.6、q=0.4，模型期望为36、48、16。三行差值为0只说明这组数字吻合，不证明真实群体满足全部模型条件。',
+      },
+      {
+        title: '两类纯合个体',
+        values: { countAA: 50, countAa: 0, countaa: 50 },
+        explanation:
+          'A 与 a 各100份，所以 p=q=0.5。模型期望为25、50、25，计数差为25、−50、25；相同等位基因频率并不决定观察到的基因型组成。',
+      },
+      {
+        title: '一个杂合个体',
+        values: { countAA: 0, countAa: 1, countaa: 0 },
+        explanation:
+          'N=1 时仍可核算 p=q=0.5，模型期望为0.25、0.5、0.25。它们不是把一个个体拆开，而是展示模型平均数量；小样本不满足大群体理想条件。',
+      },
+      {
+        title: '仅有 A 等位基因',
+        values: { countAA: 12, countAa: 0, countaa: 0 },
+        explanation: 'p=1、q=0，期望为12、0、0；检查零频率与零柱形仍保留在表格中。',
+      },
+      {
+        title: '仅有 a 等位基因',
+        values: { countAA: 0, countAa: 0, countaa: 12 },
+        explanation: '交换上一组的 A/a 标签，得到 p=0、q=1，期望为0、0、12。',
+      },
+      {
+        title: '稀少的 a 等位基因',
+        values: { countAA: 999999, countAa: 1, countaa: 0 },
+        explanation:
+          '100万个体中只有一份 a，q=0.0000005；aa 的模型期望仍为0.00000025个，不能提前把很小的频率取整为0。观察 aa 为0与模型期望非零并不矛盾。',
+      },
+    ],
+    resources: [
+      open('biology-2e/pages/19-1-population-evolution', 'OpenStax：群体演化与模型条件'),
+      {
+        title: 'Coop：等位基因与基因型频率',
+        url: 'https://bio.libretexts.org/Bookshelves/Genetics/Population_and_Quantitative_Genetics_%28Coop%29/02%3A_Allele_and_Genotype_Frequencies',
+      },
+    ],
+  }),
+  m({
     id: 'geography-lab',
     title: '经纬度与球面距离',
     kind: 'calculator',

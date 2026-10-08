@@ -22,6 +22,7 @@ const fields: Record<string, string[]> = {
   'chemistry-balance': ['equation'],
   'chemistry-solution': ['mass', 'molarMass', 'volumeMl', 'targetConcentration', 'targetVolumeMl'],
   'genetics-lab': ['parentA', 'parentB'],
+  'population-genetics': ['countAA', 'countAa', 'countaa'],
   'geography-lab': ['lat1', 'lon1', 'lat2', 'lon2'],
   'environment-lab': ['flow1', 'concentration1', 'flow2', 'concentration2', 'removalPercent'],
   'agriculture-lab': ['area', 'et0', 'kc', 'rain', 'efficiency'],
@@ -805,6 +806,99 @@ function geneticsTool(v: Inputs): StudyResult {
   );
 }
 
+function populationGeneticsTool(v: Inputs): StudyResult {
+  const observed = [
+    num(v, 'countAA', 0, 1e6, true),
+    num(v, 'countAa', 0, 1e6, true),
+    num(v, 'countaa', 0, 1e6, true),
+  ];
+  const total = observed[0] + observed[1] + observed[2];
+  if (total === 0) fail('AA、Aa、aa 的观察计数总和必须大于0');
+  const alleleA = 2 * observed[0] + observed[1],
+    allelea = 2 * observed[2] + observed[1],
+    p = alleleA / (2 * total),
+    q = allelea / (2 * total);
+  const genotypes = ['AA', 'Aa', 'aa'];
+  // These are the integer numerators of p², 2pq, q². Every intermediate is
+  // below 2^53 for the bounded counts. The equivalent fractions avoid a tiny
+  // cancellation residual for exact examples without rounding rare alleles to zero.
+  const numerators = [alleleA * alleleA, 2 * alleleA * allelea, allelea * allelea];
+  const denominator = 4 * total;
+  const rows = genotypes.map((genotype, i) => {
+    const expectedCount = numerators[i] / denominator;
+    const countDifference = (observed[i] * denominator - numerators[i]) / denominator;
+    return {
+      genotype,
+      observedCount: observed[i],
+      observedFrequency: r(observed[i] / total),
+      expectedCount: r(expectedCount),
+      expectedFrequency: r(numerators[i] / (denominator * total)),
+      countDifference: r(countDifference),
+      frequencyDifference: r(countDifference / total),
+    };
+  });
+  const output = result(
+    '已按观察计数计算等位基因频率与 Hardy–Weinberg 模型期望；差值用于课堂比较。',
+    [
+      metric('个体总数 N', total),
+      metric('A 等位基因数', alleleA),
+      metric('a 等位基因数', allelea),
+      { label: 'A 频率 p', value: r(p) },
+      { label: 'a 频率 q', value: r(q) },
+    ],
+    [
+      {
+        title: '等位基因计数',
+        content: `共有 ${total} 个二倍体个体，在这个位点共有 ${2 * total} 份等位基因。A 的份数为 2×${observed[0]}+${observed[1]}=${alleleA}，a 的份数为 2×${observed[2]}+${observed[1]}=${allelea}。分别除以 2N 得到 p 和 q；两者相加为1。`,
+        status: 'info',
+      },
+      {
+        title: '随机结合模型',
+        content:
+          '在二倍体、同一常染色体位点仅有 A/a 两种等位基因的课堂模型中，按当前 p、q 独立随机结合，AA、Aa、aa 的期望频率分别为 p²、2pq、q²。Aa 包含先取 A 后取 a 与先取 a 后取 A 两种顺序。期望频率乘以 N 得到期望个体数。',
+        status: 'info',
+      },
+      {
+        title: '如何阅读差值',
+        content:
+          '差值统一为观察减期望：正数表示该行观察值较多，负数表示较少。期望数量可以是小数，它是模型平均值，不是对个体取整分配。差值为零不能证明真实群体处于平衡，非零也不能据此确定原因；本实验不进行显著性检验或能力评分。',
+        status: 'info',
+      },
+      {
+        title: '模型范围与精度',
+        content:
+          '跨代维持 Hardy–Weinberg 理想状态还依赖随机交配、足够大群体，以及无选择、突变和迁移等条件。本次仅核算给定计数对应的数学期望，不检验这些条件，也不预测个人性状或健康。A/a 是等位基因标签，不包含显隐性判断。计算使用未舍入的计数和比例，最后按有效数字展示；显示值求和可能有微小舍入差。记录中的“已完成”只表示完成一次实验。',
+        status: 'info',
+      },
+    ],
+    [
+      table(
+        '观察与模型期望',
+        [
+          ['genotype', '基因型'],
+          ['observedCount', '观察计数'],
+          ['observedFrequency', '观察频率'],
+          ['expectedCount', '模型期望计数'],
+          ['expectedFrequency', '模型期望频率'],
+          ['countDifference', '计数差（观察−期望）'],
+          ['frequencyDifference', '频率差（观察−期望）'],
+        ],
+        rows,
+      ),
+    ],
+  );
+  output.categoryChart = {
+    title: '观察计数与模型期望计数',
+    categories: genotypes,
+    series: [
+      { name: '观察计数', values: rows.map((row) => row.observedCount) },
+      { name: '模型期望计数', values: rows.map((row) => row.expectedCount) },
+    ],
+    yAxisLabel: '个体数',
+  };
+  return output;
+}
+
 function geographyTool(v: Inputs): StudyResult {
   const lat1 = num(v, 'lat1', -90, 90),
     lon1 = num(v, 'lon1', -180, 180),
@@ -1019,6 +1113,8 @@ export function evaluateScienceModule(moduleId: string, values: Inputs): StudyRe
       return chemistrySolutionTool(values);
     case 'genetics-lab':
       return geneticsTool(values);
+    case 'population-genetics':
+      return populationGeneticsTool(values);
     case 'geography-lab':
       return geographyTool(values);
     case 'environment-lab':

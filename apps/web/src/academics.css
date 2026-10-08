@@ -704,6 +704,16 @@
   font-size: 14px;
   margin: 5px 0 13px;
 }
+.academic-category-chart {
+  min-width: 0;
+  max-width: 100%;
+}
+.academic-category-caption {
+  color: #738399;
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 8px 0 0;
+}
 .academic-record-meta {
   color: #8896a8;
   font-size: 11px;

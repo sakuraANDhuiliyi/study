@@ -43,7 +43,16 @@ const major = (
   name,
   subjectId: `subject-${subject}`,
   description,
-  moduleIds: [...new Set([...modules, 'research-planning', 'study-notebook'])],
+  moduleIds: [
+    ...new Set([
+      ...modules,
+      'research-planning',
+      'study-notebook',
+      ...(['biology', 'ecology', 'agronomy', 'horticulture', 'animal-science'].includes(id)
+        ? ['population-genetics']
+        : []),
+    ]),
+  ],
 });
 export const academicMajors: MajorTemplate[] = [
   major(

@@ -51,6 +51,12 @@ export interface StudyResult {
   tables: { title: string; columns: { key: string; title: string }[]; rows: Record<string, ResultCell>[] }[];
   sections: { title: string; content: string; status?: 'success' | 'warning' | 'info' }[];
   chart?: { title: string; points: { x: number; y: number; label?: string }[] };
+  categoryChart?: {
+    title: string;
+    categories: string[];
+    series: { name: string; values: number[] }[];
+    yAxisLabel: string;
+  };
 }
 export interface SubjectTemplate {
   id: string;

@@ -49,6 +49,12 @@ export type LearningResult = {
   }[];
   sections: { title: string; content: string; status?: 'success' | 'warning' | 'info' }[];
   chart?: { title: string; points: { x: number; y: number; label?: string }[] };
+  categoryChart?: {
+    title: string;
+    categories: string[];
+    series: { name: string; values: number[] }[];
+    yAxisLabel?: string;
+  };
 };
 export type LearningRecord = {
   id: string;

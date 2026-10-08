@@ -39,6 +39,7 @@
     "test:academic-goals": "node --import tsx --test --test-concurrency=1 tests/academic-goals.integration.ts",
     "test:academic-records-export": "node --import tsx --test --test-concurrency=1 tests/academic-records-export.integration.ts",
     "test:digital-logic": "node --import tsx --test --test-concurrency=1 tests/digital-logic.integration.ts",
+    "test:population-genetics": "node --import tsx --test --test-concurrency=1 tests/population-genetics.integration.ts",
     "verify:iteration": "node scripts/verify-iteration.mjs",
     "test:algorithm-references": "node scripts/verify-algorithm-references.mjs"
   },

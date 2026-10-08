@@ -1,6 +1,7 @@
 import { Alert } from 'antd';
 import { Chart } from '../shared';
 import type { LearningResult } from './types';
+import { CategoryChart } from './CategoryChart';
 
 export function ResultView({ result }: { result: LearningResult }) {
   return (
@@ -60,6 +61,7 @@ export function ResultView({ result }: { result: LearningResult }) {
           </div>
         </section>
       ))}
+      {result.categoryChart !== undefined && <CategoryChart value={result.categoryChart} />}
       {result.chart && (
         <section>
           <h3>{result.chart.title}</h3>
