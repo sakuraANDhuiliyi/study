@@ -1,5 +1,6 @@
 import { coreAlgorithmEditorials } from './algorithms.editorials-core';
 import { extraAlgorithmEditorials } from './algorithms.editorials-extra';
+import { graphAlgorithmEditorials } from './algorithms.editorials-graphs';
 export type {
   AlgorithmEditorial,
   AlgorithmEditorialApproach,
@@ -7,7 +8,11 @@ export type {
   AlgorithmEditorialLanguage,
 } from './algorithms.editorials.types';
 
-export const algorithmEditorials = [...coreAlgorithmEditorials, ...extraAlgorithmEditorials];
+export const algorithmEditorials = [
+  ...coreAlgorithmEditorials,
+  ...extraAlgorithmEditorials,
+  ...graphAlgorithmEditorials,
+];
 
 export function getAlgorithmEditorial(problemId: string) {
   return algorithmEditorials.find((editorial) => editorial.problemId === problemId);

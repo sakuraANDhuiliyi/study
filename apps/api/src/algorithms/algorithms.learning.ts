@@ -60,9 +60,9 @@ export const algorithmPlans = [
   {
     id: 'trees-graphs',
     title: '树与图专题',
-    description: '从遍历到连通性、依赖关系和最短路，建立图建模能力。',
+    description: '从遍历、连通性和最短路走向最小生成树，区分路径最短与全图连接总权最小。',
     level: '进阶',
-    estimatedDays: 14,
+    estimatedDays: 16,
     chapters: [
       {
         title: '遍历与连通性',
@@ -73,6 +73,11 @@ export const algorithmPlans = [
         title: '依赖与带权路径',
         description: '区分拓扑顺序与最短距离，选择合适的数据结构。',
         problemIds: ['course-order', 'shortest-path'],
+      },
+      {
+        title: '全图连接与贪心',
+        description: '组合边排序与并查集，用安全边和交换论证理解最小生成树。',
+        problemIds: ['minimum-spanning-tree'],
       },
     ],
   },

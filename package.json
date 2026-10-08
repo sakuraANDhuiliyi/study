@@ -34,6 +34,7 @@
     "test:ai-study": "node --import tsx --test --test-concurrency=1 tests/ai-study.integration.ts",
     "test:ai-authoring": "node --import tsx --test --test-concurrency=1 tests/ai-authoring.integration.ts",
     "test:algorithms": "node --import tsx --test --test-concurrency=1 tests/algorithms.integration.ts",
+    "test:minimum-spanning-tree": "node --import tsx --test --test-concurrency=1 tests/minimum-spanning-tree.integration.ts",
     "test:accounts": "node --import tsx --test --test-concurrency=1 tests/accounts.integration.ts",
     "test:academics": "node --import tsx --test --test-concurrency=1 tests/academics.integration.ts",
     "test:academic-goals": "node --import tsx --test --test-concurrency=1 tests/academic-goals.integration.ts",

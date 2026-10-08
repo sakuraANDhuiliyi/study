@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { solveMstInput } from './helpers/minimum-spanning-tree-oracle';
 import { algorithmProblems, getAlgorithmProblem } from '../apps/api/src/algorithms/algorithms.catalog';
 
 // Independent reference calculations catch ambiguous prompts and incorrect expected answers.
 const solve: Record<string, (input: string) => string> = {
+  'minimum-spanning-tree': solveMstInput,
   'sum-of-two': (input) =>
     String(
       input
@@ -344,7 +346,7 @@ const solve: Record<string, (input: string) => string> = {
 };
 
 test('algorithm catalog has complete public statements, starter programs and independent answer checks', () => {
-  assert.equal(algorithmProblems.length, 18);
+  assert.equal(algorithmProblems.length, 19);
   assert.equal(new Set(algorithmProblems.map((p) => p.id)).size, algorithmProblems.length);
   assert.equal(getAlgorithmProblem('does-not-exist'), undefined);
   for (const p of algorithmProblems) {

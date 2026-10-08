@@ -1,4 +1,5 @@
 import { extraAlgorithmContents } from './algorithms.catalog-extra';
+import { graphAlgorithmContents } from './algorithms.catalog-graphs';
 
 /** Original, versioned practice content. Private cases and teaching notes stay on the server. */
 export type AlgorithmLanguage = 'cpp' | 'python' | 'javascript' | 'java';
@@ -406,20 +407,22 @@ const limitCases: Record<string, [string, string][]> = (() => {
   };
 })();
 
-export const algorithmProblems: AlgorithmProblem[] = [...contents, ...extraAlgorithmContents].map(
-  ({ hiddenCases, ...problem }, index) => ({
-    ...problem,
-    number: index + 1,
-    timeLimitMs: 2000,
-    memoryLimitMb: 256,
-    starterCode: { ...starterCode },
-    testCases: [
-      ...problem.examples.map(({ input, output }) => ({ input, output, hidden: false })),
-      ...hiddenCases.map(([input, output]) => ({ input, output, hidden: true })),
-      ...(limitCases[problem.id] ?? []).map(([input, output]) => ({ input, output, hidden: true })),
-    ],
-  }),
-);
+export const algorithmProblems: AlgorithmProblem[] = [
+  ...contents,
+  ...extraAlgorithmContents,
+  ...graphAlgorithmContents,
+].map(({ hiddenCases, ...problem }, index) => ({
+  ...problem,
+  number: index + 1,
+  timeLimitMs: 2000,
+  memoryLimitMb: 256,
+  starterCode: { ...starterCode },
+  testCases: [
+    ...problem.examples.map(({ input, output }) => ({ input, output, hidden: false })),
+    ...hiddenCases.map(([input, output]) => ({ input, output, hidden: true })),
+    ...(limitCases[problem.id] ?? []).map(([input, output]) => ({ input, output, hidden: true })),
+  ],
+}));
 
 export function getAlgorithmProblem(id: string): AlgorithmProblem | undefined {
   return algorithmProblems.find((problem) => problem.id === id);
