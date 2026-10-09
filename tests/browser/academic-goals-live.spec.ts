@@ -438,6 +438,7 @@ test('真实学习目标随完成记录增减、并发编辑保留输入，归�
     try {
       await db.$transaction([
         db.academicGoal.deleteMany({ where: { userId: { in: ids } } }),
+        db.academicsEvaluationAttempt.deleteMany({ where: { userId: { in: ids } } }),
         db.academicsRecord.deleteMany({ where: { userId: { in: ids } } }),
         db.academicsPreference.deleteMany({ where: { userId: { in: ids } } }),
         db.organizationJoinRequest.deleteMany({

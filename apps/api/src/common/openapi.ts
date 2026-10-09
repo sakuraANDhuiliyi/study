@@ -6,6 +6,8 @@ import * as academic from '../academics/academics.schemas';
 import * as goals from '../academics/goals.schemas';
 import { academicRecordExportInput } from '../academics/records-export.schemas';
 import * as programming from '../programming/programming.schemas';
+import { programmingBackupSchema } from '../programming/programming.backup';
+import * as training from '../algorithms/training-plan.schemas';
 import * as creative from '../programming/creative.schemas';
 import * as forum from '../algorithm-forum/algorithm-forum.schemas';
 import { courseInput, lessonInput } from '../courses/courses.controller';
@@ -67,6 +69,11 @@ function schema(value: z.ZodTypeAny): any {
     return out;
   }
   if (d.typeName === 'ZodBoolean') return { type: 'boolean' };
+  if (d.typeName === 'ZodLiteral')
+    return {
+      type: typeof d.value === 'number' && Number.isInteger(d.value) ? 'integer' : typeof d.value,
+      enum: [d.value],
+    };
   if (d.typeName === 'ZodRecord') return { type: 'object', additionalProperties: schema(d.valueType) };
   if (d.typeName === 'ZodEnum') return { type: 'string', enum: d.values };
   if (d.typeName === 'ZodArray')
@@ -80,6 +87,9 @@ function schema(value: z.ZodTypeAny): any {
 }
 export function enrichOpenAPI(doc: OpenAPIObject) {
   const map: [string, string, z.ZodTypeAny][] = [
+    ['post', '/algorithms/training-plans', training.trainingPlanCreate],
+    ['patch', '/algorithms/training-plans/{id}', training.trainingPlanPatch],
+    ['delete', '/algorithms/training-plans/{id}', training.trainingPlanDelete],
     ['post', '/algorithm-forum/posts', forum.forumPostInput],
     ['patch', '/algorithm-forum/posts/{id}', forum.forumPostUpdateInput],
     ['delete', '/algorithm-forum/posts/{id}', forum.forumRevisionInput],
@@ -90,6 +100,8 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ['post', '/programming/creative/{id}/preview', creative.creativeRevisionInput],
     ['post', '/programming/creative/{id}/projects', creative.creativeProjectInput],
     ['post', '/programming/projects', programming.programmingCreateInput],
+    ['post', '/programming/projects/import', programmingBackupSchema],
+    ['post', '/programming/projects/{id}/duplicate', programming.programmingDuplicateInput],
     ['patch', '/programming/projects/{id}', programming.programmingUpdateInput],
     ['post', '/programming/projects/{id}/versions', programming.programmingVersionInput],
     ['post', '/programming/projects/{id}/restore', programming.programmingRestoreInput],
@@ -272,6 +284,28 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       ];
   }
   const programmingList = doc.paths['/api/programming/projects']?.get;
+  const trainingList = doc.paths['/api/algorithms/training-plans']?.get;
+  if (trainingList)
+    trainingList.description =
+      '返回本人当前学习空间最多20份私人计划、公开题目摘要及配额。进度取本空间本人正式提交通过的题目，包含创建计划前已通过的题目，样例和自定义运行不计入。';
+  const programmingBackup = doc.paths['/api/programming/projects/{id}/backup']?.get;
+  if (programmingBackup)
+    programmingBackup.description =
+      '下载格式为 zhixue-programming、版本为1的 JSON 项目备份，仅含名称、模板标识与源码文件，不含用户身份、历史、AI候选或预览凭据；可导入为独立新项目。';
+  const programmingDraftList = doc.paths['/api/programming/projects/{id}/ai-drafts']?.get;
+  if (programmingDraftList)
+    programmingDraftList.description =
+      '返回最多 20 条候选摘要，不含源码 files；查看单条候选详情时获取源码。仅存在 pending 候选时需要轮询。';
+  const algorithmDraft = doc.paths['/api/algorithms/problems/{id}/draft']?.put;
+  if (algorithmDraft) {
+    algorithmDraft.description =
+      '必须携带最近读取的 revision；尚无云端草稿时使用 0。成功返回新 revision，旧版本返回 409，缺少版本返回 400。冲突后应先比较云端与本地内容，再由用户选择保存。';
+    algorithmDraft.responses['409'] = { description: '草稿已更新；本次写入未覆盖云端内容' };
+  }
+  const academicEvaluation = doc.paths['/api/academics/modules/{id}/evaluate']?.post;
+  if (academicEvaluation)
+    academicEvaluation.description =
+      '计算前原子预占每账号 20 次/分钟、200 次/滚动 24 小时及可配置来源 IP 分钟配额；失败尝试也计入，删除记录或切换学习空间不返还次数。';
   if (programmingList)
     programmingList.parameters = [
       ...(programmingList.parameters || []),

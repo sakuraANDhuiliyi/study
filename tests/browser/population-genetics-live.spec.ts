@@ -358,6 +358,7 @@ test('群体遗传真实自由学习、小数分组图、记录笔记和完整�
         const organizationId = own.personalOrganizationId!;
         await db.$transaction([
           db.academicGoal.deleteMany({ where: { userId: own.id } }),
+          db.academicsEvaluationAttempt.deleteMany({ where: { userId: own.id } }),
           db.academicsRecord.deleteMany({ where: { userId: own.id } }),
           db.academicsPreference.deleteMany({ where: { userId: own.id } }),
           db.passwordRecovery.deleteMany({ where: { userId: own.id } }),

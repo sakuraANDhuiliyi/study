@@ -53,6 +53,7 @@ async function setup(page: Page, configured = true, role = 'STUDENT', profession
   const analyses: any[] = [];
   const requests: { path: string; method: string; body: any }[] = [];
   let draft: any = null;
+  let nextDraftSave: Promise<void> | null = null;
   let failAnalysis = false;
   let account: string | null = 'algorithm-fixture';
   const user = () => ({
@@ -75,7 +76,7 @@ async function setup(page: Page, configured = true, role = 'STUDENT', profession
   let nextLearningSave: Promise<void> | null = null;
   const json = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-  await page.route('**/api/**', async (route) => {
+  await page.context().route('**/api/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
@@ -229,8 +230,14 @@ async function setup(page: Page, configured = true, role = 'STUDENT', profession
     }
     if (path === '/api/algorithms/problems/two-sum') return json(route, { ...problem, draft });
     if (path.endsWith('/draft')) {
-      draft = { ...body, updatedAt: new Date().toISOString() };
-      return json(route, draft);
+      if (body.revision !== (draft?.revision ?? 0))
+        return json(route, { message: '草稿已在其他页面更新' }, 409);
+      draft = { ...body, revision: body.revision + 1, updatedAt: new Date().toISOString() };
+      const saved = { ...draft };
+      const hold = nextDraftSave;
+      nextDraftSave = null;
+      if (hold) await hold;
+      return json(route, saved);
     }
     if (path.endsWith('/submissions') && request.method() === 'POST') {
       const custom = Object.hasOwn(body, 'stdin');
@@ -299,6 +306,14 @@ async function setup(page: Page, configured = true, role = 'STUDENT', profession
     },
     setServerDraft: (value: any) => {
       draft = value;
+    },
+    serverDraft: () => draft,
+    holdNextDraftSave: () => {
+      let release!: () => void;
+      nextDraftSave = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return release;
     },
     concurrentNoteUpdate: () => {
       learning = {
@@ -453,9 +468,14 @@ test('非学生身份不能直接访问算法页面', async ({ page }) => {
   await expect(page.getByRole('link', { name: '算法练习', exact: true })).toHaveCount(0);
 });
 
-test('未同步本机草稿优先于较晚完成的旧服务器保存', async ({ page }) => {
+test('未知版本的旧离线草稿保留本机代码并暂停自动覆盖，用户选择后才同步', async ({ page }) => {
   const fixture = await setup(page);
-  fixture.setServerDraft({ language: 'python', code: '旧服务器代码', updatedAt: '2026-10-08T08:00:02.000Z' });
+  fixture.setServerDraft({
+    language: 'python',
+    code: '其他窗口的新云端代码',
+    revision: 0,
+    updatedAt: '2026-10-08T08:00:02.000Z',
+  });
   await page.addInitScript(() => {
     localStorage.setItem(
       'algorithm-draft:algorithm-fixture-org:algorithm-fixture:two-sum',
@@ -469,11 +489,218 @@ test('未同步本机草稿优先于较晚完成的旧服务器保存', async ({
   });
   await page.goto('/algorithms/two-sum');
   await expect(page.getByLabel('算法代码编辑器')).toHaveValue('最新未同步代码');
+  await expect(page.getByLabel('冲突中的云端草稿')).toHaveValue('其他窗口的新云端代码');
+  await page.waitForTimeout(1400);
+  expect(fixture.requests.filter((item) => item.path.endsWith('/draft'))).toHaveLength(0);
+  // Reload cannot turn an unversioned legacy cache into permission to overwrite revision 0.
+  await page.reload();
+  await expect(page.getByLabel('冲突中的本机草稿')).toHaveValue('最新未同步代码');
+  await page.getByRole('button', { name: '保留本机并同步', exact: true }).click();
   await expect
     .poll(() =>
       fixture.requests.some((item) => item.path.endsWith('/draft') && item.body.code === '最新未同步代码'),
     )
     .toBeTruthy();
+  expect(fixture.requests.find((item) => item.path.endsWith('/draft'))?.body.revision).toBe(0);
+  await expect.poll(() => fixture.serverDraft().revision).toBe(1);
+});
+
+test('已知旧版本的离线副本不能自动覆盖较新云端，选择本机仍受第二次冲突保护', async ({ page }) => {
+  const fixture = await setup(page);
+  fixture.setServerDraft({ language: 'python', code: '云端版本2', revision: 2 });
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'algorithm-draft:algorithm-fixture-org:algorithm-fixture:two-sum',
+      JSON.stringify({
+        language: 'python',
+        codes: { python: '旧离线编辑' },
+        unsynced: true,
+        baseRevision: 1,
+        updatedAt: '2099-01-01',
+      }),
+    ),
+  );
+  await page.goto('/algorithms/two-sum');
+  await expect(page.getByLabel('冲突中的云端草稿')).toHaveValue('云端版本2');
+  await page.waitForTimeout(1400);
+  expect(fixture.requests.filter((item) => item.path.endsWith('/draft'))).toHaveLength(0);
+  fixture.setServerDraft({ language: 'python', code: '云端版本3', revision: 3 });
+  await page.getByRole('button', { name: '保留本机并同步', exact: true }).click();
+  await expect(page.getByLabel('冲突中的云端草稿')).toHaveValue('云端版本3');
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('旧离线编辑');
+  expect(fixture.serverDraft().code).toBe('云端版本3');
+  await page.getByRole('button', { name: '保留本机并同步', exact: true }).click();
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(4);
+  expect(
+    fixture.requests.filter((item) => item.path.endsWith('/draft')).map((item) => item.body.revision),
+  ).toEqual([2, 3]);
+});
+
+test('匹配版本的离线编辑正常恢复同步，不以客户端时间决定覆盖权', async ({ page }) => {
+  const fixture = await setup(page);
+  fixture.setServerDraft({
+    language: 'python',
+    code: '已同步旧代码',
+    revision: 4,
+    updatedAt: '2026-10-08T08:00:02.000Z',
+  });
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'algorithm-draft:algorithm-fixture-org:algorithm-fixture:two-sum',
+      JSON.stringify({
+        language: 'python',
+        codes: { python: '本机离线编辑' },
+        unsynced: true,
+        baseRevision: 4,
+        updatedAt: '2025-01-01',
+      }),
+    ),
+  );
+  await page.goto('/algorithms/two-sum');
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('本机离线编辑');
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(5);
+  expect(fixture.serverDraft().code).toBe('本机离线编辑');
+  await expect(page.getByLabel('冲突中的云端草稿')).toHaveCount(0);
+});
+
+test('打开期间云端更新返回409，本机编辑保持，采用云端不产生覆盖请求', async ({ page }) => {
+  const fixture = await setup(page);
+  fixture.setServerDraft({ language: 'cpp', code: '已读取代码', revision: 1 });
+  await page.goto('/algorithms/two-sum');
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('已读取代码');
+  fixture.setServerDraft({ language: 'python', code: '另一窗口刚保存的代码', revision: 2 });
+  await page.getByLabel('算法代码编辑器').fill('我的未同步代码');
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect(page.getByLabel('冲突中的云端草稿')).toHaveValue('另一窗口刚保存的代码');
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('我的未同步代码');
+  await page.getByLabel('算法代码编辑器').fill('冲突期间继续修改');
+  await page.waitForTimeout(1400);
+  expect(fixture.requests.filter((item) => item.path.endsWith('/draft'))).toHaveLength(1);
+  expect(fixture.serverDraft().code).toBe('另一窗口刚保存的代码');
+  await page.getByRole('button', { name: '采用云端草稿', exact: true }).click();
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('另一窗口刚保存的代码');
+  await expect(page.getByText('草稿已同步', { exact: true })).toBeVisible();
+  expect(fixture.requests.filter((item) => item.path.endsWith('/draft'))).toHaveLength(1);
+});
+
+test('同账号两个窗口同时编辑时后保存者得到冲突，保留代码并显式选择', async ({ page, context }) => {
+  const fixture = await setup(page);
+  fixture.setServerDraft({ language: 'cpp', code: '共同读取的草稿', revision: 1 });
+  await page.goto('/algorithms/two-sum');
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('共同读取的草稿');
+  const second = await context.newPage();
+  await second.goto('/algorithms/two-sum');
+  await expect(second.getByLabel('算法代码编辑器')).toHaveValue('共同读取的草稿');
+  await page.getByLabel('算法代码编辑器').fill('第一个窗口的新代码');
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect(page.getByText('草稿已同步', { exact: true })).toBeVisible();
+  await second.getByLabel('算法代码编辑器').fill('第二个窗口的本机编辑');
+  await second.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect(second.getByLabel('冲突中的云端草稿')).toHaveValue('第一个窗口的新代码');
+  await expect(second.getByLabel('算法代码编辑器')).toHaveValue('第二个窗口的本机编辑');
+  expect(fixture.serverDraft().code).toBe('第一个窗口的新代码');
+  await second.getByRole('button', { name: '保留本机并同步', exact: true }).click();
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(3);
+  expect(fixture.serverDraft().code).toBe('第二个窗口的本机编辑');
+  expect(
+    fixture.requests.filter((item) => item.path.endsWith('/draft')).map((item) => item.body.revision),
+  ).toEqual([1, 1, 2]);
+  await second.close();
+});
+
+test('另一窗口迟到保存响应不能清除本窗口未同步副本，刷新仍保留并比较云端', async ({ page, context }) => {
+  const fixture = await setup(page);
+  fixture.setServerDraft({ language: 'cpp', code: '共同版本', revision: 1 });
+  await page.goto('/algorithms/two-sum');
+  await expect(page.getByLabel('算法代码编辑器')).toHaveValue('共同版本');
+  const second = await context.newPage();
+  await second.goto('/algorithms/two-sum');
+  await expect(second.getByLabel('算法代码编辑器')).toHaveValue('共同版本');
+  const release = fixture.holdNextDraftSave();
+  await page.getByLabel('算法代码编辑器').fill('已到云端但响应延迟的代码');
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(2);
+  await second.getByLabel('算法代码编辑器').fill('刷新后也不能丢的本机编辑');
+  release();
+  await expect(page.getByText('草稿已同步', { exact: true })).toBeVisible();
+  const shared = await second.evaluate(() =>
+    JSON.parse(localStorage.getItem('algorithm-draft:algorithm-fixture-org:algorithm-fixture:two-sum')!),
+  );
+  expect(shared.codes.cpp).toBe('刷新后也不能丢的本机编辑');
+  // A subsequent explicit edit in the first window updates the shared cache;
+  // the second window still has its own backup for reload or navigation.
+  await page.route('**/api/algorithms/problems/two-sum/draft', (route) => route.abort());
+  await page.getByLabel('算法代码编辑器').fill('第一窗口再次编辑');
+  await second.reload();
+  await expect(second.getByLabel('算法代码编辑器')).toHaveValue('刷新后也不能丢的本机编辑');
+  await expect(second.getByLabel('冲突中的云端草稿')).toHaveValue('已到云端但响应延迟的代码');
+  await second.getByRole('button', { name: '采用云端草稿', exact: true }).click();
+  await expect(second.getByLabel('算法代码编辑器')).toHaveValue('已到云端但响应延迟的代码');
+  expect(
+    await second.evaluate(() =>
+      sessionStorage.getItem('algorithm-draft:algorithm-fixture-org:algorithm-fixture:two-sum:unsynced'),
+    ),
+  ).toBeNull();
+  await second.close();
+});
+
+test('退出后迟到的草稿响应和窗口备份不会进入另一账号的代码或版本', async ({ page }) => {
+  const fixture = await setup(page);
+  await page.goto('/algorithms/two-sum');
+  const input = page.getByLabel('算法代码编辑器');
+  await expect(input).toHaveValue(problem.starterCode.cpp);
+  const release = fixture.holdNextDraftSave();
+  await input.fill('上一账号已发送的私有代码');
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(1);
+  await input.fill('上一账号窗口内尚未发送的私有代码');
+  await loginOtherStudent(page);
+  await expect(input).toHaveValue(problem.starterCode.cpp);
+  release();
+  await input.fill('新账号自己的草稿');
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect(page.getByText('草稿已同步', { exact: true })).toBeVisible();
+  await expect(input).toHaveValue('新账号自己的草稿');
+  const drafts = await page.evaluate(() => ({
+    local: JSON.parse(
+      localStorage.getItem('algorithm-draft:algorithm-fixture-org:algorithm-fixture-b:two-sum')!,
+    ),
+    window: sessionStorage.getItem(
+      'algorithm-draft:algorithm-fixture-org:algorithm-fixture-b:two-sum:unsynced',
+    ),
+  }));
+  expect(drafts.local.codes.cpp).toBe('新账号自己的草稿');
+  expect(drafts.local.baseRevision).toBe(1);
+  expect(drafts.window).toBeNull();
+  expect(
+    fixture.requests.filter((item) => item.path.endsWith('/draft')).map((item) => item.body.revision),
+  ).toEqual([0, 0]);
+});
+
+test('保存中的新编辑排队使用上次成功版本，迟到响应保留最新代码和语言', async ({ page }) => {
+  const fixture = await setup(page);
+  await page.goto('/algorithms/two-sum');
+  const input = page.getByLabel('算法代码编辑器');
+  await expect(input).toHaveValue(problem.starterCode.cpp);
+  const release = fixture.holdNextDraftSave();
+  await input.fill('第一份代码');
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(1);
+  await page.getByRole('combobox', { name: '编程语言' }).press('ArrowDown');
+  await page.getByTitle('Python 3', { exact: true }).click();
+  await input.fill('print("最新代码")');
+  release();
+  await expect.poll(() => fixture.serverDraft()?.revision).toBe(2);
+  await expect(input).toHaveValue('print("最新代码")');
+  const writes = fixture.requests.filter((item) => item.path.endsWith('/draft'));
+  expect(writes.map((item) => item.body.revision)).toEqual([0, 1]);
+  expect(writes.at(-1)?.body.language).toBe('python');
+  const local = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('algorithm-draft:algorithm-fixture-org:algorithm-fixture:two-sum')!),
+  );
+  expect(local.baseRevision).toBe(2);
+  expect(local.unsynced).toBe(false);
+  expect(local.codes.cpp).toBe('第一份代码');
 });
 
 test('专业编辑器使用本地 Monaco、快捷键、主题、全屏和可调分栏', async ({ page }) => {

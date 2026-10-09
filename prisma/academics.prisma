@@ -49,3 +49,17 @@ model AcademicsRecord {
   @@index([organizationId,userId,moduleId,createdAt,id])
   @@index([userId])
 }
+
+// Requests are charged before computing, independently of whether a record is saved.
+model AcademicsEvaluationAttempt {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  ipHash String? @db.VarChar(64)
+  reservedUntil DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([userId,createdAt])
+  @@index([ipHash,createdAt])
+  @@index([organizationId,userId,reservedUntil])
+  @@index([createdAt])
+}

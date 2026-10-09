@@ -331,6 +331,7 @@ test('真实个人注册、专业与实验记录持久化、组织审批及退�
       ),
     ];
     await db.$transaction([
+      db.academicsEvaluationAttempt.deleteMany({ where: { userId: { in: ids } } }),
       db.academicsRecord.deleteMany({ where: { userId: { in: ids } } }),
       db.academicsPreference.deleteMany({ where: { userId: { in: ids } } }),
       db.organizationJoinRequest.deleteMany({

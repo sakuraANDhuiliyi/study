@@ -14,6 +14,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
+import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaService } from '../common/prisma.service';
 import { AuthService } from '../auth/auth.service';
@@ -122,9 +123,15 @@ export class CoursesController {
       pageSize: p.pageSize,
     };
   }
-  private async teacher(a: Actor, id: string) {
-    const u = await this.db.user.findFirst({
-      where: { id, organizationId: a.organizationId, active: true, roles: { some: { roleId: 'TEACHER' } } },
+  private async teacher(a: Actor, id: string, tx: Prisma.TransactionClient = this.db) {
+    const u = await tx.user.findFirst({
+      where: {
+        id,
+        organizationId: a.organizationId,
+        accountMode: 'ORGANIZATION',
+        active: true,
+        roles: { some: { roleId: 'TEACHER' } },
+      },
     });
     if (!u) throw new BadRequestException('负责教师必须是本机构的启用教师');
   }
@@ -136,6 +143,8 @@ export class CoursesController {
     await this.teacher(a, teacherId);
     await this.term(a, d.termId);
     const c = await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${teacherId} FOR UPDATE`;
+      await this.teacher(a, teacherId, tx);
       const course = await tx.course.create({
         data: {
           organizationId: a.organizationId,
@@ -249,6 +258,8 @@ export class CoursesController {
       throw new BadRequestException('请先添加至少一个课时');
     const c = await this.db.$transaction(async (tx) => {
       if (d.teacherId && d.teacherId !== before.teacherId) {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${d.teacherId} FOR UPDATE`;
+        await this.teacher(a, d.teacherId, tx);
         await tx.teachingAssignment.updateMany({
           where: { courseId: id, userId: before.teacherId },
           data: { active: false },
@@ -467,31 +478,34 @@ export class CoursesController {
       .object({ userId: z.string(), kind: z.enum(['teacher', 'student']).default('student') })
       .parse(body);
     if (d.kind === 'teacher') this.auth.require(a, 'course.admin');
-    const u = await this.db.user.findFirst({
-      where: {
-        id: d.userId,
-        organizationId: a.organizationId,
-        active: true,
-        roles: { some: { roleId: d.kind === 'teacher' ? 'TEACHER' : 'STUDENT' } },
-      },
-    });
-    if (!u) throw new BadRequestException('成员不属于本机构或角色不匹配');
-    const key = { courseId_userId: { courseId: id, userId: u.id } };
-    const result =
-      d.kind === 'student'
-        ? await this.db.enrollment.upsert({
+    const result = await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${d.userId} FOR UPDATE`;
+      const u = await tx.user.findFirst({
+        where: {
+          id: d.userId,
+          organizationId: a.organizationId,
+          accountMode: 'ORGANIZATION',
+          active: true,
+          roles: { some: { roleId: d.kind === 'teacher' ? 'TEACHER' : 'STUDENT' } },
+        },
+      });
+      if (!u) throw new BadRequestException('成员不属于本机构或角色不匹配');
+      const key = { courseId_userId: { courseId: id, userId: u.id } };
+      return d.kind === 'student'
+        ? await tx.enrollment.upsert({
             where: key,
             create: { courseId: id, userId: u.id },
             update: { active: true },
           })
-        : await this.db.teachingAssignment.upsert({
+        : await tx.teachingAssignment.upsert({
             where: key,
             create: { courseId: id, userId: u.id },
             update: { active: true },
           });
-    await this.audit.record(a, 'membership.add', 'Course', id, { userId: u.id, kind: d.kind });
+    });
+    await this.audit.record(a, 'membership.add', 'Course', id, { userId: d.userId, kind: d.kind });
     await this.audit.notify(
-      [u.id],
+      [d.userId],
       a.organizationId,
       'MEMBERSHIP',
       '课程成员资格更新',

@@ -610,15 +610,18 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
     });
 
     await t.test('每个字段的非法类型/范围、超出分母、CSRF和管理角色均拒绝且不落库', async () => {
+      // Every failed calculation is charged; each field gets its own bounded learner batch.
+      const invalidEnvelope = await register('invalid_envelope');
       const before = await db!.academicsRecord.count();
       for (const field of fields) {
+        const invalidField = await register(`invalid_${field.toLowerCase()}`);
         const without = { ...defaults };
         delete without[field];
-        await call(personal, endpoint, 'POST', { values: without }, 400);
+        await call(invalidField, endpoint, 'POST', { values: without }, 400);
         for (const value of [-1, 0.25, 1000001, 1e100, '1', '', null, true, [], {}])
-          await call(personal, endpoint, 'POST', { values: { ...defaults, [field]: value } }, 400);
+          await call(invalidField, endpoint, 'POST', { values: { ...defaults, [field]: value } }, 400);
         if (field.includes('Total'))
-          await call(personal, endpoint, 'POST', { values: { ...defaults, [field]: 0 } }, 400);
+          await call(invalidField, endpoint, 'POST', { values: { ...defaults, [field]: 0 } }, 400);
       }
       for (const [success, total] of [
         ['aSuccess1', 'aTotal1'],
@@ -627,14 +630,14 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         ['bSuccess2', 'bTotal2'],
       ])
         await call(
-          personal,
+          invalidEnvelope,
           endpoint,
           'POST',
           { values: { ...defaults, [success]: defaults[total] + 1 } },
           400,
         );
-      await call(personal, endpoint, 'POST', { values: { ...defaults, unknown: 1 } }, 400);
-      await call(personal, endpoint, 'POST', { values: defaults, result: { score: 100 } }, 400);
+      await call(invalidEnvelope, endpoint, 'POST', { values: { ...defaults, unknown: 1 } }, 400);
+      await call(invalidEnvelope, endpoint, 'POST', { values: defaults, result: { score: 100 } }, 400);
       await call(null, endpoint, 'POST', { values: defaults }, 401);
       await call(personal, endpoint, 'POST', { values: defaults }, 403, false);
       for (const account of [admin, teacher])

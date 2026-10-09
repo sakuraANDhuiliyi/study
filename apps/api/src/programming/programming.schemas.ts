@@ -60,6 +60,7 @@ const revision = z.number().int().min(0).max(2147483646);
 export const programmingCreateInput = z
   .object({ title: text(160), templateId: z.enum(['starter', 'counter', 'todo']) })
   .strict();
+export const programmingDuplicateInput = z.object({ revision, title: text(160) }).strict();
 export const programmingUpdateInput = z
   .object({ revision, title: text(160), files: programmingFilesSchema })
   .strict();

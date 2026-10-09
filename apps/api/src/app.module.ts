@@ -31,6 +31,8 @@ import { AiAuthoringService } from './ai-authoring/ai-authoring.service';
 import { AiAuthoringGateway } from './ai-authoring/ai-authoring.gateway';
 import { AlgorithmsController } from './algorithms/algorithms.controller';
 import { AlgorithmsService } from './algorithms/algorithms.service';
+import { AlgorithmTrainingPlansController } from './algorithms/training-plan.controller';
+import { AlgorithmTrainingPlansService } from './algorithms/training-plan.service';
 import { AlgorithmAiGateway } from './algorithms/algorithm-ai.gateway';
 import { JudgeGateway } from './algorithms/judge.gateway';
 import { AccountController, AdminAccountController } from './accounts/accounts.controller';
@@ -124,6 +126,7 @@ class CatalogController {
     AiStudyController,
     AiAuthoringController,
     AlgorithmsController,
+    AlgorithmTrainingPlansController,
     AccountController,
     AdminAccountController,
     AcademicsController,
@@ -151,6 +154,7 @@ class CatalogController {
     AiAuthoringService,
     AiAuthoringGateway,
     AlgorithmsService,
+    AlgorithmTrainingPlansService,
     AlgorithmAiGateway,
     JudgeGateway,
     AccountsService,

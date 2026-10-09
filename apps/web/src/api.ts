@@ -30,6 +30,10 @@ export class ApiError extends Error {
   }
 }
 export async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
+  // A response belongs to the account and session that issued it. In-flight requests
+  // can finish after logout or a role/account change, including a new login to the same user.
+  const requestScope = sessionScope;
+  const requestCsrf = csrfToken;
   const headers = new Headers(init.headers);
   if (!(init.body instanceof FormData) && init.body) headers.set('Content-Type', 'application/json');
   if (init.method && !['GET', 'HEAD'].includes(init.method)) headers.set('x-csrf-token', csrfToken);
@@ -39,8 +43,12 @@ export async function api<T = any>(path: string, init: RequestInit = {}): Promis
     credentials: 'include',
   });
   const body = await res.json().catch(() => ({}));
+  const currentSession = requestScope === sessionScope && requestCsrf === csrfToken;
+  if (!currentSession && (path.includes('/auth/') || body.user || body.csrfToken))
+    throw new ApiError(409, '账号身份已变化，请重新打开当前页面');
   if (!res.ok) {
-    if (res.status === 401 && !path.includes('/auth/')) window.dispatchEvent(new Event('auth-expired'));
+    if (res.status === 401 && currentSession && !path.includes('/auth/'))
+      window.dispatchEvent(new Event('auth-expired'));
     const fields = body.error?.fields || body.fields;
     const details = Array.isArray(fields)
       ? fields.map((field: any) => [field.field, field.message].filter(Boolean).join(': ')).join('；')

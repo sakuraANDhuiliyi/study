@@ -8,6 +8,7 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { Prisma, type AcademicsRecord } from '@prisma/client';
+import { createHash } from 'node:crypto';
 import type { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { lockSecurityUser } from '../auth/security-transaction';
@@ -37,6 +38,10 @@ const selectedSubject = {
   revision: true,
 } as const;
 const selectedMajor = { ...selectedSubject, subjectId: true, moduleIds: true } as const;
+export function academicIpMinuteLimit() {
+  const value = Number(process.env.ACADEMICS_IP_MINUTE_LIMIT);
+  return Number.isInteger(value) && value >= 20 && value <= 100000 ? value : 120;
+}
 
 @Injectable()
 export class AcademicsService {
@@ -66,7 +71,10 @@ export class AcademicsService {
     if (!verified) throw new UnauthorizedException('登录已失效，请重新登录');
     await lockSecurityUser(tx, actor, verified);
     const user = await tx.user.findUniqueOrThrow({ where: { id: actor.id }, include: { roles: true } });
-    if (!user.roles.some((role) => role.roleId === actor.role))
+    if (
+      !user.roles.some((role) => role.roleId === actor.role) ||
+      (actor.accountMode && user.accountMode !== actor.accountMode)
+    )
       throw new UnauthorizedException('账号身份已变化');
     return user;
   }
@@ -184,45 +192,96 @@ export class AcademicsService {
     await this.access(actor);
     return publicAcademicModule(this.module(id));
   }
-  async evaluate(actor: Actor, id: string, body: unknown) {
+  private async reserveEvaluation(actor: Actor, ip?: string) {
+    const ipHash = ip
+      ? createHash('sha256')
+          .update(ip.replace(/^::ffff:/, ''))
+          .digest('hex')
+      : null;
+    // Commit admission before parsing module inputs or starting a worker. Computation failures
+    // release the record slot but keep this request charged; record deletion cannot reset it.
+    return this.db.$transaction(async (tx) => {
+      await this.current(tx, actor);
+      if (ipHash)
+        await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${`academics:ip:${ipHash}`}, 0))`;
+      const [{ now }] = await tx.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS "now"`;
+      const dayStart = new Date(now.getTime() - 86400000),
+        minuteStart = new Date(now.getTime() - 60000),
+        where = this.scope(actor);
+      const [records, pending, day, minute, ipMinute] = await Promise.all([
+        tx.academicsRecord.count({ where }),
+        tx.academicsEvaluationAttempt.count({ where: { ...where, reservedUntil: { gt: now } } }),
+        tx.academicsEvaluationAttempt.count({ where: { userId: actor.id, createdAt: { gt: dayStart } } }),
+        tx.academicsEvaluationAttempt.count({ where: { userId: actor.id, createdAt: { gt: minuteStart } } }),
+        ipHash
+          ? tx.academicsEvaluationAttempt.count({ where: { ipHash, createdAt: { gt: minuteStart } } })
+          : 0,
+      ]);
+      if (records + pending >= 5000) throw new ConflictException('学习记录已达到上限，请整理旧记录后再练习');
+      if (day >= 200 || minute >= 20 || ipMinute >= academicIpMinuteLimit())
+        throw new HttpException('练习过于频繁，请稍后再试', 429);
+      // Incremental indexed cleanup bounds work per request, including after a long idle period.
+      await tx.$executeRaw`
+        DELETE FROM "AcademicsEvaluationAttempt" WHERE "id" IN (
+          SELECT "id" FROM "AcademicsEvaluationAttempt" WHERE "createdAt" <= ${dayStart}
+          ORDER BY "createdAt" LIMIT 1000 FOR UPDATE SKIP LOCKED
+        )
+      `;
+      return tx.academicsEvaluationAttempt.create({
+        data: { ...where, ipHash, createdAt: now, reservedUntil: new Date(now.getTime() + 300000) },
+        select: { id: true },
+      });
+    });
+  }
+  async evaluate(actor: Actor, id: string, body: unknown, ip?: string) {
     await this.access(actor);
-    const input = academicEvaluationInput.parse(body),
-      module = this.module(id);
-    const result = await evaluateAcademicModule(module, input.values);
-    // PostgreSQL expands decimal exponents and adds separators when rendering JSONB.
-    // Check the actual stored envelope rather than letting a valid small JSON request hit a CHECK failure.
-    const [budget] = await this.db.$queryRaw<{ inputBytes: number; resultBytes: number }[]>`
+    const module = this.module(id),
+      attempt = await this.reserveEvaluation(actor, ip);
+    let saved = false;
+    try {
+      const input = academicEvaluationInput.parse(body);
+      const result = await evaluateAcademicModule(module, input.values);
+      // PostgreSQL expands decimal exponents and adds separators when rendering JSONB.
+      // Check the actual stored envelope rather than letting a valid small JSON request hit a CHECK failure.
+      const [budget] = await this.db.$queryRaw<{ inputBytes: number; resultBytes: number }[]>`
       SELECT octet_length(${JSON.stringify(input.values)}::jsonb::text) AS "inputBytes",
              octet_length(${JSON.stringify(result)}::jsonb::text) AS "resultBytes"
     `;
-    if (budget.inputBytes > 98304 || budget.resultBytes > 262144)
-      throw new BadRequestException('输入或计算结果过大，请减少数据数量或使用合适的数值范围');
-    const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
-    if (!fresh || fresh.organizationId !== actor.organizationId || fresh.id !== actor.id)
-      throw new ForbiddenException('当前学习会话已失效');
-    await this.access(fresh);
-    const record = await this.db.$transaction(async (tx) => {
-      await this.current(tx, actor);
-      const where = this.scope(actor),
-        now = Date.now();
-      const [all, day, minute] = await Promise.all([
-        tx.academicsRecord.count({ where }),
-        tx.academicsRecord.count({ where: { ...where, createdAt: { gte: new Date(now - 86400000) } } }),
-        tx.academicsRecord.count({ where: { ...where, createdAt: { gte: new Date(now - 60000) } } }),
-      ]);
-      if (all >= 5000) throw new ConflictException('学习记录已达到上限，请整理旧记录后再练习');
-      if (day >= 200 || minute >= 20) throw new HttpException('练习过于频繁，请稍后再试', 429);
-      return tx.academicsRecord.create({
-        data: {
-          ...where,
-          moduleId: module.id,
-          title: input.title ?? module.title,
-          values: json(input.values),
-          result: json(result),
-        },
+      if (budget.inputBytes > 98304 || budget.resultBytes > 262144)
+        throw new BadRequestException('输入或计算结果过大，请减少数据数量或使用合适的数值范围');
+      const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+      if (!fresh || fresh.organizationId !== actor.organizationId || fresh.id !== actor.id)
+        throw new ForbiddenException('当前学习会话已失效');
+      await this.access(fresh);
+      const record = await this.db.$transaction(async (tx) => {
+        await this.current(tx, fresh);
+        const where = this.scope(actor);
+        const [{ now }] = await tx.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS "now"`;
+        const all = await tx.academicsRecord.count({ where });
+        if (all >= 5000) throw new ConflictException('学习记录已达到上限，请整理旧记录后再练习');
+        const released = await tx.academicsEvaluationAttempt.updateMany({
+          where: { id: attempt.id, ...where, reservedUntil: { gt: now } },
+          data: { reservedUntil: null },
+        });
+        if (released.count !== 1) throw new ConflictException('本次计算预留已过期，请重试');
+        return tx.academicsRecord.create({
+          data: {
+            ...where,
+            moduleId: module.id,
+            title: input.title ?? module.title,
+            values: json(input.values),
+            result: json(result),
+          },
+        });
       });
-    });
-    return { record: this.recordDto(record), result };
+      saved = true;
+      return { record: this.recordDto(record), result };
+    } finally {
+      if (!saved)
+        await this.db.academicsEvaluationAttempt
+          .updateMany({ where: { id: attempt.id, ...this.scope(actor) }, data: { reservedUntil: null } })
+          .catch(() => {}); // A process/storage failure releases the slot when its five-minute lease expires.
+    }
   }
   async records(actor: Actor, query: unknown) {
     await this.access(actor);

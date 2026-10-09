@@ -451,6 +451,8 @@ test('群体遗传模型与增量迁移：独立PostgreSQL与真实HTTP验收', 
     });
 
     await t.test('非法数值、缺字段、伪造结果与错误角色或CSRF均拒绝且不落库', async () => {
+      // Split failed-input vectors into separate learners, each within 20 requests/minute.
+      const invalidLearners = await Promise.all([register('invalid_a'), register('invalid_b')]);
       const before = await db!.academicsRecord.count();
       const invalid: Record<string, unknown>[] = [
         counts(0, 0, 0),
@@ -462,8 +464,15 @@ test('群体遗传模型与增量迁移：独立PostgreSQL与真实HTTP验收', 
       for (const field of ['countAA', 'countAa', 'countaa'])
         for (const value of [-1, 0.5, 1_000_001, 1e100, '1', '', null, true, [], {}])
           invalid.push({ ...counts(1, 1, 1), [field]: value });
-      for (const values of invalid) await call(personal, endpoint, 'POST', { values }, 400);
-      await call(personal, endpoint, 'POST', { values: counts(1, 1, 1), result: { score: 100 } }, 400);
+      for (const [index, values] of invalid.entries())
+        await call(invalidLearners[index % 2], endpoint, 'POST', { values }, 400);
+      await call(
+        invalidLearners[0],
+        endpoint,
+        'POST',
+        { values: counts(1, 1, 1), result: { score: 100 } },
+        400,
+      );
       await call(null, endpoint, 'POST', { values: counts(1, 1, 1) }, 401);
       await call(personal, endpoint, 'POST', { values: counts(1, 1, 1) }, 403, false);
       for (const account of [admin, teacher])

@@ -37,6 +37,11 @@ test(
       const chunks: Buffer[] = [];
       for await (const chunk of request) chunks.push(Buffer.from(chunk));
       observed = JSON.parse(Buffer.concat(chunks).toString());
+      const editablePaths = new Set(
+        JSON.parse(observed.messages.find((message: any) => message.role === 'user').content).files.map(
+          (file: any) => file.path,
+        ),
+      );
       response.writeHead(200, { 'content-type': 'application/json' }).end(
         JSON.stringify({
           choices: [
@@ -53,10 +58,10 @@ test(
                       ? [{ path: '../index.html', content: 'unsafe' }]
                       : mode === 'notice'
                         ? [
-                            ...candidate,
+                            ...candidate.filter((file) => editablePaths.has(file.path)),
                             { path: 'Notice.txt', content: 'MODEL MUST NOT CHANGE UPSTREAM LICENSE' },
                           ]
-                        : candidate,
+                        : candidate.filter((file) => editablePaths.has(file.path)),
                 }),
               },
             },
@@ -484,6 +489,24 @@ test(
           const userRequest = JSON.parse(observed.messages.find((m: any) => m.role === 'user').content);
           assert.deepEqual(Object.keys(userRequest).sort(), ['files', 'prompt', 'title']);
           assert.ok(!userRequest.files.some((f: any) => f.path.toLowerCase() === 'notice.txt'));
+          if (item.id === 'aora-expression-lab') {
+            assert.deepEqual(userRequest.files.map((file: any) => file.path).sort(), [
+              'README.md',
+              'app.js',
+              'index.html',
+              'style.css',
+            ]);
+            for (const file of project.files.filter(
+              (file: any) =>
+                file.path.startsWith('vendor/') ||
+                ['LICENSE.txt', 'NOTICE.md', 'LICENSE-COMMERCIAL.md'].includes(file.path),
+            )) {
+              assert.deepEqual(
+                firstDraft.files.find((candidate: any) => candidate.path === file.path),
+                file,
+              );
+            }
+          }
           const wire = JSON.stringify(userRequest);
           for (const secret of [
             item.source.licenseText,

@@ -198,13 +198,19 @@ async function setup(page: Page, empty = false) {
         ...problem,
         id: problemMatch[1],
         title: problemMatch[1] === 'two-sum' ? problem.title : '二分查找',
-        draft: { language: 'cpp', code: owner === 'b' ? '// ACCOUNT_B_DRAFT' : draft, updatedAt: stamp },
+        draft: {
+          language: 'cpp',
+          code: owner === 'b' ? '// ACCOUNT_B_DRAFT' : draft,
+          revision: 0,
+          updatedAt: stamp,
+        },
         navigation: {
           previousProblemId: problemMatch[1] === 'two-sum' ? null : 'two-sum',
           nextProblemId: problemMatch[1] === 'two-sum' ? 'binary-search' : null,
         },
       });
-    if (path.endsWith('/draft')) return json(route, { ...body, updatedAt: stamp });
+    if (path.endsWith('/draft'))
+      return json(route, { ...body, revision: body.revision + 1, updatedAt: stamp });
     const listMatch = /^\/api\/algorithms\/problems\/([^/]+)\/submissions$/.exec(path);
     if (listMatch && method === 'POST' && owner) {
       const item = submission(
@@ -311,7 +317,10 @@ async function refreshHistory(page: Page) {
 }
 async function open(page: Page) {
   await page.goto('/algorithms/two-sum');
-  await page.getByRole('tab', { name: '提交记录', exact: true }).click();
+  const tab = page.getByRole('tab', { name: /提交记录/ });
+  await tab.focus();
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('group', { name: '提交记录筛选', exact: true })).toBeVisible();
 }
 async function choose(page: Page, name: string, option: string) {

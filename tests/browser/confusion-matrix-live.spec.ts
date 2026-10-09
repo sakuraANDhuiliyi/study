@@ -348,6 +348,7 @@ test('混淆矩阵真实自由学习、零分母与失衡数据、记录笔记�
         const organizationId = own.personalOrganizationId!;
         await db.$transaction([
           db.academicGoal.deleteMany({ where: { userId: own.id } }),
+          db.academicsEvaluationAttempt.deleteMany({ where: { userId: own.id } }),
           db.academicsRecord.deleteMany({ where: { userId: own.id } }),
           db.academicsPreference.deleteMany({ where: { userId: own.id } }),
           db.passwordRecovery.deleteMany({ where: { userId: own.id } }),

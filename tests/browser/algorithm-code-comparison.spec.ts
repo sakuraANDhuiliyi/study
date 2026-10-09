@@ -105,17 +105,18 @@ async function setup(
     ],
     b: [submission('history-owner-b', '// ACCOUNT_B_HISTORY\nint main() { return 3; }')],
   };
-  const drafts = new Map<string, { language: Language; code: string; updatedAt: string }>([
+  const drafts = new Map<string, { language: Language; code: string; revision: number; updatedAt: string }>([
     [
       'a:two-sum',
       {
         language: options.language ?? 'cpp',
         code: options.code ?? '// CURRENT_DRAFT\nint main() { return 0; }',
+        revision: 0,
         updatedAt: stamp,
       },
     ],
-    ['a:binary-search', { language: 'cpp', code: '// SECOND_PROBLEM_DRAFT', updatedAt: stamp }],
-    ['b:two-sum', { language: 'cpp', code: '// ACCOUNT_B_DRAFT', updatedAt: stamp }],
+    ['a:binary-search', { language: 'cpp', code: '// SECOND_PROBLEM_DRAFT', revision: 0, updatedAt: stamp }],
+    ['b:two-sum', { language: 'cpp', code: '// ACCOUNT_B_DRAFT', revision: 0, updatedAt: stamp }],
   ]);
   const delayed = new Map<string, Promise<void>>();
   const failures = new Map<string, number>();
@@ -213,7 +214,9 @@ async function setup(
     if (draftMatch) {
       if (body.code.length > 16000 || Buffer.byteLength(body.code, 'utf8') > 48000)
         return json(route, { message: '代码过长' }, 400);
-      const saved = { ...body, updatedAt: new Date().toISOString() };
+      if (body.revision !== (drafts.get(`${owner}:${draftMatch[1]}`)?.revision ?? 0))
+        return json(route, { message: '草稿已更新' }, 409);
+      const saved = { ...body, revision: body.revision + 1, updatedAt: new Date().toISOString() };
       drafts.set(`${owner}:${draftMatch[1]}`, saved);
       const hold = nextDraft;
       nextDraft = null;
@@ -297,7 +300,11 @@ async function setup(
 }
 
 async function inspect(page: Page, index = 0) {
-  await page.getByRole('tab', { name: '提交记录', exact: true }).click();
+  const tab = page.getByRole('tab', { name: /提交记录/ });
+  // Focus scrolls an overflowing AntD tab into its nav viewport before the click.
+  await tab.focus();
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
   await page.locator('.algo-history-item').nth(index).click();
   await expect(page.locator('.algo-submitted-code')).toBeVisible();
 }
@@ -456,6 +463,35 @@ test('未同步快照不被迟到草稿保存或执行结果轮询改写', async
   await closeComparison(page);
   expect(fixture.mutations()).toHaveLength(1);
   expect(fixture.mutations()[0].path).toMatch(/\/draft$/);
+});
+
+test('切题后迟到草稿响应保留新题编辑，回到旧题使用成功保存的版本', async ({ page }) => {
+  const fixture = await setup(page);
+  await page.goto('/algorithms/two-sum');
+  await expect(editor(page)).toHaveValue('// CURRENT_DRAFT\nint main() { return 0; }');
+  const release = fixture.holdDraft();
+  await editor(page).fill('// OLD_PROBLEM_SAVE');
+  await editor(page).press('ControlOrMeta+s');
+  await expect.poll(() => fixture.draftWrites().length).toBe(1);
+  await page.getByRole('link', { name: '下一题', exact: true }).click();
+  await expect(editor(page)).toHaveValue('// SECOND_PROBLEM_DRAFT');
+  await editor(page).fill('// NEW_PROBLEM_EDIT');
+  release();
+  await expect(editor(page)).toHaveValue('// NEW_PROBLEM_EDIT');
+  await editor(page).press('ControlOrMeta+s');
+  await expect(page.getByText('草稿已同步', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: '上一题', exact: true }).click();
+  await expect(editor(page)).toHaveValue('// OLD_PROBLEM_SAVE');
+  await editor(page).fill('// OLD_PROBLEM_NEXT_EDIT');
+  await editor(page).press('ControlOrMeta+s');
+  await expect(page.getByText('草稿已同步', { exact: true })).toBeVisible();
+  expect(
+    fixture
+      .draftWrites()
+      .filter((item) => item.path.includes('/two-sum/'))
+      .map((item) => item.body.revision),
+  ).toEqual([0, 1]);
+  await expect(page.getByLabel('冲突中的云端草稿')).toHaveCount(0);
 });
 
 test('跨语言仅提示文本差异，不切换主编辑器语言或写入代码', async ({ page }) => {

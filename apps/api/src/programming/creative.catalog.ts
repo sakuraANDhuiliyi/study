@@ -2,6 +2,7 @@ import type { ProgrammingFile } from './programming.schemas';
 import { visualCreativeItems } from './creative.advanced-visual';
 import { productCreativeItems } from './creative.advanced-product';
 import { narrativeCreativeItems } from './creative.advanced-narrative';
+import { emotionBallCreativeItem } from './creative.emotion-ball';
 
 export type CreativeItem = {
   id: string;
@@ -17,6 +18,7 @@ export type CreativeItem = {
     files: { title: string; url: string }[];
     license: string;
     licenseText: string;
+    usageNotice?: string;
     videos: {
       platform: string;
       title: string;
@@ -1227,6 +1229,7 @@ const foundationCreativeItems: CreativeItem[] = [
 // Put the newest full experiences first, alternating scene, tool and narrative.
 const advancedGroups = [visualCreativeItems, productCreativeItems, narrativeCreativeItems];
 export const creativeItems: CreativeItem[] = [
+  emotionBallCreativeItem,
   ...Array.from({ length: Math.max(...advancedGroups.map((group) => group.length)) }, (_, index) =>
     advancedGroups.flatMap((group) => (group[index] ? [{ ...group[index], edition: 2 as const }] : [])),
   ).flat(),

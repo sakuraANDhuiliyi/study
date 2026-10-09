@@ -1,0 +1,155 @@
+.training-plans {
+  scroll-margin-top: 24px;
+}
+.training-plans-heading {
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.training-plan-capacity,
+.training-plan-help {
+  color: var(--text-secondary, #667085);
+  font-size: 13px;
+}
+.training-plan-capacity {
+  margin-bottom: 14px;
+}
+.training-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.training-plan-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border-color, #e6e9f0);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+}
+.training-plan-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.training-plan-title h3 {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.training-plan-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary, #667085);
+}
+.training-plan-progress {
+  margin: 14px 0;
+  font-size: 13px;
+}
+.training-plan-progress .ant-progress {
+  display: block;
+}
+.training-plan-card summary {
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.training-plan-card ol {
+  padding-left: 22px;
+}
+.training-plan-card li + li {
+  margin-top: 7px;
+}
+.training-plan-card li a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.training-plan-card li a > span:first-child {
+  overflow-wrap: anywhere;
+}
+.training-plan-status {
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-secondary, #667085);
+}
+.training-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.training-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-top: 12px;
+}
+.training-plan-form label {
+  font-weight: 600;
+}
+.training-plan-form .ant-select {
+  width: 100%;
+}
+.training-plan-form .ant-alert-description {
+  overflow-wrap: anywhere;
+}
+.training-plan-order {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.training-plan-order li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color, #e6e9f0);
+}
+.training-plan-order li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.training-plan-order .ant-space {
+  flex-shrink: 0;
+}
+.training-plan-navigation {
+  margin: 14px 0;
+  padding: 14px 18px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-color, #e6e9f0);
+  border-radius: 12px;
+}
+.training-plan-navigation > div,
+.training-plan-navigation strong + span {
+  display: block;
+}
+.training-plan-navigation strong + span {
+  margin: 5px 0 10px;
+  color: var(--text-secondary, #667085);
+  font-size: 13px;
+}
+.training-plan-navigation strong {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .training-plan-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .training-plan-card {
+    padding: 14px;
+  }
+  .training-plans-heading > .ant-space {
+    width: 100%;
+  }
+  .training-plan-form .ant-select-selector {
+    min-width: 0;
+  }
+  .training-plan-navigation {
+    padding: 12px;
+  }
+}

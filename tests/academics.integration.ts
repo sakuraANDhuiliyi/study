@@ -607,6 +607,12 @@ test('专业学习中心：独立PostgreSQL数据库与真实HTTP端到端验收
     });
 
     await t.test('SQL查询由真实SQLite执行，JOIN/聚合结果核验，危险SQL不接触应用库', async () => {
+      // The preceding business scenarios include rejected inputs, which now consume requests.
+      // Advance only this isolated fixture's minute window; retain its daily attempt ledger.
+      await db!.academicsEvaluationAttempt.updateMany({
+        where: { userId: personal.user.id },
+        data: { createdAt: new Date(Date.now() - 120000) },
+      });
       const correct = await evaluate(personal, 'sql-lab');
       assert.equal(metric(correct.result, '任务是否匹配'), '是');
       assert.deepEqual(

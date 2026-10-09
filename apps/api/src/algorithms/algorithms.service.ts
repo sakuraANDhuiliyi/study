@@ -12,6 +12,7 @@ import {
   type AlgorithmAnalysis,
   type AlgorithmSubmission,
   type AlgorithmLearningState,
+  type AlgorithmDraft,
 } from '@prisma/client';
 import type { z } from 'zod';
 import type { Actor } from '../auth/auth.guard';
@@ -25,9 +26,9 @@ import {
   type AlgorithmAnalysisInput,
   type AlgorithmSubmissionInput,
   type AlgorithmSubmissionQuery,
-  type AlgorithmLanguage,
   type algorithmProblemQuery,
   type AlgorithmLearningInput,
+  type AlgorithmDraftInput,
 } from './algorithms.schemas';
 import { JudgeGateway, type JudgeExecutionRequest, type JudgeExecutionResult } from './judge.gateway';
 
@@ -90,6 +91,12 @@ export function algorithmLearningDto(state: AlgorithmLearningState | null) {
     revision: state?.revision ?? 0,
     updatedAt: state?.updatedAt ?? null,
   };
+}
+
+export function algorithmDraftDto(draft: AlgorithmDraft | null) {
+  return draft
+    ? { language: draft.language, code: draft.code, revision: draft.revision, updatedAt: draft.updatedAt }
+    : null;
 }
 
 export function publicAlgorithmProblem(problem: AlgorithmProblem) {
@@ -265,7 +272,7 @@ export class AlgorithmsService {
     const position = algorithmProblems.findIndex((item) => item.id === id);
     return {
       ...publicAlgorithmProblem(problem),
-      draft: draft ? { language: draft.language, code: draft.code, updatedAt: draft.updatedAt } : null,
+      draft: algorithmDraftDto(draft),
       learningState: algorithmLearningDto(state),
       navigation: {
         previousProblemId: algorithmProblems[position - 1]?.id ?? null,
@@ -377,16 +384,27 @@ export class AlgorithmsService {
       plans,
     };
   }
-  async saveDraft(actor: Actor, problemId: string, input: { language: AlgorithmLanguage; code: string }) {
+  async saveDraft(actor: Actor, problemId: string, input: AlgorithmDraftInput) {
     await this.access(actor);
     this.catalog(problemId);
-    const key = { ...this.scope(actor), problemId };
-    const draft = await this.db.algorithmDraft.upsert({
-      where: { organizationId_userId_problemId: key },
-      create: { ...key, ...input },
-      update: input,
+    return this.db.$transaction(async (tx) => {
+      await this.lock(tx, actor);
+      const where = { ...this.scope(actor), problemId };
+      const current = await tx.algorithmDraft.findFirst({ where });
+      if ((current?.revision ?? 0) !== input.revision)
+        throw new ConflictException('草稿已在其他页面更新，请比较云端草稿后再保存');
+      const data = { language: input.language, code: input.code };
+      if (!current)
+        return algorithmDraftDto(
+          await tx.algorithmDraft.create({ data: { ...where, ...data, revision: 1 } }),
+        );
+      const updated = await tx.algorithmDraft.updateMany({
+        where: { ...where, revision: input.revision },
+        data: { ...data, revision: { increment: 1 } },
+      });
+      if (updated.count !== 1) throw new ConflictException('草稿已更新，请比较云端草稿后再保存');
+      return algorithmDraftDto(await tx.algorithmDraft.findFirstOrThrow({ where }));
     });
-    return { language: draft.language, code: draft.code, updatedAt: draft.updatedAt };
   }
   private async lock(tx: Tx, actor: Actor) {
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`algorithms:${actor.organizationId}:${actor.id}`}))`;

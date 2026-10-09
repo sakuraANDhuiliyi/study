@@ -15,6 +15,7 @@ import {
   safeSummary,
   stageEnvironment,
   validateEnvironment,
+  validateRuntime,
 } from '../scripts/verify-iteration.mjs';
 
 test('iteration CLI defaults to all four reference languages and validates explicit selectors', () => {
@@ -29,10 +30,22 @@ test('iteration CLI defaults to all four reference languages and validates expli
     ['--skip-browser'],
     ['--api-port=3003'],
     ['--api-port=3032'],
+    ['--api-port=4183'],
+    ['--api-port=3038'],
+    ['--preview-port=3039'],
+    ['--preview-port=4175'],
+    ['--api-port=4179'],
     ['--preview-port=-1'],
     ['--preview-port=3.5'],
   ])
     assert.throws(() => parseOptions(args));
+});
+
+test('iteration uses supported LTS runtimes and rejects Node below the project minimum', () => {
+  for (const version of ['22.11.0', '22.22.0', '24.0.0', 'v24.19.0'])
+    assert.doesNotThrow(() => validateRuntime(version));
+  for (const version of ['20.19.0', '22.0.0', '22.10.9', '23.0.0', '25.0.0', 'not-a-version'])
+    assert.throws(() => validateRuntime(version));
 });
 
 test('iteration rejects production, remote/nonreview DB and alternative DB without disclosing credentials', () => {
@@ -49,6 +62,10 @@ test('iteration rejects production, remote/nonreview DB and alternative DB witho
     { DATABASE_URL: 'bad PRIVATE_DB_VALUE' },
     { DEV_SEED_PASSWORD: '' },
     { ACADEMICS_TEST_ADMIN_DATABASE_URL: 'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review' },
+    { ACADEMICS_ADMISSION_TEST_DATABASE_URL: 'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review' },
+    {
+      ALGORITHM_TRAINING_TEST_ADMIN_DATABASE_URL: 'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review',
+    },
   ]) {
     assert.throws(
       () => validateEnvironment({ ...env, ...overrides }),
@@ -87,6 +104,7 @@ test('iteration discovers every current/future integration and keeps all mandato
     'build',
     'audit',
     'trusted-references',
+    'creative-expression-browser',
     'servers',
     'e2e',
     'clean-start',
@@ -147,6 +165,30 @@ test('iteration never promotes a failed, skipped or incomplete check to passing'
       .exitCode,
     0,
   );
+});
+
+test('iteration requires complete expression rendering and rejects missing checks or unexpected network activity', () => {
+  const valid = { checksPassed: 10, expressionsPassed: 32, externalRequests: 0, pageErrors: 0 };
+  assert.equal(
+    evaluateStageResult('creative-expression-browser', { exitCode: 0 }, JSON.stringify(valid)).exitCode,
+    0,
+  );
+  for (const report of [
+    undefined,
+    {},
+    { ...valid, checksPassed: 0 },
+    { ...valid, expressionsPassed: 31 },
+    { ...valid, externalRequests: 1 },
+    { ...valid, pageErrors: 1 },
+  ])
+    assert.equal(
+      evaluateStageResult(
+        'creative-expression-browser',
+        { exitCode: 0 },
+        report ? JSON.stringify(report) : 'No report',
+      ).exitCode,
+      1,
+    );
 });
 
 test('iteration builds a production Vite bundle while keeping fixtures and servers in test mode', () => {

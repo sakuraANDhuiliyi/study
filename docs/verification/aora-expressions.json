@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-09",
+  "item": {
+    "id": "aora-expression-lab",
+    "title": "动态表情实验室",
+    "sourceRepository": "https://github.com/sam70361/aora-bot",
+    "sourceCommit": "e3b6148c818da4a8e1966f2bc89cdb3cee473b73",
+    "license": "Emotion Ball Community License",
+    "usageNotice": "仅供个人技术学习、研究与非商业技术交流。球形角色视觉形象禁止任何商业用途，且不提供商业授权；表情引擎与数据的商业使用须另行获得授权。",
+    "fileCount": 12,
+    "totalBytes": 184285,
+    "originalFiles": [
+      {
+        "path": "vendor/rings.js",
+        "bytes": 41780,
+        "sha256": "7fd196046650b8273d87c9b85a899554d90f35c62d676eea1c681630e721ec20"
+      },
+      {
+        "path": "vendor/emotions.js",
+        "bytes": 21922,
+        "sha256": "c938eb9601ba4b37c67e78fa0e4c1294d1882b498111600b83a8ebfe2aeb8d77"
+      },
+      {
+        "path": "vendor/ball.js",
+        "bytes": 23826,
+        "sha256": "4d7928b66e19da61f0aceaa161d6b2e1c7a83bb49c83cd449e80844deb70a587"
+      },
+      {
+        "path": "vendor/engine.js",
+        "bytes": 30644,
+        "sha256": "6c48deb09e097f50655b546c84b5bda066a741520d8e5e2c064c6a7e813b1756"
+      },
+      {
+        "path": "LICENSE.txt",
+        "bytes": 5027,
+        "sha256": "cd25a8e1b00d05b2bb29d3a626599526db960b5bf3ba94fd726565b9bec7f8ea"
+      },
+      {
+        "path": "NOTICE.md",
+        "bytes": 3234,
+        "sha256": "549d6607c9dd13c9add2fa5faeccca488bd78cf30cac2b0b4d3dbcd8b45b721d"
+      },
+      {
+        "path": "LICENSE-COMMERCIAL.md",
+        "bytes": 7090,
+        "sha256": "0c9ce7fd2349fcda788702a5867d85546874e406dd42aeef0c944e53834d1d67"
+      }
+    ]
+  },
+  "verification": {
+    "unit": {
+      "passed": 416,
+      "failed": 0,
+      "skipped": 0
+    },
+    "httpDatabase": {
+      "creative": 17,
+      "programming": 18,
+      "total": 35,
+      "failed": 0,
+      "environment": "isolated local review PostgreSQL and APIs; DeepSeek uses a local protocol fixture"
+    },
+    "sandboxBrowser": {
+      "checks": 10,
+      "expressions": 32,
+      "shapes": 3,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "includes": [
+        "selection and search",
+        "automatic sequence state sync",
+        "pause and reduced motion",
+        "tour shape preservation",
+        "hidden-page pause",
+        "BFCache restoration",
+        "pagehide cleanup",
+        "390px layout"
+      ]
+    },
+    "liveLocalSmoke": "gallery, source license notice, actual isolated preview, 32 expressions, desktop and 390px detail/gallery passed",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "build": "API and web passed; API rebuilt after AI engine preservation update",
+    "diffWhitespaceCheck": "passed"
+  },
+  "limits": [
+    "Real external AI authentication and generation quality were not exercised",
+    "Mood Mates cloud/star renderer is outside this integration",
+    "Existing Monaco bundle-size warning remains"
+  ],
+  "migrationRequired": false,
+  "dependenciesAdded": false,
+  "committed": false,
+  "pushed": false
+}

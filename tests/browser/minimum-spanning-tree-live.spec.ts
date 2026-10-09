@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
+import { algorithmProblems } from '../../apps/api/src/algorithms/algorithms.catalog';
 
 const api = process.env.TEST_BASE_URL;
 const web = process.env.WEB_BASE_URL || 'http://localhost:5173';
@@ -106,7 +107,7 @@ test('第19题最小生成树真实检索、第三章、分级题解与四语言
     expect(status.judge.available).toBe(false);
     expect(status.ai.available).toBe(false);
     const catalog = await get('/algorithms/problems?pageSize=50');
-    expect(catalog.total).toBe(19);
+    expect(catalog.total).toBe(algorithmProblems.length);
     expect(catalog.stats.solved).toBe(0);
     const editorial = (await get(`/algorithms/problems/${problemId}/editorial`)).editorial;
     expect(Object.keys(editorial.referenceCode).sort()).toEqual(['cpp', 'java', 'javascript', 'python']);

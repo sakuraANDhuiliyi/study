@@ -14,6 +14,26 @@ import { programmingFilePath, programmingFilesSchema, type ProgrammingFile } fro
 import { creativeItems } from './creative.catalog';
 
 const lifetimeMs = 10 * 60 * 1000;
+const readWindowMs = 60_000;
+// A maximum-size page can request all 24 files together; one owner still leaves
+// eight of the 32 validation slots available for other students.
+const maxReadBuckets = 1024;
+type ReadBucket = { startedAt: number; count: number };
+export function readProgrammingPreviewReadLimits(
+  environment: Record<string, string | undefined> = process.env,
+) {
+  const bounded = (name: string, fallback: number, minimum: number, maximum: number) => {
+    const raw = environment[name];
+    const value = raw && /^\d+$/.test(raw) ? Number(raw) : NaN;
+    return Number.isInteger(value) && value >= minimum && value <= maximum ? value : fallback;
+  };
+  return {
+    userConcurrency: bounded('PROGRAMMING_PREVIEW_USER_CONCURRENCY', 24, 1, 24),
+    userReads: bounded('PROGRAMMING_PREVIEW_USER_READS_PER_MINUTE', 480, 48, 9600),
+    tokenReads: bounded('PROGRAMMING_PREVIEW_TOKEN_READS_PER_MINUTE', 240, 24, 4800),
+    ipReads: bounded('PROGRAMMING_PREVIEW_IP_READS_PER_MINUTE', 9600, 240, 100000),
+  };
+}
 type PreviewConfiguration = {
   enabled: boolean;
   port: number;
@@ -133,8 +153,12 @@ type Snapshot = {
 @Injectable()
 export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy {
   private readonly configuration = readProgrammingPreviewConfiguration();
+  private readonly readLimits = readProgrammingPreviewReadLimits();
   private readonly snapshots = new Map<string, Snapshot>();
   private readonly requests = new Map<string, number[]>();
+  private readonly readRequests = new Map<string, ReadBucket>();
+  private readonly activeUsers = new Map<string, number>();
+  private cleanupTimer?: ReturnType<typeof setInterval>;
   private server?: Server;
   private ready = false;
   private active = 0;
@@ -145,6 +169,8 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
 
   async onModuleInit() {
     if (!this.configuration.enabled) return;
+    this.cleanupTimer = setInterval(() => this.cleanup(), readWindowMs);
+    this.cleanupTimer.unref();
     this.server = createServer((request, response) => {
       void this.serve(request, response);
     });
@@ -166,6 +192,8 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
     this.ready = false;
     this.snapshots.clear();
     this.requests.clear();
+    this.readRequests.clear();
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     if (!this.server?.listening) return;
     await new Promise<void>((resolve) => {
       this.server!.close(() => resolve());
@@ -188,6 +216,34 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
       if (recent.length) this.requests.set(key, recent);
       else this.requests.delete(key);
     }
+    for (const [key, bucket] of this.readRequests)
+      if (now - bucket.startedAt >= readWindowMs) this.readRequests.delete(key);
+  }
+  private admitRead(token: string, userId: string, ip: string) {
+    const now = Date.now();
+    const limits = [
+      { key: `user:${userId}`, limit: this.readLimits.userReads },
+      { key: `token:${token}`, limit: this.readLimits.tokenReads },
+      // The socket peer may be a school NAT or proxy. Forwarded headers are
+      // untrusted on this listener; keep the peer limit generous for shared IPs.
+      { key: `ip:${ip}`, limit: this.readLimits.ipReads },
+    ];
+    for (const { key, limit } of limits) {
+      const bucket = this.readRequests.get(key);
+      if (bucket && bucket.count >= limit)
+        return {
+          status: 429,
+          retryAfter: Math.max(1, Math.ceil((bucket.startedAt + readWindowMs - now) / 1000)),
+        };
+    }
+    const additional = limits.filter(({ key }) => !this.readRequests.has(key)).length;
+    if (this.readRequests.size + additional > maxReadBuckets) return { status: 503, retryAfter: 1 };
+    for (const { key } of limits) {
+      const bucket = this.readRequests.get(key) || { startedAt: now, count: 0 };
+      bucket.count++;
+      this.readRequests.set(key, bucket);
+    }
+    return null;
   }
   revokeProject(projectId: string) {
     for (const [token, snapshot] of this.snapshots)
@@ -268,13 +324,17 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
     content: string,
     type = 'text/plain; charset=utf-8',
     head = false,
+    retryAfter?: number,
   ) {
-    response.writeHead(status, { ...programmingPreviewHeaders(this.configuration), 'Content-Type': type });
+    response.writeHead(status, {
+      ...programmingPreviewHeaders(this.configuration),
+      'Content-Type': type,
+      ...(retryAfter ? { 'Retry-After': String(retryAfter) } : {}),
+    });
     response.end(head ? undefined : content);
   }
   private async serve(request: IncomingMessage, response: ServerResponse) {
-    if (this.active >= 32) return this.finish(response, 503, '预览服务繁忙，请稍后重试');
-    this.active++;
+    let userId: string | undefined;
     try {
       if (!['GET', 'HEAD'].includes(request.method || ''))
         return this.finish(response, 405, '仅支持只读预览');
@@ -292,6 +352,40 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
       this.cleanup();
       const snapshot = this.snapshots.get(match[1]);
       if (!snapshot) return this.finish(response, 404, '预览不存在或已经过期，请重新运行');
+      // Acquire all quotas synchronously before session/database work. Multiple
+      // tokens and organizations belonging to one user share the same allowance.
+      const activeUser = this.activeUsers.get(snapshot.userId) || 0;
+      if (activeUser >= this.readLimits.userConcurrency)
+        return this.finish(
+          response,
+          429,
+          '当前用户的预览读取过多，请稍后重试',
+          undefined,
+          request.method === 'HEAD',
+          1,
+        );
+      if (this.active >= 32)
+        return this.finish(
+          response,
+          503,
+          '预览服务繁忙，请稍后重试',
+          undefined,
+          request.method === 'HEAD',
+          1,
+        );
+      const limited = this.admitRead(match[1], snapshot.userId, request.socket.remoteAddress || 'unknown');
+      if (limited)
+        return this.finish(
+          response,
+          limited.status,
+          '预览读取过于频繁，请稍后重试',
+          undefined,
+          request.method === 'HEAD',
+          limited.retryAfter,
+        );
+      userId = snapshot.userId;
+      this.active++;
+      this.activeUsers.set(userId, activeUser + 1);
       const actor = await this.auth.resolveSessionId(snapshot.sessionId);
       if (
         !actor ||
@@ -335,7 +429,12 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
       if (!response.headersSent) this.finish(response, 404, '预览暂时不可用，请重新运行');
       else response.end();
     } finally {
-      this.active--;
+      if (userId) {
+        this.active--;
+        const remaining = (this.activeUsers.get(userId) || 1) - 1;
+        if (remaining) this.activeUsers.set(userId, remaining);
+        else this.activeUsers.delete(userId);
+      }
     }
   }
 }

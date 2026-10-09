@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AcademicsService } from './academics.service';
@@ -25,8 +26,9 @@ export class AcademicsController {
     @CurrentActor() actor: Actor,
     @Param('id') id: string,
     @Body() body: unknown,
+    @Req() req: Request,
   ) {
-    return this.academics.evaluate(actor, id, body);
+    return this.academics.evaluate(actor, id, body, req.ip ?? req.socket.remoteAddress ?? 'unknown');
   }
   @Get('records') records(@CurrentActor() actor: Actor, @Query() query: Record<string, string>) {
     return this.academics.records(actor, query);

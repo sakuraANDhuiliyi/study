@@ -5,6 +5,281 @@ They contain no third-party photographs, downloaded video frames, external fonts
 Captured by scripts/creative-covers.mjs using an opaque browser iframe.
 Each template records the exact extracted / independently reimplemented scope below.
 
+=== aora-expression-lab.png — 动态表情实验室 ===
+
+# 动态表情实验室 (aora-expression-lab)
+Source: https://github.com/sam70361/aora-bot
+Pinned commit: e3b6148c818da4a8e1966f2bc89cdb3cee473b73
+License: Emotion Ball Community License
+Scope: 完整迁入固定版本 js/rings.js、js/emotions.js、js/ball.js、js/engine.js 的原始文本，保留 32 个表情 ID、三种球形角色和 SVG 动画引擎。
+Local changes: 上游四个脚本保持原文。新增中文筛选、搜索、形态与线稿控制、单实例巡演、只读 JSON、键盘导航和本地代理消息示例；不接入 AI、网络、存储或服务器。暂停、后台页面与减少动态效果时停止巡演并渲染静态帧。
+js/rings.js: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/js/rings.js
+js/emotions.js: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/js/emotions.js
+js/ball.js: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/js/ball.js
+js/engine.js: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/js/engine.js
+LICENSE: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/LICENSE
+NOTICE.md: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/NOTICE.md
+LICENSE-COMMERCIAL.md: https://github.com/sam70361/aora-bot/blob/e3b6148c818da4a8e1966f2bc89cdb3cee473b73/LICENSE-COMMERCIAL.md
+
+Emotion Ball Community License
+Emotion Ball 社区许可（非商业免费；引擎与表情数据可另行商业授权；球形角色视觉形象永不商用）
+
+Copyright (c) 2026 sam70361 (仅就独立编写的源代码、表情配置数据与文档部分)
+
+适用范围 / Scope: 本许可仅适用于仓库根目录及 emotion-ball/ 目录的内容
+（球形角色项目及其站点与文档）。mood-mates/ 子目录为独立原创角色子项目，
+受其自带的 mood-mates/LICENSE（社区许可）与 mood-mates/LICENSE-COMMERCIAL.md
+（商业许可）约束，不适用本许可。
+This license applies only to the contents at the repository root and in the
+emotion-ball/ directory (the ball-character project, its site and docs). The
+mood-mates/ subdirectory is an independent original-character sub-project
+governed by its own mood-mates/LICENSE (community) and
+mood-mates/LICENSE-COMMERCIAL.md (commercial); this license does not apply
+to it.
+
+【中文】
+
+0. 内容划分：本项目包含两类授权不同的内容——
+
+   (A) 表情引擎与表情数据：源代码（状态机、弹簧插值动画、球面投影、
+       渲染与配置注册中心等）、表情配置数据（眼环 / 眼形 / 嘴形参数、
+       动画原语与关键帧序列）以及配套文档，均为独立编写与设计；
+
+   (B) 球形角色视觉形象：blob / wedge / gem 身体造型、配色方案、彩带等
+       特效视觉，及其组合形成的整体角色形象。
+
+1. 非商业使用（适用于 A 与 B）：允许免费查看、下载、运行、修改本项目，
+   并在注明出处的前提下，在个人学习、研究与技术交流等非商业场景中分享
+   本项目或其衍生作品。
+
+2. 商业使用（仅限 A）：表情引擎与表情数据可通过商业授权用于商业用途，
+   通用条款见仓库根目录 LICENSE-COMMERCIAL.md；商业授权请联系
+   1251579308@qq.com。
+
+3. 视觉形象永不商用（B）：球形角色视觉形象仅供个人技术学习与研究，
+   禁止任何商业用途；该部分不提供、也永不提供商业授权。取得商业授权的
+   被许可方亦不得将球形角色视觉形象用于商业用途，须搭配自有或另行合法
+   授权的角色形象使用。详见仓库根目录 NOTICE.md。
+
+4. 未经商业授权，禁止将本项目或其衍生作品用于任何商业用途，包括但不
+   限于售卖、付费授权、集成到商业产品或服务、用于商业推广等。
+
+5. 分发本项目或其衍生作品时，须完整保留本许可声明、版权信息与
+   NOTICE.md。
+
+6. 本项目按"现状"提供，不附带任何明示或默示的担保；因使用本项目产生
+   的任何风险与责任由使用者自行承担。
+
+[English]
+
+0. CONTENT CLASSES: this project contains two differently licensed classes
+   of content —
+
+   (A) Expression engine & emotion data: the source code (state machine,
+       spring interpolation, spherical projection, rendering, config
+       registry, etc.), the emotion configuration data (eye-ring / eye-shape
+       / mouth-shape parameters, animation primitives and keyframe
+       sequences) and the accompanying documentation, all independently
+       written and designed;
+
+   (B) Ball-character visual designs: the blob / wedge / gem body
+       silhouettes, color schemes, ribbon and other FX visuals, and the
+       overall character appearance they form together.
+
+1. NON-COMMERCIAL USE (applies to both A and B): viewing, downloading,
+   running and modifying this project free of charge, and sharing this
+   project or derivative works with proper attribution in non-commercial
+   scenarios (personal learning, research and technical exchange) are
+   permitted.
+
+2. COMMERCIAL USE (A only): the expression engine and emotion data may be
+   used commercially under a commercial license; see LICENSE-COMMERCIAL.md
+   in the repository root for the general terms, and contact
+   1251579308@qq.com for licensing.
+
+3. VISUAL DESIGNS NEVER COMMERCIAL (B): the ball-character visual designs
+   are provided solely for personal technical study and research; any
+   commercial use is prohibited, and no commercial license is or will ever
+   be offered for them. Even commercial licensees must not use the
+   ball-character visual designs commercially and must pair the licensed
+   materials with their own or otherwise lawfully licensed character
+   designs. See NOTICE.md in the repository root.
+
+4. Without a commercial license, any commercial use of this project or its
+   derivative works is prohibited, including but not limited to selling,
+   paid licensing, integration into commercial products or services, or use
+   in commercial promotion.
+
+5. This license notice, the copyright notice and NOTICE.md must be retained
+   in all copies or substantial portions of the project.
+
+6. The project is provided "AS IS", without warranty of any kind, express or
+   implied. All risks and liabilities arising from its use are borne by the
+   user.
+
+
+# NOTICE · 使用声明 / Usage Notice
+
+> **适用范围**：本声明针对 `emotion-ball/` 目录球形角色（blob / wedge / gem）的**视觉形象**（身体造型、配色方案、彩带等特效视觉及其整体形象）。表情引擎源代码与表情配置数据不在本声明限制范围内，采用「非商业免费 + 可获取商业授权」双许可，详见根目录 `LICENSE` 与 `LICENSE-COMMERCIAL.md`。`mood-mates/` 目录中的角色（云宝 Nimbo、亮亮 Twinkle）为独立原创设计，亦不在本声明范围内，详见 `mood-mates/LICENSE` 与 `mood-mates/LICENSE-COMMERCIAL.md`。
+>
+> **Scope**: This notice covers the **visual designs** of the ball-shaped characters (blob / wedge / gem) in the `emotion-ball/` directory — body silhouettes, color schemes, ribbon and other FX visuals, and the overall character appearance. The expression engine source code and emotion configuration data are outside this notice and are dual-licensed (free for non-commercial use + commercial licensing available) — see `LICENSE` and `LICENSE-COMMERCIAL.md` in the repository root. The characters in the `mood-mates/` directory (Nimbo the cloud, Twinkle the star) are independently created original designs and also fall outside this notice — see `mood-mates/LICENSE` and `mood-mates/LICENSE-COMMERCIAL.md`.
+
+## 【中文】
+
+1. **视觉形象使用限制**：球形角色的视觉形象（身体造型、配色方案、彩带等特效视觉及其整体形象）仅供个人技术学习与研究，**禁止任何商业用途**；该部分不提供、也永不提供商业授权。
+
+2. **代码与表情数据归属**：本仓库中的代码实现（状态机、弹簧插值动画、球面投影、配置注册中心等）与表情配置数据（眼环 / 眼形 / 嘴形参数、动画原语、关键帧序列）为独立编写与设计，非商业使用免费，商业用途可获取商业授权（见 `LICENSE` 与 `LICENSE-COMMERCIAL.md`）；商业使用时须搭配使用方自有或另行合法授权的角色形象。
+
+3. **联系方式**：若认为本仓库的内容存在不妥，请通过邮箱 **1251579308@qq.com** 联系，我们将在收到通知后及时处理。
+
+## [English]
+
+1. **Visual-design restrictions**: The ball characters' visual designs (body silhouettes, color schemes, ribbon and other FX visuals, and the overall character appearance) are for personal technical study and research only. **Any commercial use is prohibited**, and no commercial license is or will ever be offered for them.
+
+2. **Code & emotion data**: The code in this repository (state machine, spring interpolation, spherical projection, config registry, etc.) and the emotion configuration data (eye-ring / eye-shape / mouth-shape parameters, animation primitives, keyframe sequences) were independently written and designed. They are free for non-commercial use, and commercial licensing is available (see `LICENSE` and `LICENSE-COMMERCIAL.md`); commercial use must pair them with the user's own or otherwise lawfully licensed character designs.
+
+3. **Contact**: If you consider any content of this repository inappropriate, please contact **1251579308@qq.com** and it will be handled promptly upon notice.
+
+
+# Emotion Ball 表情引擎商业许可协议（通用条款）
+
+Emotion Ball Engine Commercial License (General Terms)
+
+Copyright (c) 2026 sam70361
+商业授权联系 / Commercial licensing contact: **1251579308@qq.com**
+
+---
+
+## 【中文】（本协议以中文版本为准）
+
+### 第 0 条 说明
+
+本文件是 Emotion Ball 表情引擎商业许可的**通用条款模板**。每一笔具体的商业
+授权，以双方往来的确认邮件或另行签署的书面协议（下称「授权确认」）为准；
+授权确认中未约定的事项，适用本文件；两者不一致的，以授权确认为准。
+
+未取得商业授权的使用者，仍受仓库根目录 `LICENSE`（社区许可，禁止商业用途）
+的约束。
+
+**特别提示**：本商业许可的授权标的**不包含**球形角色视觉形象（见第 1.4 条
+与第 4 条），该部分依据 `LICENSE` 与 `NOTICE.md` 仅供学习研究，不提供、也
+永不提供商业授权。
+
+### 第 1 条 定义
+
+1.1 **授权标的**：指 Emotion Ball 项目中的表情引擎源代码（状态机、弹簧插值
+    动画、球面投影、渲染与配置注册中心等）、表情配置数据（眼环 / 眼形 /
+    嘴形参数、动画原语与关键帧序列）及配套文档，具体以授权确认中载明的
+    版本（版本号或 commit 标识）为准。
+
+1.2 **许可方**：授权标的著作权人 sam70361。
+
+1.3 **被许可方**：授权确认中载明的、已支付许可费的企业或个人。
+
+1.4 **球形角色视觉形象**：指 blob / wedge / gem 身体造型、配色方案、彩带等
+    特效视觉，及其组合形成的整体角色形象。该部分**不属于授权标的**。
+
+### 第 2 条 许可类型
+
+本许可为**非独占、不可转让、不可转授权**的商业许可。许可方保留授权标的的
+全部著作权及其他知识产权，并有权继续向任何第三方授予相同或不同的许可。
+
+### 第 3 条 授予的权利
+
+被许可方支付许可费并完成授权确认后，可以：
+
+- (a) 将授权标的用于内部或对外的商业业务，不受 `LICENSE` 中非商业限制的
+  约束；
+- (b) 对授权标的进行修改与二次开发（包括将表情数据应用于被许可方自有的
+  角色形象），且**无义务公开**修改后的源代码；
+- (c) 将授权标的或其衍生作品**集成**到被许可方自有产品或服务中，并随该
+  产品或服务对外分发、销售（以集成形式，而非单独分发授权标的源代码）；
+- (d) 除非授权确认另有约定，在集成后的产品界面中可不展示本项目署名
+  （白标）。
+
+### 第 4 条 限制
+
+被许可方不得：
+
+- (a) 将球形角色视觉形象用于任何商业用途；商业集成时，须以被许可方自有
+  或另行合法授权的角色形象搭配授权标的使用；
+- (b) 单独转售授权标的源代码，或以源码库、组件、SDK 等形式将授权标的本身
+  作为主体对外再分发、售卖；
+- (c) 向任何第三方转授权；
+- (d) 声称对授权标的（不含被许可方自行开发的衍生部分）拥有著作权，或申请
+  与授权标的相关的知识产权以对抗许可方。
+
+### 第 5 条 生效、有效期与服务范围
+
+5.1 **生效**：被许可方支付许可费，且双方通过邮件或书面协议确认授权条款后，
+    本许可正式生效。
+
+5.2 **有效期**：对授权确认中载明的版本**永久有效**。
+
+5.3 除非授权确认另有约定，许可费**不包含**技术支持、定制开发与后续版本
+    升级；如有需要，双方另行协商并单独计费。
+
+### 第 6 条 质保与责任限制
+
+授权标的按「现状」（AS IS）提供，不附带任何明示或默示的担保（包括但不限于
+适销性、特定用途适用性及不侵权担保）。许可方保证对授权标的（即独立编写的
+源代码、表情配置数据与文档）拥有授予本许可所需的权利。在适用法律允许的最大
+范围内，许可方就本许可承担的全部责任，以被许可方实际支付的许可费金额为上限。
+
+### 第 7 条 终止
+
+被许可方实质性违反本条款，且在收到许可方书面（含邮件）通知后 30 日内未
+纠正的，本许可自动终止。终止后，被许可方应立即停止对授权标的的商业使用；
+已支付的许可费不予退还。本条款终止后，第 6 条继续有效。
+
+### 第 8 条 法律适用与争议解决
+
+本许可适用中华人民共和国法律。因本许可产生的争议，双方应友好协商解决；
+协商不成的，任何一方可向许可方所在地有管辖权的人民法院提起诉讼。
+
+---
+
+## [English] (Summary — the Chinese version prevails)
+
+This file contains the **general terms** for commercial licensing of the
+Emotion Ball expression engine. Each individual commercial license is
+concluded by a written confirmation between the parties (typically a
+confirmed email exchange, the "License Confirmation"), which prevails over
+this file in case of conflict. Users without a commercial license remain
+bound by the non-commercial `LICENSE` in the repository root.
+
+Key terms:
+
+- **Licensed materials**: the expression engine source code, the emotion
+  configuration data (eye-ring / eye-shape / mouth-shape parameters,
+  animation primitives and keyframe sequences) and the accompanying
+  documentation, at the version stated in the License Confirmation. The
+  **ball-character visual designs** (body silhouettes, color schemes, ribbon
+  and other FX visuals, and the overall character appearance) are **excluded**
+  and are never commercially licensable — see `LICENSE` and `NOTICE.md`.
+- **Type**: non-exclusive, non-transferable, non-sublicensable. The licensor
+  (sam70361) retains all copyright and may license the materials to others.
+- **Grant**: upon payment and confirmation, the licensee may use the licensed
+  materials commercially, modify them (including applying the emotion data to
+  the licensee's own characters) without any obligation to open-source the
+  changes, and integrate them into and distribute them with the licensee's
+  own products or services (white-labeling permitted unless agreed otherwise).
+- **Restrictions**: no commercial use of the ball-character visual designs
+  (commercial integrations must pair the licensed materials with the
+  licensee's own or otherwise lawfully licensed character designs); no
+  standalone resale or redistribution of the source code as such (e.g. as a
+  component/SDK product); no sublicensing; no claim of copyright over the
+  original materials.
+- **Term**: perpetual for the licensed version; support, customization and
+  upgrades are not included unless agreed separately.
+- **Warranty & liability**: provided "AS IS"; the licensor warrants ownership
+  of the licensed materials (the independently written code, emotion data and
+  docs); total liability is capped at the license fee actually paid.
+- **Governing law**: the laws of the People's Republic of China.
+
+For commercial licensing, contact: **1251579308@qq.com**
+
+
 === orbital-route.png — 地球航线指挥台 ===
 
 # 地球航线指挥台 (orbital-route)

@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Bot,
   Code2,
+  Copy,
   Download,
   FileCode2,
   FilePlus2,
@@ -34,9 +35,11 @@ import {
   Terminal,
   Sparkles,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
-import { api, date, send, useData } from '../api';
+import { api, date, send, useData, type User } from '../api';
+import { useAuth } from '../auth';
 import { PageTitle, QueryState, useUnsavedWarning } from '../components/shared';
 import { ProgrammingEditor } from './ProgrammingEditor';
 import './programming.css';
@@ -52,6 +55,13 @@ type Project = {
   updatedAt: string;
 };
 type ProjectSummary = Omit<Project, 'files'> & { fileCount: number };
+type ProjectBackup = {
+  format: 'zhixue-programming';
+  version: 1;
+  title: string;
+  templateId: string;
+  files: ProjectFile[];
+};
 type Template = { id: string; title: string; description: string; files: ProjectFile[] };
 type ProgrammingStatus = {
   ai: { available: boolean; reason: string; model: string };
@@ -84,6 +94,7 @@ type AiDraft = {
   updatedAt: string;
   appliedVersionId?: string | null;
 };
+type AiDraftSummary = Omit<AiDraft, 'files' | 'plan' | 'teaching'>;
 type Preview = { url: string; expiresAt: string; nonce: string };
 type PreviewLog = { id: number; level: string; text: string };
 const draftLabels = { pending: '生成中', ready: '待审阅', failed: '生成失败', applied: '已应用' };
@@ -95,18 +106,120 @@ const filePathValid = (value: string) =>
   );
 const filesKey = (files: ProjectFile[]) => JSON.stringify(files);
 const errorText = (error: unknown) => (error instanceof Error ? error.message : '操作失败，请稍后重试。');
+const maxBackupBytes = 380000;
+function readProjectBackup(value: unknown, limits: ProgrammingStatus['limits']): ProjectBackup {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('备份必须是项目 JSON 对象。');
+  const backup = value as Record<string, unknown>;
+  if (Object.keys(backup).some((key) => !['format', 'version', 'title', 'templateId', 'files'].includes(key)))
+    throw new Error('备份包含不支持的字段，请选择编程工作区下载的 JSON 备份。');
+  if (backup.format !== 'zhixue-programming' || backup.version !== 1)
+    throw new Error('不支持此备份格式或版本，请选择编程工作区下载的 JSON 备份。');
+  if (
+    typeof backup.title !== 'string' ||
+    !backup.title.trim() ||
+    backup.title.trim().length > 160 ||
+    /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(backup.title)
+  )
+    throw new Error('备份的项目名称无效。');
+  if (
+    typeof backup.templateId !== 'string' ||
+    !/^(?:starter|counter|todo|imported|creative:[a-z0-9-]+)$/.test(backup.templateId)
+  )
+    throw new Error('备份的来源模板无效。');
+  if (!Array.isArray(backup.files) || !backup.files.length || backup.files.length > limits.maxFiles)
+    throw new Error(`备份必须包含 1～${limits.maxFiles} 个文件。`);
+  const paths = new Set<string>();
+  for (const file of backup.files) {
+    if (
+      !file ||
+      typeof file !== 'object' ||
+      Array.isArray(file) ||
+      Object.keys(file).some((key) => !['path', 'content'].includes(key)) ||
+      typeof file.path !== 'string' ||
+      !filePathValid(file.path) ||
+      typeof file.content !== 'string'
+    )
+      throw new Error('备份中有无效的文件路径或源码字段。');
+    if (paths.has(file.path.toLowerCase())) throw new Error('备份中存在重复文件路径（不区分大小写）。');
+    paths.add(file.path.toLowerCase());
+    if (file.content.includes('\0')) throw new Error('备份源码不能包含空字符。');
+    if (byteLength(file.content) > limits.maxFileBytes) throw new Error(`文件 ${file.path} 超过 64 KiB。`);
+  }
+  if (!backup.files.some((file) => file.path === 'index.html'))
+    throw new Error('备份必须包含 index.html 入口。');
+  if (backup.files.reduce((sum, file) => sum + byteLength(file.content), 0) > limits.maxProjectBytes)
+    throw new Error('备份源码总计超过 256 KiB。');
+  if (byteLength(JSON.stringify(backup.files)) > 360000)
+    throw new Error('备份的 JSON 内容过大，请减少源码或转义字符。');
+  return {
+    format: 'zhixue-programming',
+    version: 1,
+    title: backup.title.trim(),
+    templateId: backup.templateId,
+    files: backup.files,
+  };
+}
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename.replace(/[\\/:*?"<>|]/g, '_');
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function useProgrammingOwner() {
+  const { user } = useAuth();
+  const client = useQueryClient();
+  const identity = [user?.organizationId, user?.id, user?.role].join(':');
+  const currentIdentity = useRef(identity);
+  currentIdentity.current = identity;
+  const mounted = useRef(false);
+  const expired = useRef(false);
+  const generation = useRef(0);
+  useEffect(() => {
+    mounted.current = true;
+    const expire = () => {
+      expired.current = true;
+      ++generation.current;
+    };
+    window.addEventListener('auth-expired', expire);
+    return () => {
+      mounted.current = false;
+      ++generation.current;
+      window.removeEventListener('auth-expired', expire);
+    };
+  }, [identity]);
+  function captureOwner() {
+    const captured = generation.current;
+    return () => {
+      const current = client.getQueryData<{ user: User }>(['auth'])?.user;
+      return (
+        mounted.current &&
+        !expired.current &&
+        currentIdentity.current === identity &&
+        generation.current === captured &&
+        !!current &&
+        [current.organizationId, current.id, current.role].join(':') === identity
+      );
+    };
+  }
+  return { identity, captureOwner };
+}
 
 export function Programming() {
   const { id } = useParams();
+  const { identity } = useProgrammingOwner();
   const status = useData<ProgrammingStatus>('/programming/status');
   return (
     <div className="programming-page">
       <QueryState query={status}>
         {status.data &&
           (id ? (
-            <ProgrammingWorkspace key={id} id={id} status={status.data} />
+            <ProgrammingWorkspace key={`${identity}:${id}`} id={id} status={status.data} />
           ) : (
-            <ProgrammingProjects status={status.data} />
+            <ProgrammingProjects key={identity} status={status.data} />
           ))}
       </QueryState>
     </div>
@@ -114,6 +227,7 @@ export function Programming() {
 }
 
 function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
+  const { captureOwner } = useProgrammingOwner();
   const [page, setPage] = useState(1);
   const projects = useData<{ items: ProjectSummary[]; total: number; page: number; pageSize: number }>(
     `/programming/projects?page=${page}&pageSize=9`,
@@ -123,19 +237,81 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [templateId, setTemplateId] = useState('starter');
+  const [importOpen, setImportOpen] = useState(false);
+  const [importBackup, setImportBackup] = useState<ProjectBackup | null>(null);
+  const [importTitle, setImportTitle] = useState('');
+  const [importError, setImportError] = useState('');
+  const [readingBackup, setReadingBackup] = useState(false);
+  const importRead = useRef(0);
+  const projectLimit = (projects.data?.total || 0) >= status.limits.maxProjects;
   const { message } = App.useApp();
   const navigate = useNavigate();
   async function create() {
-    if (!title.trim() || saving) return;
+    const isOwner = captureOwner();
+    if (!isOwner() || !title.trim() || saving) return;
     setSaving(true);
     try {
       const project: Project = await send('/programming/projects', { title: title.trim(), templateId });
+      if (!isOwner()) return;
       message.success('项目已创建');
       navigate(`/programming/${encodeURIComponent(project.id)}`);
     } catch (error) {
-      message.error(errorText(error));
+      if (isOwner()) message.error(errorText(error));
     } finally {
-      setSaving(false);
+      if (isOwner()) setSaving(false);
+    }
+  }
+  async function selectBackup(file?: File) {
+    const isOwner = captureOwner();
+    if (!isOwner()) return;
+    const request = ++importRead.current;
+    setImportBackup(null);
+    setImportError('');
+    setImportTitle('');
+    setReadingBackup(false);
+    if (!file) return;
+    setReadingBackup(true);
+    try {
+      if (file.size > maxBackupBytes)
+        throw new Error('JSON 备份文件最多 380,000 字节，请选择工作区下载的备份。');
+      const source = await file.text();
+      if (!isOwner() || request !== importRead.current) return;
+      let value: unknown;
+      try {
+        value = JSON.parse(source);
+      } catch {
+        throw new Error('无法读取 JSON，请检查文件内容是否完整。');
+      }
+      const backup = readProjectBackup(value, status.limits);
+      if (!isOwner() || request !== importRead.current) return;
+      setImportBackup(backup);
+      setImportTitle(backup.title);
+    } catch (error) {
+      if (isOwner() && request === importRead.current) setImportError(errorText(error));
+    } finally {
+      if (isOwner() && request === importRead.current) setReadingBackup(false);
+    }
+  }
+  async function importProject() {
+    const isOwner = captureOwner();
+    if (!isOwner() || !importBackup || !importTitle.trim() || saving || readingBackup || projectLimit) return;
+    setSaving(true);
+    setImportError('');
+    try {
+      const project: Project = await send('/programming/projects/import', {
+        ...importBackup,
+        title: importTitle.trim(),
+      });
+      if (!isOwner()) return;
+      message.success('备份已导入为新项目');
+      navigate(`/programming/${encodeURIComponent(project.id)}`);
+    } catch (error) {
+      if (isOwner()) {
+        setImportError(errorText(error));
+        void projects.refetch();
+      }
+    } finally {
+      if (isOwner()) setSaving(false);
     }
   }
   return (
@@ -150,9 +326,21 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
               <Button icon={<Sparkles size={16} />}>探索创意广场</Button>
             </Link>
             <Button
+              icon={<Upload size={16} />}
+              disabled={projectLimit}
+              onClick={() => {
+                setImportOpen(true);
+                setImportBackup(null);
+                setImportTitle('');
+                setImportError('');
+              }}
+            >
+              导入 JSON 备份
+            </Button>
+            <Button
               type="primary"
               icon={<Plus size={16} />}
-              disabled={(projects.data?.total || 0) >= status.limits.maxProjects}
+              disabled={projectLimit}
               onClick={() => setCreating(true)}
             >
               新建项目
@@ -166,7 +354,7 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
         </div>
         <div>
           <strong>写代码、看效果、逐步改进</strong>
-          <p>多文件编辑 · 隔离预览 · AI 辅助编写 · 版本恢复 · 源码下载</p>
+          <p>多文件编辑 · 隔离预览 · AI 辅助编写 · 版本恢复 · 项目复制与备份</p>
         </div>
         <Tag color="blue">本地工作区</Tag>
       </div>
@@ -216,6 +404,75 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
           />
         )}
       </QueryState>
+      <Modal
+        title="导入编程项目备份"
+        open={importOpen}
+        okText="确认导入"
+        cancelText="取消"
+        confirmLoading={saving}
+        okButtonProps={{ disabled: !importBackup || !importTitle.trim() || readingBackup || projectLimit }}
+        onOk={() => void importProject()}
+        onCancel={() => {
+          if (!saving) {
+            ++importRead.current;
+            setReadingBackup(false);
+            setImportOpen(false);
+          }
+        }}
+      >
+        <p>选择工作区下载的 JSON 备份，检查内容后创建独立项目。</p>
+        <label className="programming-field-label" htmlFor="programming-import-file">
+          选择 JSON 备份
+        </label>
+        <input
+          className="programming-import-file"
+          id="programming-import-file"
+          type="file"
+          accept=".json,application/json"
+          disabled={saving || readingBackup}
+          onChange={(event) => {
+            void selectBackup(event.target.files?.[0]);
+            event.target.value = '';
+          }}
+        />
+        {readingBackup && <p role="status">正在读取备份…</p>}
+        {importError && <Alert className="programming-notice" type="error" showIcon message={importError} />}
+        {importBackup && (
+          <div className="programming-import-summary">
+            <label className="programming-field-label" htmlFor="programming-import-title">
+              导入后的项目名称
+            </label>
+            <Input
+              id="programming-import-title"
+              value={importTitle}
+              maxLength={160}
+              disabled={saving}
+              onChange={(event) => setImportTitle(event.target.value)}
+            />
+            <p>
+              {importBackup.files.length} 个文件 ·{' '}
+              {(importBackup.files.reduce((sum, file) => sum + byteLength(file.content), 0) / 1024).toFixed(
+                1,
+              )}{' '}
+              KiB 源码
+            </p>
+            <p>来源模板：{importBackup.templateId}</p>
+            <ul aria-label="备份文件列表">
+              {importBackup.files.map((file) => (
+                <li key={file.path}>{file.path}</li>
+              ))}
+            </ul>
+            <p>创意项目的完整 NOTICE.txt 会随导入保留；新项目从初始版本开始。</p>
+          </div>
+        )}
+        {projectLimit && (
+          <Alert
+            type="warning"
+            showIcon
+            message={`最多保存 ${status.limits.maxProjects} 个项目，请先下载并删除旧项目。`}
+          />
+        )}
+      </Modal>
       <Modal
         title="新建编程项目"
         open={creating}
@@ -268,10 +525,13 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
 }
 
 function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingStatus }) {
+  const { captureOwner } = useProgrammingOwner();
   const projectPath = `/programming/projects/${encodeURIComponent(id)}`;
   const query = useData<Project>(projectPath);
   const versions = useData<{ items: Version[] }>(`${projectPath}/versions`);
-  const drafts = useData<{ items: AiDraft[] }>(`${projectPath}/ai-drafts`, true, 5000);
+  const projectCount = useData<{ total: number }>('/programming/projects?page=1&pageSize=1');
+  const [draftPollMs, setDraftPollMs] = useState<number | undefined>();
+  const drafts = useData<{ items: AiDraftSummary[] }>(`${projectPath}/ai-drafts`, true, draftPollMs);
   const [saved, setSaved] = useState<Project | null>(null);
   const [title, setTitle] = useState('');
   const [files, setFiles] = useState<ProjectFile[]>([]);
@@ -280,6 +540,8 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
   const busyRef = useRef(false);
   const [newFileOpen, setNewFileOpen] = useState(false);
   const [newPath, setNewPath] = useState('');
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicateTitle, setDuplicateTitle] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewFiles, setPreviewFiles] = useState('');
   const [now, setNow] = useState(Date.now());
@@ -292,7 +554,9 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
   const [versionPath, setVersionPath] = useState('index.html');
   const [prompt, setPrompt] = useState('');
   const [selectedDraft, setSelectedDraft] = useState<AiDraft | null>(null);
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
+  const [draftError, setDraftError] = useState('');
   const draftRequest = useRef(0);
   const { message, modal } = App.useApp();
   const navigate = useNavigate();
@@ -313,6 +577,7 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
   const previewExpired = !!preview && Date.parse(preview.expiresAt) <= now;
   const previewStale = !!preview && previewFiles !== filesKey(files);
   const remoteChanged = !!saved && !!query.data && query.data.revision !== saved.revision;
+  const projectLimit = (projectCount.data?.total || 0) >= status.limits.maxProjects;
   useUnsavedWarning(dirty);
   useEffect(() => {
     if (!query.data || saved) return;
@@ -344,10 +609,18 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
     return () => window.removeEventListener('message', receive);
   }, [preview, previewExpired]);
   useEffect(() => {
-    if (!selectedDraft || !drafts.data) return;
+    setDraftPollMs(pending ? 5000 : undefined);
+  }, [pending]);
+  useEffect(() => {
+    if (!selectedDraft || !drafts.data || draftLoading) return;
     const updated = drafts.data.items.find((draft) => draft.id === selectedDraft.id);
-    if (updated && updated.status !== selectedDraft.status) setSelectedDraft(updated);
-  }, [drafts.data, selectedDraft]);
+    if (
+      updated &&
+      (Date.parse(updated.updatedAt) > Date.parse(selectedDraft.updatedAt) ||
+        (selectedDraft.status === 'pending' && updated.status !== 'pending'))
+    )
+      void selectDraft(updated);
+  }, [drafts.data, selectedDraft, draftLoading]);
 
   function install(project: Project) {
     setSaved(project);
@@ -359,37 +632,89 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
     client.setQueriesData({ queryKey: [projectPath] }, project);
     void client.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith(`${projectPath}/`) });
   }
-  async function perform(action: string, operation: () => Promise<void>) {
-    if (busyRef.current) return;
+  async function perform(action: string, operation: (isOwner: () => boolean) => Promise<void>) {
+    const isOwner = captureOwner();
+    if (!isOwner() || busyRef.current) return;
     busyRef.current = true;
     setBusy(action);
     try {
-      await operation();
+      await operation(isOwner);
     } catch (error) {
+      if (!isOwner()) return;
       message.error(errorText(error));
       if (error && typeof error === 'object' && 'status' in error && error.status === 409)
         void query.refetch();
     } finally {
-      busyRef.current = false;
-      setBusy('');
+      if (isOwner()) {
+        busyRef.current = false;
+        setBusy('');
+      }
     }
   }
   function save() {
     if (!saved || !dirty || fileError || !title.trim()) return;
-    void perform('save', async () => {
+    void perform('save', async (isOwner) => {
       const project: Project = await send(
         projectPath,
         { revision: saved.revision, title: title.trim(), files },
         'PATCH',
       );
+      if (!isOwner()) return;
       install(project);
       message.success('草稿已保存');
     });
   }
+  async function saveForReuse(isOwner: () => boolean) {
+    if (!saved) throw new Error('项目尚未载入，请稍后重试。');
+    if (remoteChanged) throw new Error('服务器上的项目已变化，请保留本地源码并重新载入后再操作。');
+    if (fileError || !title.trim()) throw new Error(fileError || '请填写项目名称后再操作。');
+    if (!dirty) return saved;
+    if (pending) throw new Error('AI 请求正在处理，请等待完成后保存修改。');
+    const project: Project = await send(
+      projectPath,
+      { revision: saved.revision, title: title.trim(), files },
+      'PATCH',
+    );
+    if (!isOwner()) return null;
+    install(project);
+    return project;
+  }
+  function duplicateProject() {
+    if (!duplicateTitle.trim() || projectLimit) return;
+    void perform('duplicate', async (isOwner) => {
+      const source = await saveForReuse(isOwner);
+      if (!isOwner() || !source) return;
+      const project: Project = await send(`${projectPath}/duplicate`, {
+        revision: source.revision,
+        title: duplicateTitle.trim(),
+      });
+      if (!isOwner()) return;
+      void client.invalidateQueries({
+        predicate: (entry) => String(entry.queryKey[0]).startsWith('/programming/projects'),
+      });
+      message.success('项目已复制为独立副本');
+      setDuplicateOpen(false);
+      navigate(`/programming/${encodeURIComponent(project.id)}`);
+    });
+  }
+  function backupProject() {
+    void perform('backup', async (isOwner) => {
+      const source = await saveForReuse(isOwner);
+      if (!isOwner() || !source) return;
+      const backup = await api<ProjectBackup>(`${projectPath}/backup`);
+      if (!isOwner()) return;
+      downloadBlob(
+        new Blob([JSON.stringify(backup)], { type: 'application/json;charset=utf-8' }),
+        `${source.title || 'project'}.json`,
+      );
+      message.success('已下载 JSON 项目备份，可从项目列表重新导入');
+    });
+  }
   function run() {
     if (!saved || fileError || !status.preview.available) return;
-    void perform('preview', async () => {
+    void perform('preview', async (isOwner) => {
       const result: Preview = await send(`${projectPath}/preview`, { revision: saved.revision, files });
+      if (!isOwner()) return;
       const url = new URL(result.url);
       const expected = new URL(status.preview.origin);
       if (
@@ -411,11 +736,12 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
   }
   function createVersion() {
     if (!saved || dirty || !note.trim() || pending || versionLimit) return;
-    void perform('version', async () => {
+    void perform('version', async (isOwner) => {
       const result: { project: Project; version: Version } = await send(`${projectPath}/versions`, {
         revision: saved.revision,
         note: note.trim(),
       });
+      if (!isOwner()) return;
       install(result.project);
       setNote('');
       message.success(`版本 ${result.version.number} 已保存`);
@@ -429,11 +755,12 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
       okText: '确认恢复',
       cancelText: '取消',
       onOk: () =>
-        perform('restore', async () => {
+        perform('restore', async (isOwner) => {
           const project: Project = await send(`${projectPath}/restore`, {
             revision: saved.revision,
             versionId: version.id,
           });
+          if (!isOwner()) return;
           install(project);
           setPreview(null);
           setViewVersion(null);
@@ -443,13 +770,19 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
   }
   function generate() {
     if (!saved || dirty || pending || draftLimit || !prompt.trim() || !status.ai.available) return;
-    void perform('generate', async () => {
+    void perform('generate', async (isOwner) => {
       const draft: AiDraft = await send(`${projectPath}/ai-drafts`, {
         revision: saved.revision,
         prompt: prompt.trim(),
       });
+      if (!isOwner()) return;
+      ++draftRequest.current;
+      setSelectedDraftId(draft.id);
       setSelectedDraft(draft);
+      setDraftLoading(false);
+      setDraftError('');
       await drafts.refetch();
+      if (!isOwner()) return;
       if (draft.status === 'failed') message.error(draft.error || 'AI 生成失败，项目源码已保留。');
       else if (draft.status === 'ready') message.success('候选代码已生成，请审阅差异后应用。');
     });
@@ -470,11 +803,12 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
       okText: '确认应用',
       cancelText: '继续审阅',
       onOk: () =>
-        perform('apply', async () => {
+        perform('apply', async (isOwner) => {
           const result: { project: Project; draft: AiDraft } = await send(
             `${projectPath}/ai-drafts/${encodeURIComponent(selectedDraft.id)}/apply`,
             { revision: saved.revision },
           );
+          if (!isOwner()) return;
           install(result.project);
           setSelectedDraft(result.draft);
           setPreview(null);
@@ -484,20 +818,17 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
   }
   function exportProject() {
     if (!saved || dirty) return;
-    void perform('export', async () => {
+    void perform('export', async (isOwner) => {
       const response = await fetch(`/api${projectPath}/export`, { credentials: 'include' });
+      if (!isOwner()) return;
       if (!response.ok) {
         if (response.status === 401) window.dispatchEvent(new Event('auth-expired'));
         const result = await response.json().catch(() => ({}));
         throw new Error(result.message || result.error?.message || '下载失败，请稍后重试。');
       }
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `${saved.title.replace(/[\\/:*?"<>|]/g, '_') || 'project'}.zip`;
-      anchor.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (!isOwner()) return;
+      downloadBlob(blob, `${saved.title || 'project'}.zip`);
       message.success('已下载项目源码');
     });
   }
@@ -514,21 +845,27 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
     setNewFileOpen(false);
     setNewPath('');
   }
-  async function selectDraft(draft: AiDraft) {
+  async function selectDraft(draft: Pick<AiDraftSummary, 'id'>) {
+    const isOwner = captureOwner();
+    if (!isOwner()) return;
     const request = ++draftRequest.current;
+    setSelectedDraftId(draft.id);
+    setSelectedDraft(null);
     setDraftLoading(true);
+    setDraftError('');
     try {
       const detail = await api<AiDraft>(`${projectPath}/ai-drafts/${encodeURIComponent(draft.id)}`);
-      if (request === draftRequest.current) setSelectedDraft(detail);
+      if (isOwner() && request === draftRequest.current) setSelectedDraft(detail);
     } catch (error) {
-      message.error(errorText(error));
+      if (isOwner() && request === draftRequest.current) setDraftError(errorText(error));
     } finally {
-      if (request === draftRequest.current) setDraftLoading(false);
+      if (isOwner() && request === draftRequest.current) setDraftLoading(false);
     }
   }
   async function loadVersion(version: Version) {
-    void perform('inspect-version', async () => {
+    void perform('inspect-version', async (isOwner) => {
       const detail = await api<Version>(`${projectPath}/versions/${encodeURIComponent(version.id)}`);
+      if (!isOwner()) return;
       setViewVersion(detail);
       setVersionPath(detail.files?.[0]?.path || 'index.html');
     });
@@ -542,8 +879,9 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
       okText: '重新载入',
       cancelText: '取消',
       onOk: () =>
-        perform('reload', async () => {
+        perform('reload', async (isOwner) => {
           const project = await api<Project>(projectPath);
+          if (!isOwner()) return;
           install(project);
           setPreview(null);
         }),
@@ -608,6 +946,36 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
                   源码 ZIP
                 </Button>
               </Tooltip>
+              <Tooltip title="先保存当前修改，再下载可重新导入的 JSON 项目备份">
+                <Button
+                  icon={<Download size={15} />}
+                  loading={busy === 'backup'}
+                  disabled={!!busy || !!fileError || !title.trim() || pending || remoteChanged}
+                  onClick={backupProject}
+                >
+                  JSON 备份
+                </Button>
+              </Tooltip>
+              <Tooltip
+                title={
+                  projectLimit
+                    ? `最多保存 ${status.limits.maxProjects} 个项目`
+                    : '先保存当前修改，再创建独立副本'
+                }
+              >
+                <Button
+                  icon={<Copy size={15} />}
+                  disabled={
+                    !!busy || !!fileError || !title.trim() || pending || remoteChanged || projectLimit
+                  }
+                  onClick={() => {
+                    setDuplicateTitle(`${title.trim()} 副本`.slice(0, 160));
+                    setDuplicateOpen(true);
+                  }}
+                >
+                  复制项目
+                </Button>
+              </Tooltip>
               <Button
                 aria-label="重新载入项目"
                 icon={<RefreshCw size={15} />}
@@ -620,8 +988,9 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
                 okText="删除项目"
                 cancelText="取消"
                 onConfirm={() =>
-                  perform('delete', async () => {
+                  perform('delete', async (isOwner) => {
                     await send(projectPath, {}, 'DELETE');
+                    if (!isOwner()) return;
                     message.success('项目已删除');
                     navigate('/programming');
                   })
@@ -641,7 +1010,7 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
               className="programming-notice"
               type="warning"
               showIcon
-              message="有未保存修改。可直接预览；AI 生成、应用、版本操作和下载前请先保存草稿。"
+              message="有未保存修改。复制项目和 JSON 备份会先保存当前修改；AI、版本操作与源码 ZIP 下载前请先保存草稿。"
             />
           )}
           {fileError && <Alert className="programming-notice" type="error" showIcon message={fileError} />}
@@ -893,7 +1262,7 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
                       <button
                         type="button"
                         key={draft.id}
-                        className={`programming-task ${selectedDraft?.id === draft.id ? 'active' : ''}`}
+                        className={`programming-task ${selectedDraftId === draft.id ? 'active' : ''}`}
                         onClick={() => void selectDraft(draft)}
                       >
                         <span>{draft.prompt}</span>
@@ -921,9 +1290,22 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
                 ) : null}
               </QueryState>
               {draftLoading && (
-                <div className="programming-draft-loading">
-                  <Spin size="small" /> 正在载入候选内容…
+                <div className="programming-draft-loading" role="status">
+                  <Spin size="small" /> 正在载入候选详情与源码…
                 </div>
+              )}
+              {draftError && selectedDraftId && (
+                <Alert
+                  type="error"
+                  showIcon
+                  message="候选详情加载失败"
+                  description={draftError}
+                  action={
+                    <Button size="small" onClick={() => void selectDraft({ id: selectedDraftId })}>
+                      重试
+                    </Button>
+                  }
+                />
               )}
               {selectedDraft && (
                 <ProgrammingCandidate
@@ -937,6 +1319,40 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
               )}
             </aside>
           </div>
+          <Modal
+            title="复制编程项目"
+            open={duplicateOpen}
+            okText="创建副本"
+            cancelText="取消"
+            confirmLoading={busy === 'duplicate'}
+            okButtonProps={{
+              disabled:
+                !duplicateTitle.trim() || projectLimit || (!!busy && busy !== 'duplicate') || remoteChanged,
+            }}
+            onOk={duplicateProject}
+            onCancel={() => {
+              if (!busy) setDuplicateOpen(false);
+            }}
+          >
+            <p>当前修改会先保存，副本保留源码与来源模板，并从初始版本开始。</p>
+            <label className="programming-field-label" htmlFor="programming-duplicate-title">
+              副本名称
+            </label>
+            <Input
+              id="programming-duplicate-title"
+              value={duplicateTitle}
+              maxLength={160}
+              disabled={!!busy}
+              onChange={(event) => setDuplicateTitle(event.target.value)}
+            />
+            {projectLimit && (
+              <Alert
+                type="warning"
+                showIcon
+                message={`最多保存 ${status.limits.maxProjects} 个项目，请先下载并删除旧项目。`}
+              />
+            )}
+          </Modal>
           <Modal
             title="新建文件"
             open={newFileOpen}

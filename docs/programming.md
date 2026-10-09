@@ -24,6 +24,8 @@
 
 点击“生成候选代码”后，服务端发送项目名称、需求和当前完整源码，要求模型返回改动说明、实现计划、知识讲解及完整文件列表。模型不会自动替换当前项目。
 
+任务列表只读取状态、需求、摘要等元数据，不读取或传输项目及候选的整份源码、实现计划和知识讲解。仅在存在生成中的任务时每 5 秒刷新列表；全部完成后停止轮询。选择一个任务后按需加载详情与候选源码，页面会显示加载状态或可重试的错误；选中的生成中任务完成时自动加载一次更新后的详情。
+
 生成完成后，查看“候选代码审阅”中的新增、修改和删除文件，打开源码对比，确认后点击应用。应用前，服务端把当前已保存源码保留为版本快照；如果最新快照已经与当前源码一致，就复用它。应用和版本保存位于同一数据库事务中，成功后会记录应用后的版本。随后运行预览，手动核对交互、布局和控制台错误。
 
 若模型生成期间项目在其他页面发生修改，候选仍可查看，但不能直接覆盖新修订。应保留需要的源码，以当前版本重新生成。失败、超时或无效 JSON 会明确显示，已有源码保留；系统不会伪造“测试通过”或“已经部署”的结果。
@@ -53,17 +55,23 @@ PROGRAMMING_PREVIEW_BIND_HOST=127.0.0.1
 
 使用 **http://localhost:5173** 登录学习平台。**localhost** 与 **127.0.0.1** 在这里刻意使用不同主机名：Cookie 按主机名而非端口隔离，单纯改为 **localhost:4173** 仍可能携带学习平台的主机 Cookie。预览配置必须同时与平台使用不同主机名和不同 origin，否则预览关闭并说明原因。
 
-| 环境变量                      | 用途                                                             |
-| ----------------------------- | ---------------------------------------------------------------- |
-| PROGRAMMING_PREVIEW_ENABLED   | 默认尝试启动；设为 false 关闭预览，项目编辑仍可使用              |
-| PROGRAMMING_PREVIEW_PORT      | API 进程内的预览监听端口，默认 4173，范围 1024–65535             |
-| PROGRAMMING_PREVIEW_BIND_HOST | 默认 127.0.0.1，供本地使用；调整监听范围需同时考虑代理和访问控制 |
-| PROGRAMMING_PREVIEW_ORIGIN    | 浏览器实际访问的独立预览 origin，不允许路径、查询参数或 URL 凭据 |
-| APP_ORIGIN                    | 学习平台来源，也是预览允许嵌入及回传日志的目标来源               |
+| 环境变量                                   | 用途                                                             |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| PROGRAMMING_PREVIEW_ENABLED                | 默认尝试启动；设为 false 关闭预览，项目编辑仍可使用              |
+| PROGRAMMING_PREVIEW_PORT                   | API 进程内的预览监听端口，默认 4173，范围 1024–65535             |
+| PROGRAMMING_PREVIEW_BIND_HOST              | 默认 127.0.0.1，供本地使用；调整监听范围需同时考虑代理和访问控制 |
+| PROGRAMMING_PREVIEW_ORIGIN                 | 浏览器实际访问的独立预览 origin，不允许路径、查询参数或 URL 凭据 |
+| APP_ORIGIN                                 | 学习平台来源，也是预览允许嵌入及回传日志的目标来源               |
+| PROGRAMMING_PREVIEW_USER_CONCURRENCY       | 同一用户跨空间和链接的文件验证并发，默认 24，可设 1–24           |
+| PROGRAMMING_PREVIEW_USER_READS_PER_MINUTE  | 每用户 GET/HEAD 文件读取量，默认 480，可设 48–9600               |
+| PROGRAMMING_PREVIEW_TOKEN_READS_PER_MINUTE | 每临时链接 GET/HEAD 文件读取量，默认 240，可设 24–4800           |
+| PROGRAMMING_PREVIEW_IP_READS_PER_MINUTE    | 每直连 socket IP GET/HEAD 文件读取量，默认 9600，可设 240–100000 |
 
 预览相关环境变量在启动时读取，修改后重启 API。端口被占用或配置无效时，学习平台继续启动，页面说明预览不可用。开发环境的 HTTP 预览仅允许回环主机。生产环境必须显式提供 HTTPS 预览地址，平台地址也必须使用 HTTPS，并通过反向代理将独立预览域名转发到监听端口；默认不启用公开预览。
 
 每次运行创建 10 分钟的只读内存快照和随机查看链接。链接是临时查看凭据，持有者在有效期内可能加载该预览，不应分享。服务端每次文件读取都会重新核对签发者会话、学生权限、机构功能开关和项目归属；注销或删除项目后不可继续读取。每用户最多保留 3 个预览快照，后续运行会替换最早快照，API 重启后全部失效。预览源码不会因点击运行自动写入项目数据库。
+
+文件读取另设上述每分钟配额，GET 与 HEAD 合并计数；创建快照仍单独限制为每用户每分钟 20 次。同一用户跨链接最多同时占用 24 个验证槽，全局硬上限为 32，避免一个用户阻塞所有其他人；默认并发也允许一个最多 24 文件的网页同时读取全部资源。用户并发或读取配额用尽时返回 **429**，全局并发或限流状态容量用尽时返回 **503**，均携带秒数格式的 **Retry-After**。限流状态最多 1024 项并定期清理过期窗口；IP 取直接连接的 socket 地址，忽略客户端提供的 Forwarded/X-Forwarded-For，较高的默认 IP 配额用于兼容共享代理和校园网络。非法或越界的读取限额配置回退到默认值；调整得过低可能使多文件页面部分资源加载失败。
 
 ## 支持的文件及限制
 
@@ -119,7 +127,7 @@ ZIP 包含当前数据库中已保存的项目源码，不包含密钥、学习�
 ## 开发验证与接口
 
 ```sh
-node --import tsx --test tests/programming.unit.test.ts
+node --import tsx --test tests/programming.unit.test.ts tests/programming-resources.unit.test.ts
 npm run test:programming
 npm run typecheck
 npm run lint
@@ -130,16 +138,31 @@ HTTP 集成测试使用独立本地 review 数据库、测试 API/预览端口�
 
 业务 API 位于 **/api/programming**，统一要求已登录的学生身份和 **learning.use**；机构练习功能关闭时不可使用。
 
-| 路径                                                                              | 行为                               |
-| --------------------------------------------------------------------------------- | ---------------------------------- |
-| GET /status、GET /templates                                                       | AI/预览状态与模板                  |
-| GET /projects、POST /projects                                                     | 本人项目列表、从模板创建           |
-| GET/PATCH/DELETE /projects/:id                                                    | 查看、保存完整源码、删除           |
-| GET/POST /projects/:id/versions                                                   | 版本列表、保存快照                 |
-| GET /projects/:id/versions/:versionId、POST /projects/:id/restore                 | 查看指定版本、恢复                 |
-| GET /projects/:id/export                                                          | 下载已保存源码 ZIP                 |
-| POST /projects/:id/preview                                                        | 使用当前修订及完整文件创建临时预览 |
-| POST/GET /projects/:id/ai-drafts                                                  | 生成候选、查询任务列表             |
-| GET /projects/:id/ai-drafts/:draftId、POST /projects/:id/ai-drafts/:draftId/apply | 查看候选、确认应用                 |
+| 路径                                                                              | 行为                                 |
+| --------------------------------------------------------------------------------- | ------------------------------------ |
+| GET /status、GET /templates                                                       | AI/预览状态与模板                    |
+| GET /projects、POST /projects                                                     | 本人项目列表、从模板创建             |
+| POST /projects/import                                                             | 导入标准 JSON 备份，创建独立项目     |
+| POST /projects/:id/duplicate                                                      | 按源修订复制项目，保留来源模板       |
+| GET /projects/:id/backup                                                          | 下载可重新导入的 JSON 项目备份       |
+| GET/PATCH/DELETE /projects/:id                                                    | 查看、保存完整源码、删除             |
+| GET/POST /projects/:id/versions                                                   | 版本列表、保存快照                   |
+| GET /projects/:id/versions/:versionId、POST /projects/:id/restore                 | 查看指定版本、恢复                   |
+| GET /projects/:id/export                                                          | 下载已保存源码 ZIP                   |
+| POST /projects/:id/preview                                                        | 使用当前修订及完整文件创建临时预览   |
+| POST/GET /projects/:id/ai-drafts                                                  | 生成候选、查询不含源码的任务摘要列表 |
+| GET /projects/:id/ai-drafts/:draftId、POST /projects/:id/ai-drafts/:draftId/apply | 查看候选、确认应用                   |
 
 所有版本敏感写入提交整数 **revision**；服务端以当前版本复核并拒绝过期覆盖。AI 生成时预占共享额度，在服务端完成结构校验和当前访问资格复核后成为可审阅候选。重复应用已完成的同一候选返回原应用结果，不重复写入版本。
+
+### 项目复制与可导入备份
+
+工作区的“复制项目”和“JSON 备份”会先保存当前未保存修改；保存失败或遇到过期修订时停止后续操作，保留本地源码。复制提交 `{title, revision}`，服务端在权限与用户锁保护的事务内核对源修订并创建独立项目，不修改源项目。项目列表的“导入 JSON 备份”先读取本地 JSON，展示文件列表、文件数和源码大小，可调整新项目名称后确认导入。
+
+切换账号、切换身份或离开页面后，旧页面的异步结果不会触发下载、成功提示、导航或旧项目重新查询；取消文件读取并选择另一份备份时，较晚返回的旧文件也不会覆盖新摘要。
+
+备份格式固定为 `{format: "zhixue-programming", version: 1, title, templateId, files}`，仅含项目名称、来源模板和源码，不包含用户、机构、项目 ID、修订、历史版本或 AI 草稿。未知字段、未知格式/版本、未知模板及无效文件会被拒绝。导入与复制都受每个用户最多 20 项目、24 文件、单文件 64 KiB、总源码 256 KiB 和文件 JSON 序列化负载限制；本地导入文件最多 380,000 字节。新项目从修订 0 和版本 1 开始，不继承源项目历史、AI 草稿或临时预览。
+
+来源模板仅接受 `starter`、`counter`、`todo`、`imported` 和创意目录中的 `creative:<id>`。创意导入必须完整保留目录对应的 `NOTICE.txt`；即使模板字段被改为普通模板，完整原始 NOTICE 或同一文件中的上游仓库与固定提交组合仍会识别创意来源并恢复其来源模板，确保后续保存继续保护 NOTICE。普通说明仅提及仓库 URL 不会触发来源识别。离线 JSON 未签名，来源识别无法证明所有标记均被移除后的任意源码血缘。
+
+聚焦验证：`node --import tsx --test tests/programming-portability.unit.test.ts` 与 `npx playwright test -c playwright.config.ts tests/browser/programming-portability.spec.ts`。这些测试使用本地源码、内存数据库夹具和浏览器 API 模拟，不请求真实模型或判题服务。

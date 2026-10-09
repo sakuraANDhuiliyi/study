@@ -5,6 +5,7 @@ import { mkdir } from 'node:fs/promises';
 test.use({ actionTimeout: 15000 });
 
 const stamp = '2026-10-09T09:00:00.000Z';
+const previewOrigin = process.env.PROGRAMMING_PREVIEW_ORIGIN || 'http://127.0.0.1:4173';
 const initialFiles = [
   {
     path: 'index.html',
@@ -22,9 +23,11 @@ type FixtureOptions = {
   unsafePreview?: boolean;
   conflictSave?: boolean;
   conflictApply?: boolean;
+  initialDraft?: 'ready' | 'pending';
 };
 async function fixture(page: Page, options: FixtureOptions = {}) {
   const writes: { path: string; body: any; csrf?: string }[] = [];
+  const reads: string[] = [];
   let project = {
     id: 'project-one',
     title: '契约计数器',
@@ -34,7 +37,34 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
     createdAt: stamp,
     updatedAt: stamp,
   };
-  let currentDraft: any = null;
+  let currentDraft: any = options.initialDraft
+    ? {
+        id: 'draft-one',
+        projectId: project.id,
+        baseRevision: 0,
+        status: options.initialDraft,
+        prompt: '已有候选任务',
+        summary: '大源码候选',
+        plan: ['加载后审阅'],
+        teaching: ['按需读取'],
+        files:
+          options.initialDraft === 'pending'
+            ? []
+            : [
+                { path: 'index.html', content: `<h1>大候选</h1>${' '.repeat(60000)}` },
+                ...Array.from({ length: 3 }, (_, i) => ({
+                  path: `large-${i}.js`,
+                  content: ' '.repeat(60000),
+                })),
+              ],
+        model: 'fixture',
+        error: null,
+        createdAt: stamp,
+        updatedAt: stamp,
+      }
+    : null;
+  let detailGate: Promise<void> | undefined;
+  let releaseDetail: (() => void) | undefined;
   const versions: any[] = [
     {
       id: 'version-1',
@@ -49,7 +79,7 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
   let conflictApply = !!options.conflictApply;
   const json = (route: Route, data: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
-  await page.route('http://127.0.0.1:4173/**', (route) =>
+  await page.route(`${previewOrigin}/**`, (route) =>
     route.fulfill({
       contentType: 'text/html; charset=utf-8',
       body: '<!doctype html><html><head><meta charset="utf-8"></head><body><h1>隔离预览</h1><script>parent.postMessage({type:"programming-preview-log",nonce:"contract-preview-nonce",level:"log",text:"preview ready"},"*");</script></body></html>',
@@ -59,6 +89,7 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     const method = request.method();
+    if (method === 'GET') reads.push(path);
     if (!['GET', 'HEAD'].includes(method))
       writes.push({ path, body: request.postDataJSON(), csrf: request.headers()['x-csrf-token'] });
     if (path === '/api/auth/me')
@@ -84,7 +115,7 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
           reason: '未配置模型密钥',
           model: 'contract-fixture-model',
         },
-        preview: { available: true, reason: '', origin: 'http://127.0.0.1:4173' },
+        preview: { available: true, reason: '', origin: previewOrigin },
         limits: {
           maxProjects: 20,
           maxFiles: 24,
@@ -137,7 +168,7 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
       return json(route, {
         url: options.unsafePreview
           ? 'https://malicious.invalid/preview'
-          : 'http://127.0.0.1:4173/p/fixture/index.html',
+          : `${previewOrigin}/p/fixture/index.html`,
         nonce: 'contract-preview-nonce',
         expiresAt: new Date(Date.now() + 600000).toISOString(),
       });
@@ -177,8 +208,14 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
       };
       return json(route, project);
     }
-    if (path === `${base}/ai-drafts` && method === 'GET')
-      return json(route, { items: currentDraft ? [currentDraft] : [] });
+    if (path === `${base}/ai-drafts` && method === 'GET') {
+      const summary =
+        currentDraft &&
+        Object.fromEntries(
+          Object.entries(currentDraft).filter(([key]) => !['files', 'plan', 'teaching'].includes(key)),
+        );
+      return json(route, { items: summary ? [summary] : [] });
+    }
     if (path === `${base}/ai-drafts` && method === 'POST') {
       const body = request.postDataJSON();
       currentDraft = {
@@ -207,7 +244,10 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
       };
       return json(route, currentDraft, 201);
     }
-    if (path === `${base}/ai-drafts/draft-one` && method === 'GET') return json(route, currentDraft);
+    if (path === `${base}/ai-drafts/draft-one` && method === 'GET') {
+      await detailGate;
+      return json(route, currentDraft);
+    }
     if (path === `${base}/ai-drafts/draft-one/apply`) {
       if (conflictApply) {
         conflictApply = false;
@@ -228,7 +268,28 @@ async function fixture(page: Page, options: FixtureOptions = {}) {
     }
     return json(route, { message: `Unmocked ${method} ${path}` }, 404);
   });
-  return { writes, getProject: () => project };
+  return {
+    writes,
+    reads,
+    getProject: () => project,
+    finishDraft() {
+      currentDraft = {
+        ...currentDraft,
+        status: 'ready',
+        updatedAt: '2026-10-09T09:01:00.000Z',
+        files: [{ path: 'index.html', content: '<h1>生成完成</h1>' }],
+      };
+    },
+    holdDetail() {
+      detailGate = new Promise<void>((resolve) => {
+        releaseDetail = resolve;
+      });
+    },
+    releaseDetail() {
+      releaseDetail?.();
+      detailGate = undefined;
+    },
+  };
 }
 
 async function simpleEditor(page: Page) {
@@ -243,6 +304,50 @@ async function screenshot(page: Page, name: string) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `.data/programming-${name}.png`, fullPage: true });
 }
+
+test('ready 大源码候选列表停止轮询，选中时才加载详情并可应用', async ({ page }) => {
+  await page.clock.install();
+  const state = await fixture(page, { initialDraft: 'ready' });
+  const listPath = '/api/programming/projects/project-one/ai-drafts';
+  const detailPath = `${listPath}/draft-one`;
+  await page.goto('/programming/project-one');
+  await expect(page.getByRole('button', { name: /已有候选任务/ })).toBeVisible();
+  expect(state.reads.filter((path) => path === listPath)).toHaveLength(1);
+  expect(state.reads.filter((path) => path === detailPath)).toHaveLength(0);
+  await page.clock.fastForward(16000);
+  expect(state.reads.filter((path) => path === listPath)).toHaveLength(1);
+  state.holdDetail();
+  await page.getByRole('button', { name: /已有候选任务/ }).click();
+  await expect(page.getByRole('status')).toContainText('正在载入候选详情与源码');
+  await expect(page.getByRole('button', { name: '审核完成，应用候选代码', exact: true })).toHaveCount(0);
+  state.releaseDetail();
+  await expect(page.getByRole('heading', { name: '候选代码审阅', exact: true })).toBeVisible();
+  expect(state.reads.filter((path) => path === detailPath)).toHaveLength(1);
+  await page.getByRole('button', { name: '审核完成，应用候选代码', exact: true }).click();
+  await page.getByRole('button', { name: '确认应用', exact: true }).click();
+  await expect(
+    page.getByText('候选代码已应用到项目。原源码已保留在版本记录中。', { exact: true }),
+  ).toBeVisible();
+});
+
+test('只在 pending 时轮询摘要，选中的任务完成后只加载一次详情并停止轮询', async ({ page }) => {
+  await page.clock.install();
+  const state = await fixture(page, { initialDraft: 'pending' });
+  const listPath = '/api/programming/projects/project-one/ai-drafts';
+  const detailPath = `${listPath}/draft-one`;
+  await page.goto('/programming/project-one');
+  await page.getByRole('button', { name: /已有候选任务/ }).click();
+  await expect(page.getByText('任务正在生成，完成后可查看候选代码。', { exact: true })).toBeVisible();
+  state.finishDraft();
+  await page.clock.fastForward(5500);
+  await expect(page.getByRole('button', { name: '审核完成，应用候选代码', exact: true })).toBeEnabled();
+  expect(state.reads.filter((path) => path === detailPath)).toHaveLength(2);
+  const listCount = state.reads.filter((path) => path === listPath).length;
+  expect(listCount).toBeGreaterThan(1);
+  await page.clock.fastForward(16000);
+  expect(state.reads.filter((path) => path === listPath)).toHaveLength(listCount);
+  expect(state.reads.filter((path) => path === detailPath)).toHaveLength(2);
+});
 
 test('个人学生可创建模板项目、编辑多文件、保存版本、隔离预览并下载源码', async ({ page }) => {
   const state = await fixture(page);
@@ -284,7 +389,7 @@ test('个人学生可创建模板项目、编辑多文件、保存版本、隔�
     ),
   );
   await expect(page.getByRole('log')).not.toContainText('FORGED HOST MESSAGE');
-  const previewFrame = page.frames().find((item) => item.url().includes('4173'))!;
+  const previewFrame = page.frames().find((item) => item.url().startsWith(`${previewOrigin}/`))!;
   await previewFrame.evaluate(() => {
     parent.postMessage(
       { type: 'programming-preview-log', nonce: 'wrong-nonce', level: 'error', text: 'FORGED NONCE MESSAGE' },

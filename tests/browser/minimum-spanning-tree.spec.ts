@@ -23,7 +23,7 @@ async function setup(page: Page) {
   const solved = new Set(
     graphPlan.chapters.flatMap((chapter) => chapter.problemIds).filter((item) => item !== id),
   );
-  const drafts = new Map<string, { language: Language; code: string; updatedAt: string }>();
+  const drafts = new Map<string, { language: Language; code: string; revision: number; updatedAt: string }>();
   const submissions: any[] = [];
   const requests: { path: string; method: string; body: any }[] = [];
   const cards = () =>
@@ -159,7 +159,9 @@ async function setup(page: Page) {
         });
       }
       if (match[2] === 'draft') {
-        drafts.set(selected.id, { ...body, updatedAt: stamp });
+        if (body.revision !== (drafts.get(selected.id)?.revision ?? 0))
+          return json(route, { message: '草稿已更新' }, 409);
+        drafts.set(selected.id, { ...body, revision: body.revision + 1, updatedAt: stamp });
         return json(route, drafts.get(selected.id));
       }
       if (match[2] === 'learning') return json(route, learning);
@@ -234,15 +236,18 @@ async function restoreBackup(page: Page) {
 test('第19题分页与搜索可见，树图第三章5/6继续学习指向新题', async ({ page }) => {
   await setup(page);
   await page.goto('/algorithms');
-  await expect(page.getByLabel('算法练习统计')).toContainText('19');
+  await expect(page.getByLabel('算法练习统计')).toContainText(String(algorithmProblems.length));
   await expect(page.locator('.algo-problem-row')).toHaveCount(12);
   await page.getByTitle('2', { exact: true }).click();
-  await expect(page.locator('.algo-problem-row')).toHaveCount(7);
+  await expect(page.locator('.algo-problem-row')).toHaveCount(Math.min(12, algorithmProblems.length - 12));
   await expect(page.locator('.algo-problem-row').filter({ hasText: '最小生成树总权' })).toContainText('019');
   await page.getByRole('searchbox', { name: '搜索算法题' }).fill('19');
   await page.getByRole('searchbox', { name: '搜索算法题' }).press('Enter');
-  await expect(page.locator('.algo-problem-row')).toHaveCount(1);
-  await expect(page.locator('.algo-problem-row')).toContainText('最小生成树总权');
+  await expect(page.locator('.algo-problem-row')).toHaveCount(
+    algorithmProblems.filter((item) => `${item.number} ${item.title} ${item.tags.join(' ')}`.includes('19'))
+      .length,
+  );
+  await expect(page.locator('.algo-problem-row').filter({ hasText: '最小生成树总权' })).toHaveCount(1);
   await page.getByText('树与图专题', { exact: true }).click();
   await expect(planPanel(page)).toContainText('5 / 6 题');
   await expect(planPanel(page).locator('.algo-plan-chapter')).toHaveCount(3);
@@ -256,7 +261,13 @@ test('第19题分页与搜索可见，树图第三章5/6继续学习指向新题
   await planPanel(page).getByRole('button', { name: '继续学习', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/algorithms/${id}$`));
   await expect(page.getByRole('heading', { name: '最小生成树总权', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: '下一题' })).toHaveCount(0);
+  const next = algorithmProblems[algorithmProblems.findIndex((item) => item.id === id) + 1];
+  if (next)
+    await expect(page.getByRole('link', { name: '下一题', exact: true })).toHaveAttribute(
+      'href',
+      `/algorithms/${next.id}`,
+    );
+  else await expect(page.getByRole('link', { name: '下一题', exact: true })).toHaveCount(0);
 });
 
 test('原创题面明确三公开答案、负权与树限制，三级提示逐次展开且完整答案默认隐藏', async ({ page }) => {

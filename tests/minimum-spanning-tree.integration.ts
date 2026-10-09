@@ -433,7 +433,7 @@ test('最小生成树：独立数据库、Judge0协议、真实HTTP与学习进�
         'connected-components',
         'shortest-path',
       ]);
-      await call(student, `${base}/draft`, 'PUT', source);
+      await call(student, `${base}/draft`, 'PUT', { ...source, revision: 0 });
       const note = '合法总权 -1；自环不能入树；边权总和使用64位。\n<script>literal</script>';
       const state = (
         await call(student, `${base}/learning`, 'PATCH', {

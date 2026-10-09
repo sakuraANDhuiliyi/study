@@ -343,6 +343,8 @@ test('数字逻辑等价比较：独立PostgreSQL与真实HTTP验收', { timeout
     });
 
     await t.test('非法对照和未知字段400，角色/CSRF拒绝，均不新增记录', async () => {
+      // Rejected module inputs spend requests too; isolate this 19-vector validation batch.
+      const invalidLearner = await register('logic_invalid');
       const before = await db!.academicsRecord.count();
       for (const compareExpression of [
         'E',
@@ -363,24 +365,24 @@ test('数字逻辑等价比较：独立PostgreSQL与真实HTTP验收', { timeout
         [],
         {},
       ]) {
-        await call(personal, endpoint, 'POST', { values: { expression: 'A', compareExpression } }, 400);
+        await call(invalidLearner, endpoint, 'POST', { values: { expression: 'A', compareExpression } }, 400);
       }
       await call(
-        personal,
+        invalidLearner,
         endpoint,
         'POST',
         { values: { expression: 'A', compareExpression: 'A', unsupported: true } },
         400,
       );
       await call(
-        personal,
+        invalidLearner,
         endpoint,
         'POST',
         { values: { expression: 'A', compareExpression: 'A' }, result: { summary: '伪造' } },
         400,
       );
       await call(null, endpoint, 'POST', { values: { expression: 'A' } }, 401);
-      await call(personal, endpoint, 'POST', { values: { expression: 'A' } }, 403, false);
+      await call(invalidLearner, endpoint, 'POST', { values: { expression: 'A' } }, 403, false);
       for (const account of [admin, teacher])
         await call(account, endpoint, 'POST', { values: { expression: 'A' } }, 403);
       assert.equal(await db!.academicsRecord.count(), before);

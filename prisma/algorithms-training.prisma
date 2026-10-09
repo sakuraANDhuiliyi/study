@@ -1,0 +1,14 @@
+model AlgorithmTrainingPlan {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  title          String
+  description    String @default("")
+  problemIds     String[]
+  archived       Boolean @default(false)
+  revision       Int @default(0)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId, userId, archived, createdAt, id], map: "AlgorithmTrainingPlan_owner_list_idx")
+  @@index([userId])
+}

@@ -32,7 +32,7 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 - `GET /admin/users?search=&role=&active=&page=&pageSize=`。
 - `POST /admin/users {username,name,password,studentNo?,roles:string[]}`。
 - `PATCH /admin/users/:id {name?,active?,studentNo?,roles?}`，拒绝自身权限变更，管理员只能操作学生／教师。所有已有账号禁止通过此接口设置密码。
-- `POST /admin/users/:id/recovery` 开启 15 分钟恢复许可，需要 `users.manage` 和相同目标管理边界；目标必须已由本人预留恢复码。管理员拿不到恢复码，也不能指定新密码。
+- `POST /admin/users/:id/recovery` 开启 15 分钟恢复许可，需要 `users.manage` 和相同目标管理边界；目标必须已由本人预留恢复码。事务先锁定目标 User，再复核当前机构、机构账号模式、角色上限与启用状态；与退出机构、迁移或角色更新并发时，按锁内当前状态拒绝过期操作。管理员拿不到恢复码，也不能指定新密码。
 - `POST /admin/users/import {rows:[…新增账号字段],commit:false}` 先预览；全量通过后 `commit:true` 事务导入。错误 `{row,message}`；返回预览不会含密码。
 - `GET /admin/users/template` CSV 模板；`GET /admin/users/export` 当前权限复查后直接下载，无永久导出链接。
 - `POST /admin/users/batch {ids,active}` 每项独立授权并返回结果。

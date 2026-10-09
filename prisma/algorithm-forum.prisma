@@ -1,3 +1,12 @@
+model AlgorithmForumAlias {
+  authorId String
+  contextKey String
+  label String @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  author User @relation(fields:[authorId],references:[id],onDelete:Cascade)
+  @@id([authorId,contextKey])
+}
+
 model AlgorithmForumPost {
   id String @id @default(cuid())
   organizationId String

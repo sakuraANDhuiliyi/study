@@ -4,10 +4,11 @@ import {
   HttpException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, type AlgorithmForumPost, type AlgorithmForumReply } from '@prisma/client';
-import { createHash } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import type { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { lockSecurityUser } from '../auth/security-transaction';
@@ -22,9 +23,14 @@ import {
   type ForumPageQuery,
 } from './algorithm-forum.schemas';
 type Tx = Prisma.TransactionClient;
-export function forumAuthorLabel(id: string) {
-  return `学习者·${createHash('sha256').update(`algorithm-forum:${id}`).digest('hex').slice(0, 8)}`;
+export function createForumAuthorLabel() {
+  return `学习者·${randomBytes(8).toString('hex')}`;
 }
+type AliasSource = { authorId: string; organizationId: string; scope: string };
+const aliasContext = (row: AliasSource) =>
+  row.scope === 'public' ? 'public' : `organization:${row.organizationId}`;
+const aliasKey = (row: { authorId: string; contextKey: string }) =>
+  JSON.stringify([row.authorId, row.contextKey]);
 export function forumCanWrite(actor: Actor) {
   return actor.role === 'STUDENT'
     ? actor.permissions.includes('learning.use')
@@ -133,7 +139,51 @@ export class AlgorithmForumService {
     if (!row) throw new NotFoundException('讨论不存在或不可访问');
     return row;
   }
-  private postDto(actor: Actor, row: AlgorithmForumPost, replyCount = 0, detail = false) {
+  private async authorLabels(db: Tx | PrismaService, rows: AliasSource[]) {
+    const keys = [
+      ...new Map(
+        rows.map((row) => {
+          const key = { authorId: row.authorId, contextKey: aliasContext(row) };
+          return [aliasKey(key), key] as const;
+        }),
+      ).values(),
+    ].sort((left, right) => aliasKey(left).localeCompare(aliasKey(right)));
+    const labels = new Map<string, string>();
+    let missing = keys;
+    // Pages are bounded; resolve authors in batches and read the winner if another
+    // request inserts the same key. Retry a rare random label collision as well.
+    for (let attempt = 0; missing.length && attempt < 3; attempt++) {
+      const stored = await db.algorithmForumAlias.findMany({
+        where: { OR: missing },
+        select: { authorId: true, contextKey: true, label: true },
+      });
+      for (const row of stored) labels.set(aliasKey(row), row.label);
+      missing = missing.filter((key) => !labels.has(aliasKey(key)));
+      if (missing.length)
+        await db.algorithmForumAlias.createMany({
+          data: missing.map((key) => ({ ...key, label: createForumAuthorLabel() })),
+          skipDuplicates: true,
+        });
+    }
+    if (missing.length) {
+      const stored = await db.algorithmForumAlias.findMany({
+        where: { OR: missing },
+        select: { authorId: true, contextKey: true, label: true },
+      });
+      for (const row of stored) labels.set(aliasKey(row), row.label);
+    }
+    if (keys.some((key) => !labels.has(aliasKey(key))))
+      throw new ServiceUnavailableException('讨论别名暂不可用，请稍后重试');
+    return (row: AliasSource) =>
+      labels.get(aliasKey({ authorId: row.authorId, contextKey: aliasContext(row) }))!;
+  }
+  private postDto(
+    actor: Actor,
+    row: AlgorithmForumPost,
+    authorLabel: string,
+    replyCount = 0,
+    detail = false,
+  ) {
     const problem = row.problemId ? getAlgorithmProblem(row.problemId) : undefined;
     const own = this.own(actor, row),
       moderate = forumCanModerate(actor, row.organizationId);
@@ -149,7 +199,7 @@ export class AlgorithmForumService {
       pinned: row.pinned,
       closed: row.closed,
       solved: row.solved,
-      authorLabel: forumAuthorLabel(row.authorId),
+      authorLabel,
       isOwn: own,
       canEdit: own && forumCanWrite(actor),
       canDelete: (own && forumCanWrite(actor)) || moderate,
@@ -160,12 +210,12 @@ export class AlgorithmForumService {
       updatedAt: row.updatedAt,
     };
   }
-  private replyDto(actor: Actor, row: AlgorithmForumReply) {
+  private replyDto(actor: Actor, row: AlgorithmForumReply, authorLabel: string) {
     return {
       id: row.id,
       body: row.body,
       revision: row.revision,
-      authorLabel: forumAuthorLabel(row.authorId),
+      authorLabel,
       isOwn: this.own(actor, row),
       canDelete:
         (this.own(actor, row) && forumCanWrite(actor)) || forumCanModerate(actor, row.organizationId),
@@ -219,8 +269,9 @@ export class AlgorithmForumService {
       _count: { _all: true },
     });
     const byId = new Map(counts.map((c) => [c.postId, c._count._all]));
+    const label = await this.authorLabels(this.db, items);
     return {
-      items: items.map((row) => this.postDto(actor, row, byId.get(row.id) || 0)),
+      items: items.map((row) => this.postDto(actor, row, label(row), byId.get(row.id) || 0)),
       total,
       page: query.page,
       pageSize: query.pageSize,
@@ -230,7 +281,8 @@ export class AlgorithmForumService {
     await this.access(actor);
     const row = await this.post(this.db, actor, id);
     const count = await this.db.algorithmForumReply.count({ where: { postId: id, deletedAt: null } });
-    return this.postDto(actor, row, count, true);
+    const label = await this.authorLabels(this.db, [row]);
+    return this.postDto(actor, row, label(row), count, true);
   }
   async create(actor: Actor, input: ForumPostInput) {
     await this.access(actor);
@@ -251,7 +303,8 @@ export class AlgorithmForumService {
         kind: row.kind,
         problemId: row.problemId,
       });
-      return this.postDto(fresh, row, 0, true);
+      const label = await this.authorLabels(tx, [row]);
+      return this.postDto(fresh, row, label(row), 0, true);
     });
   }
   async update(actor: Actor, id: string, input: ForumPostUpdateInput) {
@@ -269,7 +322,8 @@ export class AlgorithmForumService {
       });
       await this.audit(tx, actor, 'post.update', id, { revision: updated.revision });
       const replies = await tx.algorithmForumReply.count({ where: { postId: id, deletedAt: null } });
-      return this.postDto(fresh, updated, replies, true);
+      const label = await this.authorLabels(tx, [updated]);
+      return this.postDto(fresh, updated, label(updated), replies, true);
     });
   }
   async remove(actor: Actor, id: string, revision: number) {
@@ -313,12 +367,13 @@ export class AlgorithmForumService {
       });
       await this.audit(tx, actor, 'post.moderate', id, flags);
       const replies = await tx.algorithmForumReply.count({ where: { postId: id, deletedAt: null } });
-      return this.postDto(fresh, updated, replies, true);
+      const label = await this.authorLabels(tx, [updated]);
+      return this.postDto(fresh, updated, label(updated), replies, true);
     });
   }
   async replies(actor: Actor, id: string, query: ForumPageQuery) {
     await this.access(actor);
-    await this.post(this.db, actor, id);
+    const post = await this.post(this.db, actor, id);
     const where = { postId: id, deletedAt: null };
     const [items, total] = await Promise.all([
       this.db.algorithmForumReply.findMany({
@@ -329,8 +384,10 @@ export class AlgorithmForumService {
       }),
       this.db.algorithmForumReply.count({ where }),
     ]);
+    const sources = items.map((row) => ({ ...row, scope: post.scope, organizationId: post.organizationId }));
+    const label = await this.authorLabels(this.db, sources);
     return {
-      items: items.map((row) => this.replyDto(actor, row)),
+      items: items.map((row, index) => this.replyDto(actor, row, label(sources[index]))),
       total,
       page: query.page,
       pageSize: query.pageSize,
@@ -351,7 +408,9 @@ export class AlgorithmForumService {
         data: { postId: id, organizationId: actor.organizationId, authorId: actor.id, body: input.body },
       });
       await this.audit(tx, actor, 'reply.create', row.id, { postId: id });
-      return this.replyDto(fresh, row);
+      const source = { ...row, scope: post.scope, organizationId: post.organizationId };
+      const label = await this.authorLabels(tx, [source]);
+      return this.replyDto(fresh, row, label(source));
     });
   }
   async removeReply(actor: Actor, postId: string, id: string, revision: number) {

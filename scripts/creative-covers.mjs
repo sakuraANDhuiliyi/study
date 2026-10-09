@@ -1,6 +1,6 @@
 /**
  * Render covers for the checked-in creative catalog only.
- * Run: node --import tsx scripts/creative-covers.mjs
+ * Run: node --import tsx scripts/creative-covers.mjs [--only=<catalog-id>]
  * Requires the dev Playwright dependency and Chrome (macOS) / Chromium (Linux).
  * This renderer never imports, executes or accepts user project code in Node.
  * It serves only the fixed catalog files to an opaque browser sandbox.
@@ -24,13 +24,17 @@ const outputDirectory = path.join(repo, 'apps/web/public/creative');
 const evidenceDirectory = path.join(repo, '.data');
 const items = new Map(creativeItems.map((item) => [item.id, item]));
 const args = process.argv.slice(2);
+assert.ok(args.length <= 1, 'Choose one catalog filter');
+const onlyId = args[0]?.startsWith('--only=') ? args[0].slice('--only='.length) : undefined;
 assert.ok(
-  args.every((argument) => argument === '--new-only'),
-  'Only --new-only can select a fixed edition',
+  !args.length || args[0] === '--new-only' || (onlyId && items.has(onlyId)),
+  'Choose --new-only or --only=<known catalog id>',
 );
-const selectedItems = args.includes('--new-only')
-  ? creativeItems.filter((item) => item.edition === 2)
-  : creativeItems;
+const selectedItems = onlyId
+  ? [items.get(onlyId)]
+  : args.includes('--new-only')
+    ? creativeItems.filter((item) => item.edition === 2)
+    : creativeItems;
 let advancedProbes = [];
 try {
   const { advancedCreativeProbes } = await import('./creative-probes.mjs');

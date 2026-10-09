@@ -28,11 +28,25 @@ import {
 } from './programming.schemas';
 import { programmingTemplates, getProgrammingTemplate } from './programming.templates';
 import { programmingZip } from './programming.archive';
+import { parseProgrammingBackup, type ProgrammingBackup } from './programming.backup';
 import { createHash } from 'node:crypto';
 import { creativeItems, type CreativeItem } from './creative.catalog';
 import type { CreativeListQuery } from './creative.schemas';
 
 type Tx = Prisma.TransactionClient;
+const draftSummarySelect = {
+  id: true,
+  projectId: true,
+  baseRevision: true,
+  status: true,
+  prompt: true,
+  summary: true,
+  model: true,
+  error: true,
+  createdAt: true,
+  updatedAt: true,
+  appliedVersionId: true,
+} satisfies Prisma.ProgrammingAiDraftSelect;
 const json = (value: unknown) => JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 const EXPIRED = '上次 AI 编程请求已超时，请重新生成。';
 const safeErrors: Record<string, string> = {
@@ -395,6 +409,69 @@ export class ProgrammingService {
     await this.access(actor);
     return this.projectDto(await this.own(this.db, actor, id));
   }
+  private async createPortableProject(tx: Tx, actor: Actor, backup: ProgrammingBackup, note: string) {
+    if ((await tx.programmingProject.count({ where: this.scope(actor) })) >= limits.maxProjects)
+      throw new ConflictException(`最多保存 ${limits.maxProjects} 个项目，请先下载并删除旧项目`);
+    const project = await tx.programmingProject.create({
+      data: {
+        ...this.scope(actor),
+        title: backup.title,
+        templateId: backup.templateId,
+        files: json(backup.files),
+      },
+    });
+    await this.nextVersion(tx, actor, project, note);
+    return project;
+  }
+  async duplicate(actor: Actor, id: string, input: { title: string; revision: number }) {
+    await this.access(actor);
+    return this.db.$transaction(async (tx) => {
+      await this.current(tx, actor);
+      const source = await this.own(tx, actor, id);
+      this.revision(source, input.revision);
+      const backup = parseProgrammingBackup({
+        format: 'zhixue-programming',
+        version: 1,
+        title: input.title,
+        templateId: source.templateId,
+        files: source.files,
+      });
+      const project = await this.createPortableProject(tx, actor, backup, '复制项目');
+      await this.audit(tx, actor, 'programming.duplicate', project.id, {
+        sourceProjectId: id,
+        templateId: backup.templateId,
+        fileCount: backup.files.length,
+      });
+      return this.projectDto(project);
+    });
+  }
+  async backup(actor: Actor, id: string) {
+    await this.access(actor);
+    const project = await this.own(this.db, actor, id);
+    return {
+      filename: `programming-${project.id}.json`,
+      bundle: parseProgrammingBackup({
+        format: 'zhixue-programming',
+        version: 1,
+        title: project.title,
+        templateId: project.templateId,
+        files: project.files,
+      }),
+    };
+  }
+  async importProject(actor: Actor, input: ProgrammingBackup) {
+    await this.access(actor);
+    const backup = parseProgrammingBackup(input);
+    return this.db.$transaction(async (tx) => {
+      await this.current(tx, actor);
+      const project = await this.createPortableProject(tx, actor, backup, '导入项目备份');
+      await this.audit(tx, actor, 'programming.import', project.id, {
+        templateId: backup.templateId,
+        fileCount: backup.files.length,
+      });
+      return this.projectDto(project);
+    });
+  }
   async update(
     actor: Actor,
     id: string,
@@ -703,14 +780,20 @@ export class ProgrammingService {
   }
   async drafts(actor: Actor, id: string) {
     await this.access(actor);
-    await this.own(this.db, actor, id);
+    // Polling task status must not fetch either the project source or candidate sources.
+    const project = await this.db.programmingProject.findFirst({
+      where: { ...this.scope(actor), id },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundException('编程项目不存在');
     await this.recoverPending(actor);
     const rows = await this.db.programmingAiDraft.findMany({
       where: { ...this.scope(actor), projectId: id },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limits.maxAiDrafts,
+      select: draftSummarySelect,
     });
-    return { items: rows.map((row) => this.draftDto(row)) };
+    return { items: rows };
   }
   private async ownDraft(db: Tx | PrismaService, actor: Actor, projectId: string, id: string) {
     const draft = await db.programmingAiDraft.findFirst({ where: { ...this.scope(actor), projectId, id } });

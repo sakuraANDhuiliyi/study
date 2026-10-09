@@ -5,9 +5,9 @@ import { Script } from 'node:vm';
 import { creativeItems } from '../apps/api/src/programming/creative.catalog';
 import { programmingFilesSchema } from '../apps/api/src/programming/programming.schemas';
 
-test('creative catalog keeps the original twenty studies and adds twenty distinct scene experiences', () => {
-  assert.equal(creativeItems.length, 40);
-  assert.equal(creativeItems.filter((item) => item.edition === 2).length, 20);
+test('creative catalog preserves forty studies and adds the Aora expression laboratory', () => {
+  assert.equal(creativeItems.length, 41);
+  assert.equal(creativeItems.filter((item) => item.edition === 2).length, 21);
   assert.equal(creativeItems.filter((item) => item.edition !== 2).length, 20);
   assert.equal(new Set(creativeItems.map((item) => item.id)).size, creativeItems.length);
   assert.equal(new Set(creativeItems.map((item) => item.source.repository)).size, creativeItems.length);
@@ -25,9 +25,14 @@ test('each source has a pinned revision, original notice and truthful adaptation
     const { source } = item;
     assert.match(source.repository, /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/);
     assert.match(source.commit, /^[a-f0-9]{40}$/);
-    assert.ok(['MIT', 'ISC'].includes(source.license));
+    if (item.id === 'aora-expression-lab') {
+      assert.equal(source.license, 'Emotion Ball Community License');
+      assert.match(source.usageNotice || '', /非商业/);
+      assert.match(source.licenseText, /NON-COMMERCIAL USE/);
+      assert.match(source.licenseText, /VISUAL DESIGNS NEVER COMMERCIAL/);
+    } else assert.ok(['MIT', 'ISC'].includes(source.license));
     assert.match(source.licenseText, /Copyright|copyright/);
-    assert.match(source.licenseText, /PERMISSION|Permission/);
+    assert.match(source.licenseText, /PERMISSION|Permission|permitted/);
     assert.match(source.licenseText, /AS IS/);
     assert.ok(source.files.length >= 2);
     for (const file of source.files) {
@@ -67,10 +72,19 @@ test('each source has a pinned revision, original notice and truthful adaptation
 test('every recipe meets workspace limits and has valid self-contained browser JavaScript', () => {
   for (const item of creativeItems) {
     assert.ok(programmingFilesSchema.safeParse(item.files).success, item.id);
-    assert.deepEqual(
-      item.files.map((file) => file.path).sort(),
-      ['README.md', 'NOTICE.txt', 'app.js', 'index.html', 'style.css'].sort(),
-    );
+    const standardPaths = ['README.md', 'NOTICE.txt', 'app.js', 'index.html', 'style.css'];
+    if (item.id === 'aora-expression-lab') {
+      standardPaths.push(
+        'vendor/rings.js',
+        'vendor/emotions.js',
+        'vendor/ball.js',
+        'vendor/engine.js',
+        'NOTICE.md',
+        'LICENSE.txt',
+        'LICENSE-COMMERCIAL.md',
+      );
+    }
+    assert.deepEqual(item.files.map((file) => file.path).sort(), standardPaths.sort());
     const html = item.files.find((file) => file.path === 'index.html')!.content;
     const css = item.files.find((file) => file.path === 'style.css')!.content;
     const js = item.files.find((file) => file.path === 'app.js')!.content;
@@ -81,13 +95,15 @@ test('every recipe meets workspace limits and has valid self-contained browser J
     assert.doesNotMatch(html, /(?:src|href)=["'](?:https?:|\/\/|data:)/i);
     assert.doesNotMatch(html, /<iframe|<object|<embed|<form|<base/i);
     assert.doesNotMatch(css, /@import|url\(/i);
-    assert.match(css, /prefers-reduced-motion:reduce/);
-    assert.match(css, /max-width:520px/);
+    assert.match(css, /prefers-reduced-motion:\s*reduce/);
+    assert.match(css, item.id === 'aora-expression-lab' ? /max-width:\s*630px/ : /max-width:520px/);
     assert.doesNotMatch(
       js,
       /\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\blocalStorage\b|\bdocument\.cookie\b|\bserviceWorker\b|\beval\s*\(|\binnerHTML\s*=/,
     );
-    assert.doesNotThrow(() => new Script(js, { filename: `${item.id}/app.js` }), item.id);
+    for (const file of item.files.filter((file) => file.path.endsWith('.js'))) {
+      assert.doesNotThrow(() => new Script(file.content, { filename: `${item.id}/${file.path}` }), item.id);
+    }
     assert.match(readme, /## 学习步骤/);
     assert.ok(readme.includes(item.source.commit));
     assert.match(readme, /NOTICE\.txt/);

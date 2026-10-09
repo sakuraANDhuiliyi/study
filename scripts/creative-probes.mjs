@@ -1,6 +1,14 @@
 /** Fixed actions for the checked-in creative UI catalog; never user project code. */
 export const advancedCreativeProbes = [
   {
+    id: 'aora-expression-lab',
+    coverViewport: { width: 1100, height: 1000 },
+    capture: [{ type: 'click', selector: '#emotion-list [data-emotion-id="10"]' }],
+    actions: [],
+    statusSelector: '#interaction-status',
+    stageSelector: '#expression-stage',
+  },
+  {
     id: 'orbital-route',
     actions: [
       {

@@ -56,11 +56,12 @@ test('真实提交历史组合筛选、分页重置、只读对比与确认恢�
       executions.push(new URL(item.url()).pathname);
   });
   const editor = page.getByRole('textbox', { name: '算法代码编辑器', exact: true });
-  const cards = page.locator('.algo-history-item');
-  const matched = page.getByRole('status', { name: '提交记录匹配数量', exact: true });
-  const refreshButton = page
-    .getByRole('tabpanel', { name: '提交记录', exact: true })
-    .getByRole('button', { name: /^(?:loading )?刷新提交记录$/ });
+  // AntD prepends an accessible "Tab N of M" announcement while this tab has focus.
+  const historyTab = page.getByRole('tab', { name: /提交记录$/ });
+  const historyPanel = page.getByRole('tabpanel', { name: /提交记录$/ });
+  const cards = historyPanel.locator('.algo-history-item');
+  const matched = historyPanel.getByRole('status', { name: '提交记录匹配数量', exact: true });
+  const refreshButton = historyPanel.getByRole('button', { name: /^(?:loading )?刷新提交记录$/ });
   const dialog = page.getByRole('dialog', { name: '代码对比', exact: true });
   const localDraft = () =>
     page.evaluate((key) => JSON.parse(localStorage.getItem(key) || 'null'), storageKey);
@@ -104,6 +105,8 @@ test('真实提交历史组合筛选、分页重置、只读对比与确认恢�
   }
   async function assertList(filter: Filter, pageNumber = 1) {
     const expected = selected(filter);
+    await expect(historyTab).toHaveAttribute('aria-selected', 'true');
+    await expect(historyPanel).toBeVisible();
     await expect(matched).toHaveText(`匹配 ${expected.length} 条`);
     await expect
       .poll(async () => cards.evaluateAll((items) => items.map((item) => item.getAttribute('data-testid'))))
@@ -243,12 +246,14 @@ test('真实提交历史组合筛选、分页重置、只读对比与确认恢�
     }
     await get(`/algorithms/submissions/${privateRows[0].id}`, page.request, 404);
     await get(`/algorithms/submissions/${privateRows[1].id}`, page.request, 404);
-    await db.algorithmDraft.create({ data: { ...scope, problemId, language: 'cpp', code: draft } });
+    const serverDraft = await db.algorithmDraft.create({
+      data: { ...scope, problemId, language: 'cpp', code: draft },
+    });
     const baselineCount = await db.algorithmSubmission.count({ where: { userId: own.id } });
     const baselineSolved = (await get('/algorithms/overview')).stats.solved;
     await page.goto(`${web}/algorithms`);
     await page.evaluate(
-      ({ key, cpp, python }) => {
+      ({ key, cpp, python, revision }) => {
         localStorage.setItem('algorithm-editor-mode', 'simple');
         localStorage.setItem(
           key,
@@ -257,15 +262,18 @@ test('真实提交历史组合筛选、分页重置、只读对比与确认恢�
             codes: { cpp, python },
             unsynced: false,
             updatedAt: new Date().toISOString(),
+            baseRevision: revision,
           }),
         );
       },
-      { key: storageKey, cpp: draft, python: pythonDraft },
+      { key: storageKey, cpp: draft, python: pythonDraft, revision: serverDraft.revision },
     );
     const initial = pending({}, 1);
     await page.goto(`${web}/algorithms/${problemId}`);
     expect((await initial).status()).toBe(200);
-    await page.getByRole('tab', { name: '提交记录', exact: true }).click();
+    // Focus scrolls the mobile tab into AntD's overflowing nav before clicking.
+    await historyTab.focus();
+    await historyTab.click();
     await assertList({});
     await unchanged();
 

@@ -37,6 +37,7 @@ type Source = {
   commit: string;
   license: string;
   licenseText?: string;
+  usageNotice?: string;
   files?: { title: string; url: string }[];
   videos: {
     platform: string;
@@ -427,6 +428,15 @@ function CreativeDetail({ id }: { id: string }) {
               </Link>
             }
           />
+          {query.data.source.usageNotice && (
+            <Alert
+              type="info"
+              showIcon
+              message="作品使用范围"
+              description={query.data.source.usageNotice}
+              style={{ marginBottom: 16 }}
+            />
+          )}
           <div className="creative-detail-toolbar">
             <Space wrap>
               <Tag color="blue">{query.data.category}</Tag>

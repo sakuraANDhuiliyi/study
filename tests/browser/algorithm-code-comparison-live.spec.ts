@@ -69,6 +69,9 @@ test('真实历史代码对比保持只读快照，确认恢复草稿且隔离�
   const executionRequests: string[] = [];
   const dialog = page.getByRole('dialog', { name: '代码对比', exact: true });
   const editor = page.getByRole('textbox', { name: '算法代码编辑器', exact: true });
+  // AntD prepends an accessible "Tab N of M" announcement while this tab has focus.
+  const historyTab = page.getByRole('tab', { name: /提交记录$/ });
+  const historyPanel = page.getByRole('tabpanel', { name: /提交记录$/ });
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('worker', (worker) => workers.push(worker.url()));
   page.on('request', (item) => {
@@ -100,14 +103,22 @@ test('真实历史代码对比保持只读快照，确认恢复草稿且隔离�
       .toBe(true);
   }
   async function history(item: Historical, status = 200) {
-    await page.getByRole('tab', { name: '提交记录', exact: true }).click();
-    const response = page.waitForResponse(
-      (response) =>
-        response.url().endsWith(`/api/algorithms/submissions/${item.id}`) &&
-        response.request().method() === 'GET',
-    );
-    await page.getByTestId(`algorithm-submission-${item.id}`).click();
-    const fetched = await response;
+    // Focus lets AntD bring this overflowing mobile tab into its nav viewport.
+    // A successful pointer click alone does not prove the tab was activated.
+    await historyTab.focus();
+    await historyTab.click();
+    await expect(historyTab).toHaveAttribute('aria-selected', 'true');
+    await expect(historyPanel).toBeVisible();
+    const row = historyPanel.getByTestId(`algorithm-submission-${item.id}`);
+    await expect(row).toBeVisible();
+    const [fetched] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === `/api/algorithms/submissions/${item.id}` &&
+          response.request().method() === 'GET',
+      ),
+      row.click(),
+    ]);
     expect(fetched.status()).toBe(status);
     const body = await fetched.json();
     if (status === 200)
@@ -194,7 +205,7 @@ test('真实历史代码对比保持只读快照，确认恢复草稿且隔离�
     const foreignSubmission = await seed(foreignCode, 'cpp', 'submit', -6000, {
       organizationId: foreignSpace,
     });
-    await db.algorithmDraft.create({
+    const serverDraft = await db.algorithmDraft.create({
       data: { ...scope, problemId: 'two-sum-indices', language: 'cpp', code: serverCode },
     });
     const ownCount = await db.algorithmSubmission.count({ where: { userId: personal.user.id } });
@@ -213,7 +224,7 @@ test('真实历史代码对比保持只读快照，确认恢复草稿且隔离�
       );
       await page.goto(`${web}/algorithms`);
       await page.evaluate(
-        ({ key, cpp, python }) => {
+        ({ key, cpp, python, revision }) => {
           localStorage.setItem('algorithm-editor-mode', 'simple');
           localStorage.setItem(
             key,
@@ -222,10 +233,11 @@ test('真实历史代码对比保持只读快照，确认恢复草稿且隔离�
               codes: { cpp, python },
               updatedAt: new Date().toISOString(),
               unsynced: true,
+              baseRevision: revision,
             }),
           );
         },
-        { key: storageKey, cpp: currentCode, python: pythonDraft },
+        { key: storageKey, cpp: currentCode, python: pythonDraft, revision: serverDraft.revision },
       );
       await page.route('**/api/algorithms/problems/two-sum-indices/draft', async (route) => {
         if (route.request().method() === 'PUT' && holdWrites)

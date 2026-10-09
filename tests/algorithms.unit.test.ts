@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { AlgorithmAiGateway } from '../apps/api/src/algorithms/algorithm-ai.gateway';
 import { algorithmProblems } from '../apps/api/src/algorithms/algorithms.catalog';
 import {
@@ -44,7 +44,11 @@ test('算法输入严格拒绝越权字段、不受支持语言、超大代码�
     { ...valid, timeLimitMs: 900000 },
   ])
     assert.equal(algorithmSubmissionInput.safeParse(input).success, false);
-  assert.equal(algorithmDraftInput.safeParse({ language: 'cpp', code: '' }).success, true);
+  assert.equal(algorithmDraftInput.safeParse({ language: 'cpp', code: '', revision: 0 }).success, true);
+  for (const revision of [undefined, '0', -1, 0.5, 2147483647, null])
+    assert.equal(algorithmDraftInput.safeParse({ language: 'cpp', code: '', revision }).success, false);
+  assert.match(algorithmDraftInput.safeParse({ language: 'cpp', code: '' }).error!.message, /刷新页面/);
+  assert.equal(algorithmSubmissionInput.safeParse({ ...valid, revision: 0 }).success, false);
   assert.equal(algorithmSubmissionInput.safeParse({ ...valid, mode: 'run', stdin: '' }).success, true);
   assert.equal(
     algorithmAnalysisInput.safeParse({ language: 'python', code: '', mode: 'hint' }).success,
@@ -53,6 +57,71 @@ test('算法输入严格拒绝越权字段、不受支持语言、超大代码�
   assert.equal(algorithmProblemQuery.safeParse({ page: '-1' }).success, false);
   assert.equal(algorithmProblemQuery.safeParse({ difficulty: 'impossible' }).success, false);
   assert.equal(algorithmProblemQuery.parse({ page: '2', pageSize: '10' }).page, 2);
+});
+
+test('草稿保存按本人、本空间、本题和预期版本更新，旧版本不会改写云端代码', async () => {
+  let draft: any = null;
+  const queries: any[] = [];
+  const tx: any = {
+    $queryRaw: async () => [],
+    algorithmDraft: {
+      findFirst: async ({ where }: any) => {
+        queries.push(where);
+        return draft;
+      },
+      findFirstOrThrow: async ({ where }: any) => {
+        queries.push(where);
+        return draft;
+      },
+      create: async ({ data }: any) => (draft = { ...data, updatedAt: new Date() }),
+      updateMany: async ({ where, data }: any) => {
+        queries.push(where);
+        if (where.revision !== draft.revision) return { count: 0 };
+        draft = { ...draft, ...data, revision: draft.revision + 1, updatedAt: new Date() };
+        return { count: 1 };
+      },
+    },
+    $transaction: async (run: any) => run(tx),
+  };
+  const service = new AlgorithmsService(
+    tx,
+    { require: () => {}, checkFeature: async () => {} } as any,
+    {} as any,
+    {} as any,
+  );
+  const id = algorithmProblems[0].id;
+  assert.equal(
+    (await service.saveDraft(actor, id, { language: 'python', code: 'first', revision: 0 }))!.revision,
+    1,
+  );
+  assert.equal(
+    (await service.saveDraft(actor, id, { language: 'cpp', code: 'newer', revision: 1 }))!.revision,
+    2,
+  );
+  await assert.rejects(
+    service.saveDraft(actor, id, { language: 'python', code: 'old offline', revision: 1 }),
+    ConflictException,
+  );
+  assert.equal(draft.code, 'newer');
+  assert.equal(draft.revision, 2);
+  for (const where of queries) {
+    assert.equal(where.organizationId, actor.organizationId);
+    assert.equal(where.userId, actor.id);
+    assert.equal(where.problemId, id);
+  }
+  // A historical row migrated with revision 0 remains editable without changing its owner or code first.
+  draft = { ...draft, revision: 0, code: 'historical' };
+  assert.equal(
+    (await service.saveDraft(actor, id, { language: 'java', code: '', revision: 0 }))!.revision,
+    1,
+  );
+  assert.equal(draft.code, '');
+  tx.algorithmDraft.updateMany = async () => ({ count: 0 });
+  await assert.rejects(
+    service.saveDraft(actor, id, { language: 'python', code: 'raced', revision: 1 }),
+    ConflictException,
+  );
+  assert.equal(draft.code, '');
 });
 
 test('公开题目使用允许字段白名单，隐藏用例、提示和解答不能下发', () => {

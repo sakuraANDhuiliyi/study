@@ -308,6 +308,7 @@ test('数字逻辑真实工作台比较、历史恢复和完整反例导出', as
       if (own) {
         const organizationId = own.personalOrganizationId!;
         await db.$transaction([
+          db.academicsEvaluationAttempt.deleteMany({ where: { userId: own.id } }),
           db.academicsRecord.deleteMany({ where: { userId: own.id } }),
           db.academicsPreference.deleteMany({ where: { userId: own.id } }),
           db.passwordRecovery.deleteMany({ where: { userId: own.id } }),

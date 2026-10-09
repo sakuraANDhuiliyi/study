@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { api, date, queryString, send, useData } from '../api';
+import { api, ApiError, date, queryString, send, useData } from '../api';
 import { useAuth } from '../auth';
 import { EmptyState, PageTitle, QueryState, useUnsavedWarning } from '../components/shared';
 import { CodeEditor, type CodeEditorHandle } from '../components/algorithms/CodeEditor';
@@ -29,6 +29,7 @@ import { ResizableWorkspace } from '../components/algorithms/ResizableWorkspace'
 import { Editorial } from '../components/algorithms/Editorial';
 import { LearningBookmark, LearningNotes } from '../components/algorithms/LearningState';
 import { LearningOverview } from '../components/algorithms/LearningOverview';
+import { TrainingPlans, TrainingPlanNavigation } from '../components/algorithms/TrainingPlans';
 import { OutputDiff } from '../components/algorithms/OutputDiff';
 import { AlgorithmDiscussion } from '../components/algorithms/AlgorithmDiscussion';
 import { CodeComparison, type CodeComparisonSnapshot } from '../components/algorithms/CodeComparison';
@@ -60,6 +61,8 @@ type ProblemSummary = {
   favorite?: boolean;
   reviewStatus?: 'none' | 'review' | 'mastered';
 };
+type Draft = { language: Language; code: string; revision: number; updatedAt?: string };
+type DraftConflict = { server: Draft | null; loading?: boolean; error?: string };
 type Problem = ProblemSummary & {
   description: string;
   inputFormat: string;
@@ -70,7 +73,7 @@ type Problem = ProblemSummary & {
   timeLimitMs: number;
   memoryLimitMb: number;
   starterCode: Record<Language, string>;
-  draft: { language: Language; code: string; updatedAt?: string } | null;
+  draft: Draft | null;
   navigation?: { previousProblemId: string | null; nextProblemId: string | null };
 };
 type Submission = {
@@ -126,6 +129,9 @@ type LocalDraft = {
   codes: Partial<Record<Language, string>>;
   updatedAt: string;
   unsynced?: boolean;
+  // The cloud revision from which this local edit was made, never a clock timestamp.
+  baseRevision?: number;
+  writerId?: string;
 };
 const languages: { value: Language; label: string; file: string }[] = [
   { value: 'cpp', label: 'C++ 17', file: 'main.cpp' },
@@ -133,6 +139,21 @@ const languages: { value: Language; label: string; file: string }[] = [
   { value: 'javascript', label: 'JavaScript', file: 'main.js' },
   { value: 'java', label: 'Java', file: 'Main.java' },
 ];
+function readStoredDraft(read: () => string | null): LocalDraft | null {
+  try {
+    const parsed = JSON.parse(read() || 'null');
+    if (
+      parsed &&
+      languages.some((item) => item.value === parsed.language) &&
+      parsed.codes &&
+      typeof parsed.codes[parsed.language] === 'string'
+    )
+      return parsed;
+  } catch {
+    /* A corrupt or unavailable browser cache must not prevent opening a problem. */
+  }
+  return null;
+}
 const difficulties = {
   easy: { label: '简单', color: 'green' },
   medium: { label: '中等', color: 'orange' },
@@ -290,6 +311,7 @@ export function Algorithms() {
         </div>
       </div>
       <ServiceNotice status={status} />
+      <TrainingPlans />
       <LearningOverview />
       <section className="algo-panel algo-library">
         <div className="algo-panel-heading">
@@ -433,6 +455,7 @@ export function AlgorithmDetail() {
 
 function AlgorithmWorkspace({ id }: { id: string }) {
   const { user } = useAuth();
+  const [workspaceParams] = useSearchParams();
   const { message } = App.useApp();
   const client = useQueryClient();
   const problemQuery = useData<Problem>(`/algorithms/problems/${id}`);
@@ -446,6 +469,7 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const [code, setCode] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [draftStatus, setDraftStatus] = useState('正在载入草稿…');
+  const [draftConflict, setDraftConflict] = useState<DraftConflict | null>(null);
   const [dirty, setDirty] = useState(false);
   const [localFailed, setLocalFailed] = useState(false);
   const [referenceBackup, setReferenceBackup] = useState<{ language: Language; code: string } | null>(null);
@@ -527,6 +551,8 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const codeRef = useRef<CodeEditorHandle>(null);
   const codeMap = useRef<Partial<Record<Language, string>>>({});
   const lastSaved = useRef('');
+  const draftRevision = useRef<number | null>(0);
+  const conflictBlocked = useRef(false);
   const latestDraft = useRef({ language, code });
   const pendingSave = useRef<{ language: Language; code: string } | null>(null);
   const saveInFlight = useRef(false);
@@ -534,6 +560,9 @@ function AlgorithmWorkspace({ id }: { id: string }) {
   const operationLock = useRef(false);
   const analysisLock = useRef(false);
   const storageKey = `algorithm-draft:${user?.organizationId}:${user?.id}:${id}`;
+  const windowDraftKey = `${storageKey}:unsynced`;
+  const draftWriter = useRef('');
+  if (!draftWriter.current) draftWriter.current = crypto.randomUUID();
   const backupKey = `${storageKey}:before-reference`;
   useEffect(() => {
     try {
@@ -562,82 +591,158 @@ function AlgorithmWorkspace({ id }: { id: string }) {
     };
   }, []);
   useUnsavedWarning(dirty && localFailed);
+  function persistDraft(unsynced: boolean, updatedAt = new Date().toISOString(), fromSave = false) {
+    const encoded = JSON.stringify({
+      language: latestDraft.current.language,
+      codes: codeMap.current,
+      updatedAt,
+      unsynced,
+      baseRevision: draftRevision.current ?? undefined,
+      writerId: draftWriter.current,
+    });
+    let stored = !unsynced;
+    try {
+      // sessionStorage belongs to this window, so another tab cannot erase an
+      // unsynced edit before a reload. Keep shared storage for reopening a tab.
+      if (unsynced) {
+        sessionStorage.setItem(windowDraftKey, encoded);
+        stored = true;
+      } else sessionStorage.removeItem(windowDraftKey);
+    } catch {
+      /* Shared storage may still retain the draft. */
+    }
+    try {
+      const previous = fromSave ? JSON.parse(localStorage.getItem(storageKey) || 'null') : null;
+      // A delayed response may acknowledge only this window's shared backup.
+      if (!fromSave || !previous || previous.writerId === draftWriter.current) {
+        localStorage.setItem(storageKey, encoded);
+        stored = true;
+      }
+    } catch {
+      /* Leave the window backup in place when shared storage is unavailable. */
+    }
+    setLocalFailed(!stored);
+  }
   useEffect(() => {
     if (!problem || initialized) return;
-    let local: LocalDraft | null = null;
-    try {
-      const parsed = JSON.parse(localStorage.getItem(storageKey) || 'null');
-      if (
-        parsed &&
-        languages.some((l) => l.value === parsed.language) &&
-        parsed.codes &&
-        typeof parsed.codes[parsed.language] === 'string'
-      )
-        local = parsed;
-    } catch {
-      /* A corrupt browser draft must not prevent opening a problem. */
-    }
+    const windowCopy = readStoredDraft(() => sessionStorage.getItem(windowDraftKey));
+    const local =
+      windowCopy?.unsynced === true ? windowCopy : readStoredDraft(() => localStorage.getItem(storageKey));
     const server = problem.draft;
-    const serverNewer =
-      local?.unsynced !== true &&
-      !!server?.updatedAt &&
-      !!local?.updatedAt &&
-      new Date(server.updatedAt).getTime() > new Date(local.updatedAt).getTime();
-    const initialLanguage = local && !serverNewer ? local.language : server?.language || 'cpp';
-    const initialCode =
-      local && !serverNewer
-        ? local.codes[initialLanguage]!
-        : (server?.code ?? problem.starterCode[initialLanguage] ?? '');
+    const cloudRevision = server?.revision ?? 0;
+    const localHasRevision = Number.isInteger(local?.baseRevision) && (local?.baseRevision ?? -1) >= 0;
+    const localMatchesCloud =
+      !!local &&
+      !!server &&
+      fingerprint(local.language, local.codes[local.language]!) === fingerprint(server.language, server.code);
+    // A synchronized, versioned old cache can use the cloud. An unsynced or
+    // unversioned copy stays visible, but must never silently overwrite a newer draft.
+    const useCloud =
+      !!local && local.unsynced !== true && localHasRevision && local.baseRevision! < cloudRevision;
+    const useLocal = !!local && !useCloud && !localMatchesCloud;
+    const initialLanguage = useLocal ? local!.language : server?.language || local?.language || 'cpp';
+    const initialCode = useLocal
+      ? local!.codes[initialLanguage]!
+      : (server?.code ?? local?.codes[initialLanguage] ?? problem.starterCode[initialLanguage] ?? '');
     codeMap.current = { ...(local?.codes || {}), [initialLanguage]: initialCode };
     latestDraft.current = { language: initialLanguage, code: initialCode };
     lastSaved.current = server
       ? fingerprint(server.language, server.code)
       : fingerprint(initialLanguage, initialCode);
-    const unsynced =
-      !!local && !serverNewer && (!server || fingerprint(initialLanguage, initialCode) !== lastSaved.current);
+    const unsynced = useLocal && (!server || fingerprint(initialLanguage, initialCode) !== lastSaved.current);
+    const conflicting = unsynced && !!server && (!localHasRevision || local!.baseRevision !== cloudRevision);
+    draftRevision.current = conflicting ? (local!.baseRevision ?? null) : cloudRevision;
+    conflictBlocked.current = conflicting;
+    if (conflicting) setDraftConflict({ server });
     if (unsynced) lastSaved.current = '';
     setLanguage(initialLanguage);
     setCode(initialCode);
     setInitialized(true);
     setDirty(unsynced);
-    setDraftStatus(unsynced ? '已恢复本机草稿，等待同步' : server ? '已恢复保存的草稿' : '使用初始代码模板');
-  }, [problem, initialized, storageKey]);
+    setDraftStatus(
+      conflicting
+        ? '草稿存在版本冲突，自动同步已暂停'
+        : unsynced
+          ? '已恢复本机草稿，等待同步'
+          : server
+            ? '已恢复保存的草稿'
+            : '使用初始代码模板',
+    );
+    // Upgrade old matching caches too, retaining inactive language drafts.
+    persistDraft(unsynced, local?.updatedAt || server?.updatedAt);
+  }, [problem, initialized, storageKey, windowDraftKey]);
+  async function readConflict() {
+    conflictBlocked.current = true;
+    pendingSave.current = null;
+    setDraftConflict({ server: null, loading: true });
+    setDraftStatus('草稿存在版本冲突，自动同步已暂停');
+    persistDraft(true, undefined, true);
+    try {
+      const current = await api<Problem>(`/algorithms/problems/${id}`);
+      if (mounted.current) setDraftConflict({ server: current.draft });
+    } catch (err) {
+      if (mounted.current) setDraftConflict({ server: null, error: (err as Error).message });
+    }
+  }
+  function resolveDraftConflict(useLocal: boolean) {
+    if (!draftConflict || draftConflict.loading || draftConflict.error || !problem) return;
+    const server = draftConflict.server;
+    draftRevision.current = server?.revision ?? 0;
+    const cloudLanguage = server?.language || latestDraft.current.language;
+    const cloudCode = server?.code ?? problem.starterCode[cloudLanguage] ?? '';
+    lastSaved.current = fingerprint(cloudLanguage, cloudCode);
+    if (!useLocal) {
+      codeMap.current[cloudLanguage] = cloudCode;
+      latestDraft.current = { language: cloudLanguage, code: cloudCode };
+      setLanguage(cloudLanguage);
+      setCode(cloudCode);
+    }
+    conflictBlocked.current = false;
+    setDraftConflict(null);
+    const unsynced =
+      fingerprint(latestDraft.current.language, latestDraft.current.code) !== lastSaved.current;
+    setDirty(unsynced);
+    persistDraft(unsynced);
+    setDraftStatus(unsynced ? '已选择本机草稿，等待同步' : '草稿已同步');
+    if (unsynced) void saveDraft();
+  }
   async function saveDraft() {
-    if (!initialized) return;
+    if (!initialized || conflictBlocked.current || draftRevision.current === null) return;
     pendingSave.current = { ...latestDraft.current };
     if (saveInFlight.current) return;
     saveInFlight.current = true;
-    while (pendingSave.current && mounted.current) {
+    while (pendingSave.current && mounted.current && !conflictBlocked.current) {
       const current = pendingSave.current;
       pendingSave.current = null;
       if (fingerprint(current.language, current.code) === lastSaved.current) continue;
       setDraftStatus('正在同步草稿…');
       try {
-        const saved = await send(`/algorithms/problems/${id}/draft`, current, 'PUT');
+        const saved: Draft = await send(
+          `/algorithms/problems/${id}/draft`,
+          { ...current, revision: draftRevision.current },
+          'PUT',
+        );
+        draftRevision.current = saved.revision;
         lastSaved.current = fingerprint(current.language, current.code);
-        if (
-          mounted.current &&
-          fingerprint(latestDraft.current.language, latestDraft.current.code) === lastSaved.current
-        ) {
-          setDirty(false);
-          setDraftStatus('草稿已同步');
-          try {
-            localStorage.setItem(
-              storageKey,
-              JSON.stringify({
-                language: current.language,
-                codes: codeMap.current,
-                updatedAt: saved.updatedAt || new Date().toISOString(),
-                unsynced: false,
-              }),
-            );
-            setLocalFailed(false);
-          } catch {
-            setLocalFailed(true);
-          }
+        // Reopening this problem must not initialize from a stale cached revision.
+        client.setQueryData<Problem>([`/algorithms/problems/${id}`, scope], (previous) =>
+          previous && (previous.draft?.revision ?? 0) <= saved.revision
+            ? { ...previous, draft: saved }
+            : previous,
+        );
+        if (mounted.current) {
+          const unsynced =
+            fingerprint(latestDraft.current.language, latestDraft.current.code) !== lastSaved.current;
+          setDirty(unsynced);
+          setDraftStatus(unsynced ? '已保留在本机，等待同步' : '草稿已同步');
+          // Advance the base revision even if the student edited while saving.
+          persistDraft(unsynced, saved.updatedAt, true);
         }
       } catch (err) {
-        if (mounted.current) setDraftStatus(`同步失败：${(err as Error).message}`);
+        if (mounted.current) {
+          if (err instanceof ApiError && err.status === 409) await readConflict();
+          else setDraftStatus(`同步失败：${(err as Error).message}`);
+        }
         pendingSave.current = null;
         break;
       }
@@ -645,36 +750,29 @@ function AlgorithmWorkspace({ id }: { id: string }) {
     saveInFlight.current = false;
   }
   useEffect(() => {
-    if (!initialized || !dirty) return;
+    if (!initialized || !dirty || draftConflict) return;
     const timer = window.setTimeout(() => {
       void saveDraft();
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [language, code, initialized, dirty]);
+  }, [language, code, initialized, dirty, draftConflict]);
   function edit(nextCode: string, nextLanguage = language) {
     codeMap.current[nextLanguage] = nextCode;
     latestDraft.current = { language: nextLanguage, code: nextCode };
     setLanguage(nextLanguage);
     setCode(nextCode);
     const changed = saveInFlight.current || fingerprint(nextLanguage, nextCode) !== lastSaved.current;
-    if (saveInFlight.current) pendingSave.current = { language: nextLanguage, code: nextCode };
+    if (saveInFlight.current && !conflictBlocked.current)
+      pendingSave.current = { language: nextLanguage, code: nextCode };
     setDirty(changed);
-    setDraftStatus(changed ? '已保留在本机，等待同步' : '草稿已同步');
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          language: nextLanguage,
-          codes: codeMap.current,
-          updatedAt: new Date().toISOString(),
-          unsynced: changed,
-        }),
-      );
-      setLocalFailed(false);
-    } catch {
-      setLocalFailed(true);
-      setDraftStatus('本机存储不可用，等待同步');
-    }
+    setDraftStatus(
+      conflictBlocked.current
+        ? '草稿存在版本冲突，自动同步已暂停'
+        : changed
+          ? '已保留在本机，等待同步'
+          : '草稿已同步',
+    );
+    persistDraft(changed || conflictBlocked.current);
   }
   useEffect(() => {
     if (running.data && running.data.id === result?.id) {
@@ -888,10 +986,10 @@ function AlgorithmWorkspace({ id }: { id: string }) {
               <div className="algo-detail-tools">
                 <LearningBookmark problemId={id} />
                 <div className="algo-neighbor-links">
-                  {problem.navigation?.previousProblemId && (
+                  {!workspaceParams.get('plan') && problem.navigation?.previousProblemId && (
                     <Link to={`/algorithms/${problem.navigation.previousProblemId}`}>上一题</Link>
                   )}
-                  {problem.navigation?.nextProblemId && (
+                  {!workspaceParams.get('plan') && problem.navigation?.nextProblemId && (
                     <Link to={`/algorithms/${problem.navigation.nextProblemId}`}>下一题</Link>
                   )}
                 </div>
@@ -905,6 +1003,7 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                 </div>
               </div>
             </div>
+            <TrainingPlanNavigation problemId={id} />
             <ServiceNotice status={service} />
             <ResizableWorkspace>
               <section className="algo-panel algo-reading">
@@ -1292,6 +1391,61 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                     onSubmit={() => void execute('submit')}
                     canExecute={canJudge && initialized && !!code.trim() && !isExecuting}
                   />
+                  {draftConflict && (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message="草稿存在版本冲突"
+                      description={
+                        <div>
+                          <p>本机代码已保留，自动同步已暂停。比较两份草稿后选择要保留的版本。</p>
+                          <p>本机草稿（{languages.find((item) => item.value === language)?.label}）</p>
+                          <Input.TextArea aria-label="冲突中的本机草稿" value={code} readOnly rows={4} />
+                          {draftConflict.loading ? (
+                            <p>正在读取最新云端草稿…</p>
+                          ) : draftConflict.error ? (
+                            <p role="alert">读取云端草稿失败：{draftConflict.error}</p>
+                          ) : draftConflict.server ? (
+                            <>
+                              <p>
+                                云端草稿（
+                                {
+                                  languages.find((item) => item.value === draftConflict.server?.language)
+                                    ?.label
+                                }
+                                ，版本 {draftConflict.server.revision}）
+                              </p>
+                              <Input.TextArea
+                                aria-label="冲突中的云端草稿"
+                                value={draftConflict.server.code}
+                                readOnly
+                                rows={4}
+                              />
+                            </>
+                          ) : (
+                            <p>云端尚无草稿，采用云端会恢复初始代码模板。</p>
+                          )}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                            <Button
+                              onClick={() => resolveDraftConflict(false)}
+                              disabled={draftConflict.loading || !!draftConflict.error}
+                            >
+                              采用云端草稿
+                            </Button>
+                            <Button
+                              onClick={() => resolveDraftConflict(true)}
+                              disabled={draftConflict.loading || !!draftConflict.error}
+                            >
+                              保留本机并同步
+                            </Button>
+                            <Button onClick={() => void readConflict()} loading={draftConflict.loading}>
+                              重新读取云端
+                            </Button>
+                          </div>
+                        </div>
+                      }
+                    />
+                  )}
                   {referenceBackup && (
                     <Alert
                       className="algo-reference-backup"
@@ -1332,7 +1486,7 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                       type="text"
                       icon={<Save size={13} />}
                       onClick={() => void saveDraft()}
-                      disabled={!initialized || !dirty}
+                      disabled={!initialized || !dirty || !!draftConflict}
                     >
                       保存草稿
                     </Button>

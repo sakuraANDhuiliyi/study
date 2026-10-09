@@ -12,7 +12,9 @@ import {
   programmingApplyInput,
   programmingPreviewInput,
   programmingListQuery,
+  programmingDuplicateInput,
 } from './programming.schemas';
+import { programmingBackupSchema } from './programming.backup';
 
 @ApiTags('编程学习工作室')
 @ApiCookieAuth()
@@ -31,6 +33,25 @@ export class ProgrammingController {
   }
   @Post('projects') create(@CurrentActor() actor: Actor, @Body() body: unknown) {
     return this.programming.create(actor, programmingCreateInput.parse(body));
+  }
+  @Post('projects/import') importProject(@CurrentActor() actor: Actor, @Body() body: unknown) {
+    return this.programming.importProject(actor, programmingBackupSchema.parse(body));
+  }
+  @Post('projects/:id/duplicate') duplicate(
+    @CurrentActor() actor: Actor,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.programming.duplicate(actor, id, programmingDuplicateInput.parse(body));
+  }
+  @Get('projects/:id/backup') async backup(
+    @CurrentActor() actor: Actor,
+    @Param('id') id: string,
+    @Res() response: Response,
+  ) {
+    const output = await this.programming.backup(actor, id);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.type('application/json').attachment(output.filename).send(JSON.stringify(output.bundle));
   }
   @Get('projects/:id') detail(@CurrentActor() actor: Actor, @Param('id') id: string) {
     return this.programming.detail(actor, id);

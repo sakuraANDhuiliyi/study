@@ -10,7 +10,8 @@ import {
   forumRevisionInput,
 } from '../apps/api/src/algorithm-forum/algorithm-forum.schemas';
 import {
-  forumAuthorLabel,
+  createForumAuthorLabel,
+  AlgorithmForumService,
   forumCanModerate,
   forumCanWrite,
   forumVisibleWhere,
@@ -112,10 +113,53 @@ test('forum moderation requires actual content organization, or explicit platfor
   );
   assert.equal(forumCanModerate(actor('TEACHER', ['org.platform']), 'school-a'), false);
 });
-test('forum author labels stable and omit real names, username, school and raw ID', () => {
-  const label = forumAuthorLabel('private-account-1234');
-  assert.match(label, /^学习者·[0-9a-f]{8}$/);
-  assert.equal(label, forumAuthorLabel('private-account-1234'));
-  assert.notEqual(label, forumAuthorLabel('private-account-1235'));
-  assert.ok(!label.includes('private-account'));
+test('forum alias candidates are random and do not accept account IDs', () => {
+  const labels = new Set(Array.from({ length: 100 }, () => createForumAuthorLabel()));
+  assert.equal(labels.size, 100);
+  for (const label of labels) assert.match(label, /^学习者·[0-9a-f]{16}$/);
+});
+test('forum aliases survive service restart, separate visibility contexts and resolve a racing insert in batches', async () => {
+  const stored: { authorId: string; contextKey: string; label: string }[] = [];
+  let reads = 0,
+    writes = 0;
+  const db = {
+    algorithmForumAlias: {
+      async findMany({ where }: any) {
+        reads++;
+        return stored.filter((row) =>
+          where.OR.some((key: any) => row.authorId === key.authorId && row.contextKey === key.contextKey),
+        );
+      },
+      async createMany({ data, skipDuplicates }: any) {
+        writes++;
+        assert.equal(skipDuplicates, true);
+        for (const row of data)
+          if (
+            !stored.some(
+              (existing) => existing.authorId === row.authorId && existing.contextKey === row.contextKey,
+            )
+          ) {
+            // Another request commits first; our response must read its label.
+            stored.push({ ...row, label: createForumAuthorLabel() });
+          }
+      },
+    },
+  };
+  const rows = [
+    { authorId: 'private-id', organizationId: 'school-a', scope: 'public' },
+    { authorId: 'private-id', organizationId: 'school-a', scope: 'organization' },
+    { authorId: 'private-id', organizationId: 'school-b', scope: 'organization' },
+  ];
+  const service = new AlgorithmForumService(db as any, {} as any);
+  const label = await (service as any).authorLabels(db, [...rows, ...rows]);
+  assert.equal(stored.length, 3);
+  assert.equal(reads, 2);
+  assert.equal(writes, 1);
+  assert.equal(new Set(rows.map(label)).size, 3);
+  for (const row of rows) assert.ok(stored.some((alias) => alias.label === label(row)));
+  const afterRestart = await (new AlgorithmForumService(db as any, {} as any) as any).authorLabels(db, rows);
+  for (const row of rows) assert.equal(afterRestart(row), label(row));
+  assert.equal(afterRestart({ ...rows[0], organizationId: 'school-b' }), label(rows[0]));
+  assert.equal(reads, 3);
+  assert.equal(writes, 1);
 });

@@ -33,6 +33,7 @@ model User {
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   roles UserRole[]
   passwordRecovery PasswordRecovery?
+  forumAliases AlgorithmForumAlias[]
   @@unique([organizationId, studentNo])
   @@index([organizationId,active,createdAt,id])
 }

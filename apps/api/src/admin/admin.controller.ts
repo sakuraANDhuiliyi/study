@@ -14,6 +14,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import type { Response } from 'express';
 import { PrismaService } from '../common/prisma.service';
@@ -53,8 +54,8 @@ export class AdminController {
     )
       throw new ForbiddenException('超出可授予的角色范围');
   }
-  private async target(a: Actor, id: string) {
-    const u = await this.db.user.findFirst({
+  private async target(a: Actor, id: string, tx: Prisma.TransactionClient = this.db) {
+    const u = await tx.user.findFirst({
       where: { id, organizationId: a.organizationId, accountMode: 'ORGANIZATION' },
       include: { roles: true },
     });
@@ -197,16 +198,7 @@ export class AdminController {
     if (d.roles) this.roleCeiling(a, d.roles);
     const result = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
-      const current = await tx.user.findFirst({
-        where: { id, organizationId: a.organizationId, accountMode: 'ORGANIZATION' },
-        include: { roles: true },
-      });
-      if (!current) throw new NotFoundException('用户不存在');
-      if (
-        current.roles.some((r) => r.roleId === 'SUPER_ADMIN') ||
-        (a.role !== 'SUPER_ADMIN' && current.roles.some((r) => r.roleId === 'ADMIN'))
-      )
-        throw new ForbiddenException('不能管理同级或更高权限的账号');
+      const current = await this.target(a, id, tx);
       const student = (d.roles || current.roles.map((r) => r.roleId)).includes('STUDENT');
       if (d.majorId && !student) throw new BadRequestException('只能为学生分配专业');
       await validateAccountMajor(tx, d.majorId, a.organizationId);
@@ -269,11 +261,12 @@ export class AdminController {
   @Post('users/:id/recovery') async recovery(@CurrentActor() a: Actor, @Param('id') id: string) {
     this.auth.require(a, 'users.manage');
     if (a.id === id) throw new ForbiddenException('请由另一位有权限的管理员发起恢复');
-    await this.target(a, id);
     const pendingUntil = new Date(Date.now() + 15 * 60 * 1000);
     await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
+      const current = await this.target(a, id, tx);
+      if (!current.active) throw new BadRequestException('请先启用账号');
       const u = await tx.user.update({ where: { id }, data: { authVersion: { increment: 1 } } });
-      if (!u.active) throw new BadRequestException('请先启用账号');
       const available = await tx.passwordRecovery.updateMany({
         where: { userId: id },
         data: {
@@ -584,19 +577,26 @@ export class AdminController {
     const d = z
       .object({ userId: z.string(), active: z.boolean().default(true), transferFrom: z.string().optional() })
       .parse(body);
-    if (
-      !(await this.db.class.findFirst({ where: { id, organizationId: a.organizationId } })) ||
-      !(await this.db.user.findFirst({
-        where: { id: d.userId, organizationId: a.organizationId, roles: { some: { roleId: 'STUDENT' } } },
-      }))
-    )
-      throw new BadRequestException('班级或学生无效');
-    if (
-      d.transferFrom &&
-      !(await this.db.class.findFirst({ where: { id: d.transferFrom, organizationId: a.organizationId } }))
-    )
-      throw new BadRequestException('原班级无效');
     const result = await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${d.userId} FOR UPDATE`;
+      if (
+        !(await tx.class.findFirst({ where: { id, organizationId: a.organizationId } })) ||
+        !(await tx.user.findFirst({
+          where: {
+            id: d.userId,
+            organizationId: a.organizationId,
+            accountMode: 'ORGANIZATION',
+            ...(d.active ? { active: true } : {}),
+            roles: { some: { roleId: 'STUDENT' } },
+          },
+        }))
+      )
+        throw new BadRequestException('班级或学生无效');
+      if (
+        d.transferFrom &&
+        !(await tx.class.findFirst({ where: { id: d.transferFrom, organizationId: a.organizationId } }))
+      )
+        throw new BadRequestException('原班级无效');
       if (d.transferFrom)
         await tx.classMember.updateMany({
           where: { classId: d.transferFrom, userId: d.userId },
@@ -639,24 +639,49 @@ export class AdminController {
     const cl = await this.db.class.findFirst({ where: { id, organizationId: a.organizationId } });
     if (!cl) throw new NotFoundException();
     await this.auth.course(a, d.courseId, true);
-    const members = await this.db.classMember.findMany({ where: { classId: id, active: true } });
+    let enrolled = 0;
     const result = await this.db.$transaction(async (tx) => {
+      const members = await tx.classMember.findMany({
+        where: { classId: id, active: true },
+        orderBy: { userId: 'asc' },
+      });
+      // The leave transaction locks User before removing memberships. Lock in a stable order,
+      // then re-read both identities and memberships so a stale list cannot re-enroll leavers.
+      if (members.length)
+        await tx.$queryRaw(Prisma.sql`
+          SELECT "id" FROM "User" WHERE "id" IN (${Prisma.join(members.map((m) => m.userId))})
+          ORDER BY "id" FOR UPDATE
+        `);
+      const eligible = await tx.user.findMany({
+        where: {
+          id: { in: members.map((m) => m.userId) },
+          organizationId: a.organizationId,
+          accountMode: 'ORGANIZATION',
+          active: true,
+          roles: { some: { roleId: 'STUDENT' } },
+        },
+        select: { id: true },
+      });
+      const currentMembers = await tx.classMember.findMany({
+        where: { classId: id, active: true, userId: { in: eligible.map((u) => u.id) } },
+      });
       const cc = await tx.courseClass.upsert({
         where: { courseId_classId: { courseId: d.courseId, classId: id } },
         create: { courseId: d.courseId, classId: id, name: d.name || cl.name + '教学班' },
         update: {},
       });
-      for (const m of members)
+      for (const m of currentMembers)
         await tx.enrollment.upsert({
           where: { courseId_userId: { courseId: d.courseId, userId: m.userId } },
           create: { courseId: d.courseId, userId: m.userId },
           update: { active: true },
         });
+      enrolled = currentMembers.length;
       return cc;
     });
     await this.audit.record(a, 'class.course.assign', 'Course', d.courseId, {
       classId: id,
-      count: members.length,
+      count: enrolled,
     });
     return result;
   }

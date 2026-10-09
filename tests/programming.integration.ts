@@ -8,6 +8,7 @@ import { once } from 'node:events';
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import { creativeItems } from '../apps/api/src/programming/creative.catalog';
 
 const db = new PrismaClient(),
   origin = 'http://localhost:3034';
@@ -118,6 +119,7 @@ test(
         DISABLE_JOBS: 'true',
         COOKIE_SECURE: 'false',
         NODE_ENV: 'test',
+        PROGRAMMING_PREVIEW_ENABLED: 'true',
         PROGRAMMING_PREVIEW_PORT: '4175',
         PROGRAMMING_PREVIEW_ORIGIN: 'http://127.0.0.1:4175',
       },
@@ -390,6 +392,117 @@ test(
         },
       );
       await t.test(
+        'portable backups and copies stay private, preserve source revision and begin independent history',
+        async () => {
+          const callsBefore = calls;
+          const response = await owner.raw(`${path()}/backup`);
+          assert.equal(response.status, 200);
+          assert.ok(response.headers.get('content-type')?.includes('application/json'));
+          assert.match(response.headers.get('cache-control')!, /no-store/);
+          assert.match(response.headers.get('content-disposition')!, /attachment/);
+          const backup = await response.json();
+          assert.deepEqual(Object.keys(backup).sort(), ['files', 'format', 'templateId', 'title', 'version']);
+          assert.equal(backup.format, 'zhixue-programming');
+          assert.equal(backup.version, 1);
+          assert.deepEqual(backup.files, project.files);
+          for (const outsider of [other, foreign]) {
+            await outsider.call(`${path()}/backup`, 'GET', undefined, 404);
+            await outsider.call(
+              `${path()}/duplicate`,
+              'POST',
+              { title: '越权复制', revision: project.revision },
+              404,
+            );
+          }
+          await teacher.call('/programming/projects/import', 'POST', backup, 403);
+          await owner.call(
+            `${path()}/duplicate`,
+            'POST',
+            { title: '过期复制', revision: project.revision - 1 },
+            409,
+          );
+          await owner.call('/programming/projects/import', 'POST', { ...backup, userId: 'other' }, 400);
+          const copy = await owner.call(`${path()}/duplicate`, 'POST', {
+            title: '私有项目副本',
+            revision: project.revision,
+          });
+          const imported = await personal.call('/programming/projects/import', 'POST', {
+            ...backup,
+            title: '个人备份导入',
+          });
+          for (const [client, portable] of [
+            [owner, copy],
+            [personal, imported],
+          ] as const) {
+            assert.equal(portable.revision, 0);
+            assert.deepEqual(portable.files, project.files);
+            assert.equal(portable.templateId, project.templateId);
+            const versions = (await client.call(`/programming/projects/${portable.id}/versions`)).items;
+            assert.equal(versions.length, 1);
+            assert.equal(versions[0].number, 1);
+            assert.equal(
+              (await client.call(`/programming/projects/${portable.id}/ai-drafts`)).items.length,
+              0,
+            );
+            await client.call(`/programming/projects/${portable.id}`, 'DELETE');
+          }
+          assert.equal((await owner.call(path())).revision, project.revision);
+          assert.equal(calls, callsBefore, 'project reuse performs no provider calls');
+        },
+      );
+      await t.test('creative backup import prevents attribution downgrades and missing notice', async () => {
+        const creative = creativeItems[0];
+        const backup = {
+          format: 'zhixue-programming',
+          version: 1,
+          title: '创意备份导入',
+          templateId: 'imported',
+          files: creative.files,
+        };
+        await owner.call(
+          '/programming/projects/import',
+          'POST',
+          { ...backup, files: creative.files.filter((file) => file.path !== 'NOTICE.txt') },
+          400,
+        );
+        await owner.call(
+          '/programming/projects/import',
+          'POST',
+          {
+            ...backup,
+            files: [
+              ...creative.files,
+              {
+                path: 'second-source.js',
+                content: creativeItems[1].files.find((file) => file.path === 'app.js')!.content,
+              },
+            ],
+          },
+          400,
+        );
+        const imported = await owner.call('/programming/projects/import', 'POST', backup);
+        assert.equal(imported.templateId, `creative:${creative.id}`);
+        const importedPath = `/programming/projects/${imported.id}`;
+        await owner.call(
+          importedPath,
+          'PATCH',
+          {
+            title: imported.title,
+            revision: 0,
+            files: imported.files.filter((file: { path: string }) => file.path !== 'NOTICE.txt'),
+          },
+          400,
+        );
+        const copy = await owner.call(`${importedPath}/duplicate`, 'POST', {
+          title: '创意副本',
+          revision: 0,
+        });
+        assert.equal(copy.templateId, imported.templateId);
+        assert.deepEqual(copy.files, creative.files);
+        await owner.call(`/programming/projects/${copy.id}`, 'DELETE');
+        await owner.call(importedPath, 'DELETE');
+      });
+      await t.test(
         'unsaved preview uses independent origin and private, network-limited, no-cookie static snapshot',
         async () => {
           const unsaved = candidate.map((file) => ({
@@ -439,6 +552,13 @@ test(
           assert.equal(aiDraft.status, 'ready');
           assert.equal(aiDraft.baseRevision, project.revision);
           assert.deepEqual(aiDraft.files, candidate);
+          const summary = (await owner.call(`${path()}/ai-drafts`)).items.find(
+            (item: any) => item.id === aiDraft.id,
+          );
+          assert.equal(summary.status, 'ready');
+          for (const field of ['files', 'plan', 'teaching', 'appliedProjectSnapshot'])
+            assert.equal(field in summary, false, `草稿列表不返回 ${field}`);
+          assert.deepEqual((await owner.call(`${path()}/ai-drafts/${aiDraft.id}`)).files, candidate);
           assert.deepEqual((await owner.call(path())).files, before.files);
           assert.equal(requestBody.model, 'deepseek-flash');
           assert.deepEqual(requestBody.thinking, { type: 'disabled' });
@@ -649,6 +769,24 @@ test(
             '/programming/projects',
             'POST',
             { title: '超量项目', templateId: 'starter' },
+            409,
+          );
+          await other.call(
+            `/programming/projects/${many.id}/duplicate`,
+            'POST',
+            { title: '超量副本', revision: many.revision },
+            409,
+          );
+          await other.call(
+            '/programming/projects/import',
+            'POST',
+            {
+              format: 'zhixue-programming',
+              version: 1,
+              title: '超量导入',
+              templateId: many.templateId,
+              files: many.files,
+            },
             409,
           );
           await db.programmingVersion.createMany({

@@ -37,6 +37,7 @@
     "test:algorithm-forum": "node --import tsx --test --test-concurrency=1 tests/algorithm-forum.integration.ts",
     "test:creative": "node --import tsx --test --test-concurrency=1 tests/creative.integration.ts",
     "test:algorithms": "node --import tsx --test --test-concurrency=1 tests/algorithms.integration.ts",
+    "test:algorithm-training": "node --import tsx --test --test-concurrency=1 tests/algorithm-training-plans.integration.ts",
     "test:minimum-spanning-tree": "node --import tsx --test --test-concurrency=1 tests/minimum-spanning-tree.integration.ts",
     "test:algorithm-history-filters": "node --import tsx --test --test-concurrency=1 tests/algorithm-history-filters.integration.ts",
     "test:accounts": "node --import tsx --test --test-concurrency=1 tests/accounts.integration.ts",

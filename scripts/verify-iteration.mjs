@@ -14,6 +14,21 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const loopback = (host) => ['127.0.0.1', 'localhost', '[::1]'].includes(host);
+const programmingPreviewPort = 4183;
+const reservedPorts = [
+  3031,
+  3032,
+  3033,
+  3034,
+  3035,
+  3036,
+  3037,
+  3038,
+  3039,
+  4175,
+  4179,
+  programmingPreviewPort,
+];
 
 export async function acquireVerificationLock(
   path,
@@ -136,8 +151,8 @@ export function parseOptions(args) {
     }
   }
   if (options.apiPort === options.previewPort) throw new Error('API and preview ports must be different');
-  if ([options.apiPort, options.previewPort].some((port) => port >= 3031 && port <= 3037))
-    throw new Error('Ports 3031–3037 are reserved for isolated integration suites');
+  if ([options.apiPort, options.previewPort].some((port) => reservedPorts.includes(port)))
+    throw new Error('Requested port is reserved for an isolated verification fixture');
   return options;
 }
 
@@ -158,8 +173,19 @@ export function validateEnvironment(env) {
   if (!env.DEV_SEED_PASSWORD || env.DEV_SEED_PASSWORD.length < 12)
     throw new Error('DEV_SEED_PASSWORD must be provided privately and contain at least 12 characters');
   // An inherited alternate admin URL would defeat the selected-database guard in an isolated suite.
-  if (env.ACADEMICS_TEST_ADMIN_DATABASE_URL && env.ACADEMICS_TEST_ADMIN_DATABASE_URL !== env.DATABASE_URL)
-    throw new Error('Alternate academics admin connection must match the selected review database');
+  for (const key of [
+    'ACADEMICS_TEST_ADMIN_DATABASE_URL',
+    'ACADEMICS_ADMISSION_TEST_DATABASE_URL',
+    'ALGORITHM_TRAINING_TEST_ADMIN_DATABASE_URL',
+  ])
+    if (env[key] && env[key] !== env.DATABASE_URL)
+      throw new Error('Alternate test connection must match the selected review database');
+}
+
+export function validateRuntime(version) {
+  const [major, minor] = version.replace(/^v/, '').split('.').map(Number);
+  if (![22, 24].includes(major) || !Number.isInteger(minor) || (major === 22 && minor < 11))
+    throw new Error('Verification requires Node 22.11+ or Node 24');
 }
 
 export function discoverTests(names) {
@@ -211,6 +237,12 @@ export function buildStages(options, tests) {
       ],
       ['generate'],
     ),
+    nodeStep(
+      'creative-expression-browser',
+      ['--import', 'tsx', 'scripts/verify-aora-expressions.mjs'],
+      ['generate'],
+      120_000,
+    ),
     { id: 'servers', kind: 'servers', depends: ['build', 'seed'], timeoutMs: 60_000 },
     nodeStep(
       'e2e',
@@ -231,6 +263,19 @@ export function buildStages(options, tests) {
 }
 
 export function safeSummary(id, output) {
+  if (id === 'creative-expression-browser') {
+    try {
+      const report = JSON.parse(output.slice(Math.max(0, output.lastIndexOf('\n{') + 1)));
+      return {
+        checksPassed: report.checksPassed,
+        expressionsPassed: report.expressionsPassed,
+        externalRequests: report.externalRequests,
+        pageErrors: report.pageErrors,
+      };
+    } catch {
+      return { reportAvailable: false };
+    }
+  }
   if (id === 'performance' || id === 'trusted-references') {
     try {
       const parsed = JSON.parse(output.slice(Math.max(0, output.lastIndexOf('\n{') + 1)));
@@ -402,6 +447,16 @@ async function commandResult(stage, env) {
 
 export function evaluateStageResult(id, result, output) {
   const summary = safeSummary(id, output);
+  if (
+    id === 'creative-expression-browser' &&
+    !(
+      summary.checksPassed >= 10 &&
+      summary.expressionsPassed === 32 &&
+      summary.externalRequests === 0 &&
+      summary.pageErrors === 0
+    )
+  )
+    return { ...result, exitCode: 1, reason: 'Expression browser checks are missing or incomplete', summary };
   if (id === 'audit' && summary.reportAvailable === false)
     return { ...result, exitCode: 1, reason: 'Audit report is missing or invalid', summary };
   if (
@@ -458,9 +513,7 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
       return 0;
     }
     validateEnvironment(inputEnv);
-    const major = Number(process.versions.node.split('.')[0]);
-    if (major < 22 || major >= 25)
-      throw new Error('Verification requires the project-supported Node 22 or 24 runtime');
+    validateRuntime(process.versions.node);
   } catch (error) {
     console.error(JSON.stringify({ passed: false, stage: 'configuration', reason: error.message }));
     return 1;
@@ -492,9 +545,7 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
   process.once('SIGTERM', interrupt);
   try {
     releaseLock = await acquireVerificationLock(join(root, '.data', 'iteration-verification.lock'));
-    await assertPortsFree([
-      ...new Set([options.apiPort, options.previewPort, 3031, 3032, 3033, 3034, 3035, 3036, 3037]),
-    ]);
+    await assertPortsFree([...new Set([options.apiPort, options.previewPort, ...reservedPorts])]);
     const configPath = join(directory, 'providers-disabled.yaml');
     await writeFile(
       configPath,
@@ -509,6 +560,8 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
       NODE_ENV: 'test',
       DATABASE_URL: inputEnv.DATABASE_URL,
       ACADEMICS_TEST_ADMIN_DATABASE_URL: inputEnv.DATABASE_URL,
+      ACADEMICS_ADMISSION_TEST_DATABASE_URL: inputEnv.DATABASE_URL,
+      ALGORITHM_TRAINING_TEST_ADMIN_DATABASE_URL: inputEnv.DATABASE_URL,
       TEST_BASE_URL: api,
       TEST_API_URL: `${api}/api`,
       WEB_BASE_URL: web,
@@ -517,6 +570,11 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
       COOKIE_SECURE: 'false',
       DISABLE_JOBS: 'true',
       AI_CONFIG_PATH: configPath,
+      // Individual programming fixtures own their preview services. Main verification
+      // servers must not try to bind the user's existing development preview port.
+      PROGRAMMING_PREVIEW_ENABLED: 'false',
+      PROGRAMMING_PREVIEW_PORT: String(programmingPreviewPort),
+      PROGRAMMING_PREVIEW_ORIGIN: `http://127.0.0.1:${programmingPreviewPort}`,
       UPLOAD_DIR: resolve(root, inputEnv.UPLOAD_DIR || '.data/iteration-uploads'),
       CLEAN_VERIFY_PORT: '3031',
       VERIFICATION_OUTPUT_DIR: directory,
@@ -567,6 +625,9 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
             ...env,
             PORT: String(options.previewPort),
             ALGORITHM_JUDGE_ENABLED: 'false',
+            // Own a separate preview listener so the shipped CSP authorizes the
+            // same isolated origin exercised by the mocked iframe contract.
+            PROGRAMMING_PREVIEW_ENABLED: 'true',
           });
           if (
             !(await healthy(preview, `${web}/api/health`)) ||
@@ -577,6 +638,17 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
               reason: 'Compiled preview health check failed',
               log: await failureLog(stage.id, preview.output(), env),
             };
+          const frameProbe = await fetch(env.PROGRAMMING_PREVIEW_ORIGIN, {
+            signal: AbortSignal.timeout(3000),
+          });
+          const framePolicy = frameProbe.headers.get('content-security-policy') || '';
+          if (
+            frameProbe.status !== 404 ||
+            !framePolicy.includes('sandbox allow-scripts') ||
+            !framePolicy.includes(`frame-ancestors ${web}`) ||
+            frameProbe.headers.get('cache-control') !== 'no-store'
+          )
+            return { exitCode: 1, reason: 'Isolated programming preview readiness/policy failed' };
           return { exitCode: 0 };
         }
         if (stage.kind === 'browser') {

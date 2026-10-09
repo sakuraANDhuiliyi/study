@@ -62,8 +62,12 @@ export const algorithmLearningInput = z
     '请提供需要修改的学习状态',
   );
 export type AlgorithmLearningInput = z.infer<typeof algorithmLearningInput>;
-export const algorithmDraftInput = z.object({ language: algorithmLanguage, code }).strict();
-export const algorithmSubmissionInput = algorithmDraftInput
+const algorithmCodeInput = z.object({ language: algorithmLanguage, code }).strict();
+export const algorithmDraftInput = algorithmCodeInput.extend({
+  revision: z.number({ required_error: '草稿版本缺失，请刷新页面后再保存' }).int().min(0).max(2147483646),
+});
+export type AlgorithmDraftInput = z.infer<typeof algorithmDraftInput>;
+export const algorithmSubmissionInput = algorithmCodeInput
   .extend({
     code: code.refine((v) => v.trim().length > 0, '请先编写代码'),
     mode: z.enum(['run', 'submit']),
@@ -72,7 +76,7 @@ export const algorithmSubmissionInput = algorithmDraftInput
       .optional(),
   })
   .refine((v) => v.mode === 'run' || v.stdin === undefined, '正式提交不能提供自定义输入');
-export const algorithmAnalysisInput = algorithmDraftInput.extend({
+export const algorithmAnalysisInput = algorithmCodeInput.extend({
   mode: z.enum(['hint', 'explain', 'debug']),
   submissionId: text(100, 1).optional(),
 });

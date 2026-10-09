@@ -594,21 +594,23 @@ test('二分类混淆矩阵指标与增量迁移：独立PostgreSQL与真实HTTP
     });
 
     await t.test('非法类型/全零/非有限/额外字段、CSRF、角色和失效会话均拒绝且不落库', async () => {
+      // Keep charged failure vectors separate from the learner whose history is asserted.
       const before = await db!.academicsRecord.count();
       for (const field of fields) {
+        const invalidField = await register(`invalid_${field}`);
         const without: Partial<Counts> = { ...defaults };
         delete without[field];
-        await call(personal, endpoint, 'POST', { values: without }, 400);
+        await call(invalidField, endpoint, 'POST', { values: without }, 400);
         for (const value of [-1, 0.5, 1000001, 1e100, '1', '', null, true, [], {}])
-          await call(personal, endpoint, 'POST', { values: { ...defaults, [field]: value } }, 400);
+          await call(invalidField, endpoint, 'POST', { values: { ...defaults, [field]: value } }, 400);
         const nonFinite = await fetch(`${origin}/api${endpoint}`, {
           method: 'POST',
           signal: AbortSignal.timeout(15000),
           headers: {
             origin,
             'content-type': 'application/json',
-            cookie: personal.cookie,
-            'x-csrf-token': personal.csrf,
+            cookie: invalidField.cookie,
+            'x-csrf-token': invalidField.csrf,
           },
           body: JSON.stringify({ values: defaults }).replace(
             `"${field}":${defaults[field]}`,

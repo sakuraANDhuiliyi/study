@@ -299,7 +299,20 @@ test(
         assert.equal(judgeCalls, before);
       });
       await t.test('private drafts persist and sample/custom runs do not solve a problem', async () => {
-        await student.call(`${base}/draft`, 'PUT', source);
+        const savedDraft = await student.call(`${base}/draft`, 'PUT', { ...source, revision: 0 });
+        assert.equal(savedDraft.revision, 1);
+        await student.call(`${base}/draft`, 'PUT', source, 400);
+        const simultaneous = await Promise.all([
+          student.call(`${base}/draft`, 'PUT', { ...source, code: 'first window', revision: 1 }, [200, 409]),
+          student.call(`${base}/draft`, 'PUT', { ...source, code: 'second window', revision: 1 }, [200, 409]),
+        ]);
+        assert.equal(simultaneous.filter((item) => item.revision === 2).length, 1);
+        const newer = (await student.call(base)).draft;
+        assert.equal(newer.revision, 2);
+        assert.ok(['first window', 'second window'].includes(newer.code));
+        await student.call(`${base}/draft`, 'PUT', { ...source, revision: 1 }, 409);
+        assert.equal((await student.call(base)).draft.code, newer.code);
+        await student.call(`${base}/draft`, 'PUT', { ...source, revision: 2 });
         assert.equal((await student.call(base)).draft.code, code);
         assert.equal((await other.call(base)).draft, null);
         assert.equal((await foreign.call(base)).draft, null);

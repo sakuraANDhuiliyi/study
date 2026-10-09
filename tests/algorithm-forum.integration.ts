@@ -155,6 +155,19 @@ test(
           await platform.call(`/algorithm-forum/posts/${privatePost.id}`, 'GET', undefined, 404);
           assert.equal((await peer.call('/algorithm-forum/posts?scope=organization')).total, 1);
           assert.equal((await foreign.call('/algorithm-forum/posts?scope=organization')).total, 0);
+          assert.match(publicPost.authorLabel, /^学习者·[0-9a-f]{16}$/);
+          assert.notEqual(publicPost.authorLabel, privatePost.authorLabel);
+          assert.equal(
+            (await foreign.call(`/algorithm-forum/posts/${publicPost.id}`)).authorLabel,
+            publicPost.authorLabel,
+          );
+          const aliases = await db.algorithmForumAlias.findMany({ where: { authorId: owner.user.id } });
+          assert.equal(aliases.length, 2);
+          assert.equal(aliases.find((row) => row.contextKey === 'public')?.label, publicPost.authorLabel);
+          assert.equal(
+            aliases.find((row) => row.contextKey === `organization:${a.id}`)?.label,
+            privatePost.authorLabel,
+          );
           await personal.call('/algorithm-forum/posts?scope=organization', 'GET', undefined, 403);
           await personal.call('/algorithm-forum/posts', 'POST', newPost('organization'), 403);
         },
@@ -229,6 +242,10 @@ test(
           );
           assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
           publicPost = await owner.call(`/algorithm-forum/posts/${publicPost.id}`);
+          const storedAlias = await db.algorithmForumAlias.findUniqueOrThrow({
+            where: { authorId_contextKey: { authorId: owner.user.id, contextKey: 'public' } },
+          });
+          assert.equal(publicPost.authorLabel, storedAlias.label);
           assert.equal(publicPost.revision, 1);
           assert.equal(publicPost.replyCount, 1);
           await foreign.call(

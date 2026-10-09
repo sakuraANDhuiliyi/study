@@ -406,6 +406,7 @@ test('本人学习记录真实下载跨页CSV和完整Markdown，筛选、重试
     ];
     try {
       await db.$transaction([
+        db.academicsEvaluationAttempt.deleteMany({ where: { userId: { in: ids } } }),
         db.academicsRecord.deleteMany({ where: { userId: { in: ids } } }),
         db.academicsPreference.deleteMany({ where: { userId: { in: ids } } }),
         db.passwordRecovery.deleteMany({ where: { userId: { in: ids } } }),
