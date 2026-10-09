@@ -7,27 +7,15 @@ import {
   type Page,
   type Response,
 } from '@playwright/test';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { hashPasswordAsync } from '../../apps/api/src/auth/password';
+import { auditUserRestrictError } from '../helpers/audit-errors';
 
 const api = process.env.TEST_BASE_URL;
 const web = process.env.WEB_BASE_URL || 'http://localhost:5173';
 const loopback = (host: string) => ['127.0.0.1', 'localhost', '[::1]'].includes(host);
-function auditUserRestrictError(error: unknown) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError)
-    return error.code === 'P2003' && /\bAuditLog_userId_fkey\b/.test(String(error.meta?.field_name ?? ''));
-  if (!(error instanceof Prisma.PrismaClientUnknownRequestError)) return false;
-  // Postgres RESTRICT is SQLSTATE 23001, which this Prisma version wraps as UnknownRequestError.
-  const message = error.message.replaceAll('\\"', '"');
-  return (
-    /\bcode\s*:\s*"23001"/.test(message) &&
-    message.includes(
-      'update or delete on table "User" violates RESTRICT setting of foreign key constraint "AuditLog_userId_fkey" on table "AuditLog"',
-    )
-  );
-}
 function permittedReview() {
   try {
     const database = new URL(process.env.DATABASE_URL || 'postgresql://localhost/none');

@@ -8,10 +8,11 @@ import { createServer } from 'node:net';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { hashPasswordAsync } from '../apps/api/src/auth/password';
 import { permissionDefinitions, roleDefinitions } from '../apps/api/src/auth/permissions';
 import { auditCsvHeader, auditExportMaxBytes } from '../apps/api/src/admin/audit-export.renderer';
+import { auditUserRestrictError } from './helpers/audit-errors';
 
 // This suite creates/drops only its randomly named local database. It never seeds or changes
 // configured review/business data. The API pool has 3 connections; exports must not nest pools.
@@ -30,19 +31,6 @@ async function freePort() {
   const port = (server.address() as { port: number }).port;
   await new Promise<void>((done) => server.close(() => done()));
   return port;
-}
-function auditUserRestrictError(error: unknown) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError)
-    return error.code === 'P2003' && /\bAuditLog_userId_fkey\b/.test(String(error.meta?.field_name ?? ''));
-  if (!(error instanceof Prisma.PrismaClientUnknownRequestError)) return false;
-  // Postgres RESTRICT is SQLSTATE 23001, which this Prisma version wraps as UnknownRequestError.
-  const message = error.message.replaceAll('\\"', '"');
-  return (
-    /\bcode\s*:\s*"23001"/.test(message) &&
-    message.includes(
-      'update or delete on table "User" violates RESTRICT setting of foreign key constraint "AuditLog_userId_fkey" on table "AuditLog"',
-    )
-  );
 }
 function csvRows(text: string) {
   const rows: string[][] = [];
