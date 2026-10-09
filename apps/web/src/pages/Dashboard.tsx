@@ -23,6 +23,7 @@ import { useData, date, isTeacher, isAdmin } from '../api';
 import { Chart, chartTheme, EmptyState, QueryState, RichContent } from '../components/shared';
 import '../dashboard.css';
 import { Academics } from './Academics';
+import { ActionPanel } from '../components/learning/ActionPanel';
 
 function DashboardPanel({
   title,
@@ -66,7 +67,8 @@ export function Dashboard() {
 function OrganizationDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const query = useData('/dashboard');
+  const canReadDashboard = user?.role !== 'STUDENT' || !!user?.permissions.includes('course.read');
+  const query = useData('/dashboard', canReadDashboard);
   const d = query.data;
   const teacher = isTeacher(user);
   const admin = isAdmin(user);
@@ -159,258 +161,268 @@ function OrganizationDashboard() {
           )}
         </div>
       </header>
-      <QueryState query={query}>
-        {d && (
-          <>
-            <div className="lms-dash-metrics">
-              {(d.metrics || []).map((metric: any, index: number) => {
-                const Icon = metricIcons[index % metricIcons.length];
-                const path = metric.path === '/admin/organizations' ? '/admin/organization' : metric.path;
-                const content = (
-                  <>
-                    <div className="lms-dash-metric-top">
-                      <span>{metric.label}</span>
-                      <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
-                    </div>
-                    <strong className="lms-dash-metric-value">{metric.value ?? '—'}</strong>
-                    <div className="lms-dash-metric-bottom">
-                      <span>{metric.detail || '根据当前授权范围统计'}</span>
-                      {path && <ArrowUpRight size={16} aria-hidden="true" />}
-                    </div>
-                  </>
-                );
-                return path ? (
-                  <Link
-                    key={metric.label}
-                    to={path}
-                    className="lms-dash-metric"
-                    aria-label={`查看${metric.label}`}
-                  >
-                    {content}
-                  </Link>
-                ) : (
-                  <div key={metric.label} className="lms-dash-metric">
-                    {content}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="lms-dash-grid">
-              <div className="lms-dash-primary">
-                <DashboardPanel
-                  title={admin ? '机构课程' : teacher ? '我的授课' : '继续学习'}
-                  description={
-                    admin
-                      ? '机构内课程与教学安排'
-                      : teacher
-                        ? '当前授课课程与学生规模'
-                        : '已加入课程的学习进度'
-                  }
-                  extra={<DashboardLink to="/courses" />}
-                >
-                  <div className="lms-dash-courses">
-                    {d.courses?.slice(0, 3).map((course: any) => (
-                      <Link to={`/courses/${course.id}`} key={course.id} className="lms-dash-course">
-                        <div className="lms-dash-course-cover" aria-hidden="true">
-                          {course.cover ? (
-                            <img src={course.cover} alt="" loading="lazy" referrerPolicy="no-referrer" />
-                          ) : (
-                            <BookOpen size={24} strokeWidth={1.6} />
-                          )}
-                        </div>
-                        <div className="lms-dash-course-info">
-                          <h3>{course.title}</h3>
-                          <p>
-                            {course.category || '课程学习'}
-                            {course.teacherName && <> · {course.teacherName}</>}
-                          </p>
-                        </div>
-                        <div className="lms-dash-course-progress">
-                          {teacher ? (
-                            <>
-                              <strong>{course.studentCount || 0} 位学生</strong>
-                              <span>{course.totalLessons || 0} 个课时</span>
-                            </>
-                          ) : (
-                            <>
-                              <div>
-                                <span>
-                                  {course.completedLessons || 0} / {course.totalLessons || 0} 课时
-                                </span>
-                                <strong>{course.progressPercent || 0}%</strong>
-                              </div>
-                              <Progress
-                                percent={course.progressPercent || 0}
-                                showInfo={false}
-                                size="small"
-                                strokeColor="#206bc4"
-                                trailColor="#e8edf3"
-                              />
-                            </>
-                          )}
-                        </div>
-                        <ChevronRight className="lms-dash-row-arrow" size={17} aria-hidden="true" />
-                      </Link>
-                    ))}
-                  </div>
-                  {!d.courses?.length && <EmptyState description="暂时没有已分配的课程" />}
-                </DashboardPanel>
-                <DashboardPanel
-                  title={admin ? '平台活动' : '学习活动'}
-                  description="最近七天的学习记录与平台操作次数"
-                  extra={<span className="lms-dash-period">最近 7 天</span>}
-                >
-                  <div className="lms-dash-chart">
-                    {d.weeklyActivity?.length ? (
-                      <Chart
-                        height={225}
-                        label="最近七天学习活动次数"
-                        option={{
-                          ...chartTheme,
-                          textStyle: { ...chartTheme.textStyle, color: '#626976', fontSize: 12 },
-                          grid: { left: 34, right: 15, top: 24, bottom: 28 },
-                          xAxis: {
-                            ...chartTheme.xAxis,
-                            type: 'category',
-                            boundaryGap: false,
-                            data: d.weeklyActivity.map((x: any) => date(x.date, true)),
-                          },
-                          yAxis: {
-                            ...chartTheme.yAxis,
-                            type: 'value',
-                            minInterval: 1,
-                            splitLine: { lineStyle: { color: '#e8edf3', type: 'dashed' } },
-                          },
-                          series: [
-                            {
-                              name: '活动次数',
-                              type: 'line',
-                              smooth: false,
-                              data: d.weeklyActivity.map((x: any) => x.count),
-                              symbol: 'circle',
-                              symbolSize: 6,
-                              lineStyle: { width: 2 },
-                              itemStyle: { color: '#206bc4' },
-                              areaStyle: { color: 'rgba(32,107,196,.08)' },
-                            },
-                          ],
-                        }}
-                      />
-                    ) : (
-                      <EmptyState description="开始学习后，在这里回顾你的活动" />
-                    )}
-                  </div>
-                </DashboardPanel>
-                <DashboardPanel title="最近动态">
-                  {d.activity?.length ? (
-                    <div className="lms-dash-activity-list">
-                      {d.activity.slice(0, 4).map((item: any) => (
-                        <div className="lms-dash-activity" key={item.id}>
-                          <span className="lms-dash-activity-dot" aria-hidden="true" />
-                          <div>
-                            <strong>{item.title}</strong>
-                            <p>{item.detail}</p>
-                          </div>
-                          <time>{date(item.createdAt)}</time>
-                        </div>
-                      ))}
-                    </div>
+      {canReadDashboard ? (
+        <QueryState query={query}>
+          {d && (
+            <>
+              <div className="lms-dash-metrics">
+                {(d.metrics || []).map((metric: any, index: number) => {
+                  const Icon = metricIcons[index % metricIcons.length];
+                  const path = metric.path === '/admin/organizations' ? '/admin/organization' : metric.path;
+                  const content = (
+                    <>
+                      <div className="lms-dash-metric-top">
+                        <span>{metric.label}</span>
+                        <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
+                      </div>
+                      <strong className="lms-dash-metric-value">{metric.value ?? '—'}</strong>
+                      <div className="lms-dash-metric-bottom">
+                        <span>{metric.detail || '根据当前授权范围统计'}</span>
+                        {path && <ArrowUpRight size={16} aria-hidden="true" />}
+                      </div>
+                    </>
+                  );
+                  return path ? (
+                    <Link
+                      key={metric.label}
+                      to={path}
+                      className="lms-dash-metric"
+                      aria-label={`查看${metric.label}`}
+                    >
+                      {content}
+                    </Link>
                   ) : (
-                    <EmptyState description="学习记录将在这里显示" />
-                  )}
-                </DashboardPanel>
+                    <div key={metric.label} className="lms-dash-metric">
+                      {content}
+                    </div>
+                  );
+                })}
               </div>
-              <div className="lms-dash-secondary">
-                {admin ? (
-                  <DashboardPanel title="管理入口" description="机构管理与运行维护">
-                    <div className="lms-dash-task-list">
-                      {managementLinks.map((item) => (
-                        <Link to={item.path} key={item.path} className="lms-dash-task">
-                          <span className="lms-dash-task-icon">
-                            <item.icon size={19} aria-hidden="true" />
-                          </span>
-                          <div className="lms-dash-task-body">
-                            <h3>{item.title}</h3>
-                            <p>{item.description}</p>
+              <div className="lms-dash-grid">
+                <div className="lms-dash-primary">
+                  <DashboardPanel
+                    title={admin ? '机构课程' : teacher ? '我的授课' : '继续学习'}
+                    description={
+                      admin
+                        ? '机构内课程与教学安排'
+                        : teacher
+                          ? '当前授课课程与学生规模'
+                          : '已加入课程的学习进度'
+                    }
+                    extra={<DashboardLink to="/courses" />}
+                  >
+                    <div className="lms-dash-courses">
+                      {d.courses?.slice(0, 3).map((course: any) => (
+                        <Link to={`/courses/${course.id}`} key={course.id} className="lms-dash-course">
+                          <div className="lms-dash-course-cover" aria-hidden="true">
+                            {course.cover ? (
+                              <img src={course.cover} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                            ) : (
+                              <BookOpen size={24} strokeWidth={1.6} />
+                            )}
                           </div>
-                          <ChevronRight className="lms-dash-row-arrow" size={16} aria-hidden="true" />
+                          <div className="lms-dash-course-info">
+                            <h3>{course.title}</h3>
+                            <p>
+                              {course.category || '课程学习'}
+                              {course.teacherName && <> · {course.teacherName}</>}
+                            </p>
+                          </div>
+                          <div className="lms-dash-course-progress">
+                            {teacher ? (
+                              <>
+                                <strong>{course.studentCount || 0} 位学生</strong>
+                                <span>{course.totalLessons || 0} 个课时</span>
+                              </>
+                            ) : (
+                              <>
+                                <div>
+                                  <span>
+                                    {course.completedLessons || 0} / {course.totalLessons || 0} 课时
+                                  </span>
+                                  <strong>{course.progressPercent || 0}%</strong>
+                                </div>
+                                <Progress
+                                  percent={course.progressPercent || 0}
+                                  showInfo={false}
+                                  size="small"
+                                  strokeColor="#206bc4"
+                                  trailColor="#e8edf3"
+                                />
+                              </>
+                            )}
+                          </div>
+                          <ChevronRight className="lms-dash-row-arrow" size={17} aria-hidden="true" />
                         </Link>
                       ))}
                     </div>
-                    {!managementLinks.length && <EmptyState description="暂无已授权的管理入口" />}
+                    {!d.courses?.length && <EmptyState description="暂时没有已分配的课程" />}
                   </DashboardPanel>
-                ) : (
                   <DashboardPanel
-                    title="待办任务"
-                    extra={<span className="lms-dash-count">{d.tasks?.length || 0}</span>}
+                    title={admin ? '平台活动' : '学习活动'}
+                    description="最近七天的学习记录与平台操作次数"
+                    extra={<span className="lms-dash-period">最近 7 天</span>}
                   >
-                    {d.tasks?.length ? (
-                      <div className="lms-dash-task-list">
-                        {d.tasks.slice(0, 5).map((task: any) => (
-                          <Link
-                            to={
-                              task.path ||
-                              (task.type === 'exam' ? `/exams/${task.id}` : `/assignments/${task.id}`)
-                            }
-                            key={`${task.type}-${task.id}`}
-                            className="lms-dash-task"
-                          >
-                            <span
-                              className={`lms-dash-task-icon ${task.type === 'exam' ? 'lms-dash-task-exam' : ''}`}
-                            >
-                              {task.type === 'exam' ? <FileCheck2 size={19} /> : <ClipboardList size={19} />}
-                            </span>
-                            <div className="lms-dash-task-body">
-                              <span>{task.courseTitle || '学习任务'}</span>
-                              <h3>{task.title}</h3>
-                              <p>
-                                <Clock3 size={12} aria-hidden="true" />
-                                {date(task.dueAt)}
-                                {task.type === 'exam' ? ' 开始' : ' 截止'}
-                              </p>
+                    <div className="lms-dash-chart">
+                      {d.weeklyActivity?.length ? (
+                        <Chart
+                          height={225}
+                          label="最近七天学习活动次数"
+                          option={{
+                            ...chartTheme,
+                            textStyle: { ...chartTheme.textStyle, color: '#626976', fontSize: 12 },
+                            grid: { left: 34, right: 15, top: 24, bottom: 28 },
+                            xAxis: {
+                              ...chartTheme.xAxis,
+                              type: 'category',
+                              boundaryGap: false,
+                              data: d.weeklyActivity.map((x: any) => date(x.date, true)),
+                            },
+                            yAxis: {
+                              ...chartTheme.yAxis,
+                              type: 'value',
+                              minInterval: 1,
+                              splitLine: { lineStyle: { color: '#e8edf3', type: 'dashed' } },
+                            },
+                            series: [
+                              {
+                                name: '活动次数',
+                                type: 'line',
+                                smooth: false,
+                                data: d.weeklyActivity.map((x: any) => x.count),
+                                symbol: 'circle',
+                                symbolSize: 6,
+                                lineStyle: { width: 2 },
+                                itemStyle: { color: '#206bc4' },
+                                areaStyle: { color: 'rgba(32,107,196,.08)' },
+                              },
+                            ],
+                          }}
+                        />
+                      ) : (
+                        <EmptyState description="开始学习后，在这里回顾你的活动" />
+                      )}
+                    </div>
+                  </DashboardPanel>
+                  <DashboardPanel title="最近动态">
+                    {d.activity?.length ? (
+                      <div className="lms-dash-activity-list">
+                        {d.activity.slice(0, 4).map((item: any) => (
+                          <div className="lms-dash-activity" key={item.id}>
+                            <span className="lms-dash-activity-dot" aria-hidden="true" />
+                            <div>
+                              <strong>{item.title}</strong>
+                              <p>{item.detail}</p>
                             </div>
-                          </Link>
+                            <time>{date(item.createdAt)}</time>
+                          </div>
                         ))}
                       </div>
                     ) : (
-                      <EmptyState description="当前没有待办任务" />
+                      <EmptyState description="学习记录将在这里显示" />
                     )}
-                    <div className="lms-dash-panel-footer">
-                      <DashboardLink to="/assignments">全部学习任务</DashboardLink>
-                    </div>
                   </DashboardPanel>
-                )}
-                <DashboardPanel
-                  title="通知与公告"
-                  extra={<DashboardLink to="/notifications">更多</DashboardLink>}
-                >
-                  {d.announcements?.length ? (
-                    <div className="lms-dash-announcements">
-                      {d.announcements.slice(0, 3).map((announcement: any) => (
-                        <div className="lms-dash-announcement" key={announcement.id}>
-                          <div className="lms-dash-announcement-meta">
-                            <span>
-                              <Bell size={13} aria-hidden="true" />
-                              {announcement.courseId ? '课程公告' : '机构公告'}
+                </div>
+                <div className="lms-dash-secondary">
+                  {admin ? (
+                    <DashboardPanel title="管理入口" description="机构管理与运行维护">
+                      <div className="lms-dash-task-list">
+                        {managementLinks.map((item) => (
+                          <Link to={item.path} key={item.path} className="lms-dash-task">
+                            <span className="lms-dash-task-icon">
+                              <item.icon size={19} aria-hidden="true" />
                             </span>
-                            <time>{date(announcement.createdAt, true)}</time>
-                          </div>
-                          <h3>{announcement.title}</h3>
-                          <div className="lms-dash-announcement-content">
-                            <RichContent content={announcement.content} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                            <div className="lms-dash-task-body">
+                              <h3>{item.title}</h3>
+                              <p>{item.description}</p>
+                            </div>
+                            <ChevronRight className="lms-dash-row-arrow" size={16} aria-hidden="true" />
+                          </Link>
+                        ))}
+                      </div>
+                      {!managementLinks.length && <EmptyState description="暂无已授权的管理入口" />}
+                    </DashboardPanel>
+                  ) : user?.role === 'STUDENT' ? (
+                    <ActionPanel />
                   ) : (
-                    <EmptyState description="暂无最新公告" />
+                    <DashboardPanel
+                      title="待办任务"
+                      extra={<span className="lms-dash-count">{d.tasks?.length || 0}</span>}
+                    >
+                      {d.tasks?.length ? (
+                        <div className="lms-dash-task-list">
+                          {d.tasks.slice(0, 5).map((task: any) => (
+                            <Link
+                              to={
+                                task.path ||
+                                (task.type === 'exam' ? `/exams/${task.id}` : `/assignments/${task.id}`)
+                              }
+                              key={`${task.type}-${task.id}`}
+                              className="lms-dash-task"
+                            >
+                              <span
+                                className={`lms-dash-task-icon ${task.type === 'exam' ? 'lms-dash-task-exam' : ''}`}
+                              >
+                                {task.type === 'exam' ? (
+                                  <FileCheck2 size={19} />
+                                ) : (
+                                  <ClipboardList size={19} />
+                                )}
+                              </span>
+                              <div className="lms-dash-task-body">
+                                <span>{task.courseTitle || '学习任务'}</span>
+                                <h3>{task.title}</h3>
+                                <p>
+                                  <Clock3 size={12} aria-hidden="true" />
+                                  {date(task.dueAt)}
+                                  {task.type === 'exam' ? ' 开始' : ' 截止'}
+                                </p>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState description="当前没有待办任务" />
+                      )}
+                      <div className="lms-dash-panel-footer">
+                        <DashboardLink to="/assignments">全部学习任务</DashboardLink>
+                      </div>
+                    </DashboardPanel>
                   )}
-                </DashboardPanel>
+                  <DashboardPanel
+                    title="通知与公告"
+                    extra={<DashboardLink to="/notifications">更多</DashboardLink>}
+                  >
+                    {d.announcements?.length ? (
+                      <div className="lms-dash-announcements">
+                        {d.announcements.slice(0, 3).map((announcement: any) => (
+                          <div className="lms-dash-announcement" key={announcement.id}>
+                            <div className="lms-dash-announcement-meta">
+                              <span>
+                                <Bell size={13} aria-hidden="true" />
+                                {announcement.courseId ? '课程公告' : '机构公告'}
+                              </span>
+                              <time>{date(announcement.createdAt, true)}</time>
+                            </div>
+                            <h3>{announcement.title}</h3>
+                            <div className="lms-dash-announcement-content">
+                              <RichContent content={announcement.content} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState description="暂无最新公告" />
+                    )}
+                  </DashboardPanel>
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </QueryState>
+            </>
+          )}
+        </QueryState>
+      ) : (
+        <ActionPanel />
+      )}
     </div>
   );
 }

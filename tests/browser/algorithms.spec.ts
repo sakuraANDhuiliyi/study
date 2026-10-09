@@ -1,5 +1,6 @@
 // Browser API-contract fixtures: these tests do not invoke a real compiler or AI provider.
 import { test, expect, type Page, type Route } from '@playwright/test';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 import { mkdir } from 'node:fs/promises';
 
 test.use({ actionTimeout: 15000 });
@@ -97,6 +98,8 @@ async function setup(page: Page, configured = true, role = 'STUDENT', profession
       return json(route, { user: user(), csrfToken: 'fixture-csrf-b' });
     }
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions')
+      return json(route, emptyLearningActions(new URL(route.request().url())));
     if (path === '/api/notifications') return json(route, { items: [], total: 0, unreadCount: 0 });
     if (path === '/api/algorithms/status')
       return json(route, {

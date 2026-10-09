@@ -1,5 +1,6 @@
 // Local API contracts only; no compiler, AI provider or real user records are used.
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 
 test.use({ actionTimeout: 15000 });
 const stamp = '2026-10-09T12:00:00.000Z';
@@ -81,6 +82,8 @@ async function fixture(page: Page, options: { empty?: boolean; full?: boolean; t
       return json(route, { user: user(), csrfToken: 'training-csrf-b' }, 201);
     }
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions')
+      return json(route, emptyLearningActions(new URL(route.request().url())));
     if (path === '/api/academics/catalog') return json(route, { subjects: [], majors: [], modules: [] });
     if (path === '/api/academics/me')
       return json(route, {

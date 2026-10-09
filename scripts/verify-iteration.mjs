@@ -177,6 +177,7 @@ export function validateEnvironment(env) {
     'ACADEMICS_TEST_ADMIN_DATABASE_URL',
     'ACADEMICS_ADMISSION_TEST_DATABASE_URL',
     'ALGORITHM_TRAINING_TEST_ADMIN_DATABASE_URL',
+    'LEARNING_ACTIONS_TEST_ADMIN_DATABASE_URL',
   ])
     if (env[key] && env[key] !== env.DATABASE_URL)
       throw new Error('Alternate test connection must match the selected review database');
@@ -562,6 +563,7 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
       ACADEMICS_TEST_ADMIN_DATABASE_URL: inputEnv.DATABASE_URL,
       ACADEMICS_ADMISSION_TEST_DATABASE_URL: inputEnv.DATABASE_URL,
       ALGORITHM_TRAINING_TEST_ADMIN_DATABASE_URL: inputEnv.DATABASE_URL,
+      LEARNING_ACTIONS_TEST_ADMIN_DATABASE_URL: inputEnv.DATABASE_URL,
       TEST_BASE_URL: api,
       TEST_API_URL: `${api}/api`,
       WEB_BASE_URL: web,

@@ -1,6 +1,7 @@
 // Controlled API records only; these tests never call a compiler or AI provider.
 import { test, expect, type Page, type Route } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 
 test.use({ actionTimeout: 15000 });
 type Language = 'cpp' | 'python' | 'javascript' | 'java';
@@ -153,6 +154,8 @@ async function setup(page: Page, empty = false) {
       return json(route, { user: user(), csrfToken: 'fixture-csrf-b' });
     }
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions')
+      return json(route, emptyLearningActions(new URL(route.request().url())));
     if (path === '/api/notifications') return json(route, { items: [], total: 0, unreadCount: 0 });
     if (path === '/api/academics/catalog') return json(route, { subjects: [], majors: [], modules: [] });
     if (path === '/api/academics/me')

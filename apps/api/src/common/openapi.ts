@@ -19,6 +19,7 @@ import {
   joinReviewSchema,
 } from '../accounts/accounts.schemas';
 import { taskInput, taskPatch, taskDelete } from '../planner/planner.schemas';
+import { learningActionsQuery } from '../planner/actions.schemas';
 import { noteInput } from '../notes/notes.controller';
 import { createAiReportInput, searchAiReportInput } from '../ai-study/ai-study.schemas';
 import { authoringGenerateInput, authoringCommitInput } from '../ai-authoring/ai-authoring.schemas';
@@ -284,6 +285,10 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       ];
   }
   const programmingList = doc.paths['/api/programming/projects']?.get;
+  const learningActions = doc.paths['/api/planner/actions']?.get;
+  if (learningActions)
+    learningActions.description =
+      '仅学生且具有 learning.use 权限；课程任务另需 course.read、当前机构有效课程授权及本人受众资格。按实际本人截止和最新正式提交判定，草稿不当作提交。逾期包括今天已过截止；今天为服务器当前时间至上海明日零点；未来7日为上海明日起七个自然日，右边界不含。每桶独立分页并返回同一查询快照的完整匹配总数；未完成但关闭提交的作业仅可查看，不能直接提交。';
   const trainingList = doc.paths['/api/algorithms/training-plans']?.get;
   if (trainingList)
     trainingList.description =
@@ -327,6 +332,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       { in: 'query', name: 'pageSize', schema: { type: 'integer', minimum: 1, maximum: 24, default: 12 } },
     ];
   for (const [path, query] of [
+    ['/api/planner/actions', learningActionsQuery],
     ['/api/algorithm-forum/posts', forum.forumListQuery],
     ['/api/algorithm-forum/posts/{id}/replies', forum.forumPageQuery],
   ] as const) {

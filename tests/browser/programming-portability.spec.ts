@@ -1,6 +1,7 @@
 // Every API request is mocked; these tests do not touch a database or providers.
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 
 const files = [
   { path: 'index.html', content: '<h1>原项目</h1>' },
@@ -73,6 +74,7 @@ async function fixture(page: Page, options: Options = {}) {
         },
       });
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions') return json(route, emptyLearningActions(new URL(request.url())));
     if (path === '/api/notifications') return json(route, { items: [], total: 0, unreadCount: 0 });
     if (path === '/api/programming/status')
       return json(route, {

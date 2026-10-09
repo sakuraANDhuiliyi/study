@@ -4,6 +4,7 @@ import { test, expect, type Page, type Route } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import type { LearningGoal } from '../../apps/web/src/components/academics/types';
 import { plannerDay } from '../../apps/web/src/planner-time';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 
 test.use({ actionTimeout: 15000 });
 const modules = [
@@ -91,6 +92,7 @@ async function setup(page: Page, initial: LearningGoal[] = []) {
       return json(route, { user: user(), csrfToken: 'fixture-token' });
     }
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions') return json(route, emptyLearningActions(new URL(request.url())));
     if (path === '/api/notifications') return json(route, { items: [], total: 0, unreadCount: 0 });
     if (path === '/api/academics/catalog') return json(route, { subjects: [], majors: [], modules });
     if (path === '/api/academics/me')

@@ -53,6 +53,14 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 
 `GET /dashboard` 实际课程、任务、公告与计数。
 
+`GET /planner/actions?bucket=today|upcoming|overdue&page=1&pageSize=10` 返回学生本人的学习行动清单。需要 `learning.use`；课程来源另需 `course.read`、当前空间有效选课和本人受众资格，没有课程权限时仍返回个人待办。`page` 为 1–10000，`pageSize` 为 1–20，不允许客户端指定用户或机构。
+
+响应包含 `{items,counts:{today,upcoming,overdue},total,page,pageSize,bucket,timezone,serverTime,range}`。三桶匹配数与当前页来自同一条数据库查询的快照，在分页前计算，不以日历首 500 行或当前页替代完整计数。逾期为实际时间早于 `serverTime`；今日为当前时间至北京时间明日零点；未来 7 天从明日零点至再后七日零点，右边界不含。今天已过截止的事项只归入逾期。逾期按最近到时优先，其余按时间升序，同时间按类型和 ID 排序。
+
+每条摘要包含 `id/type/title/dueAt/overdue/status/action/actionLabel/path/reason`。个人待办另有 `revision`；作业另有当前课程和 `originalDueAt`，采用本人补交许可后的有效截止，豁免与已经正式提交的作业不进入清单，退回作业重新进入；草稿不代表正式提交。考试采用本人的进入窗口或正在作答答卷的实际期限，入口分别指向考试和本人答卷，允许重试时明确显示“再次考试”。已取消、资格取消、次数用完或关闭窗口的考试不显示为可进入；已经截止且不允许迟交的作业只提供查看入口。
+
+个人完成沿用 `PATCH /planner/tasks/:id {revision,completed:true}` 的版本校验。清单只读接口在查询后复核会话、角色、空间和权限，以及全部贡献课程和当前页任务受众；资格变化返回拒绝，不裁剪旧行后保留旧总数。过程内非当前页受众变化仍遵循第一条查询的计数快照，下一次读取更新。前端拒绝时隐藏旧行、计数和课程入口；普通网络故障可提示并保留上次清单，完成按钮停用，显式重试后恢复。
+
 `GET /analytics?courseId=&classId=&termId=` 返回 metrics、scoreTrend、knowledgePoints、courseProgress、distribution、students、rules。管理员只有运行指标，除非获独立教学统计授权。`GET /analytics/export` 使用相同计算结果并再次授权。
 
 `GET /health` 查询数据库后返回服务健康与服务器时间。

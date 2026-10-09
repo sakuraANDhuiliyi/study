@@ -2,6 +2,7 @@
 // real-service tests separately verify the server and calculators.
 import { test, expect, type Page, type Route } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 test.use({ actionTimeout: 15000 });
 const stamp = '2026-10-09T08:00:00Z';
 const subject = {
@@ -189,6 +190,7 @@ async function setup(page: Page, mode: 'personal' | 'guest' | 'admin' | 'organiz
       return json(route, { user: user(), csrfToken: 'fixture-csrf' });
     }
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions') return json(route, emptyLearningActions(new URL(request.url())));
     if (path === '/api/notifications') return json(route, { items: [], total: 0, unreadCount: 0 });
     if (path === '/api/dashboard')
       return json(route, { metrics: [], courses: [], todos: [], announcements: [], activities: [] });

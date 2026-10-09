@@ -4,6 +4,7 @@
 import { test, expect, type Download, type Page, type Route } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { LearningRecord } from '../../apps/web/src/components/academics/types';
+import { emptyLearningActions } from './empty-learning-actions-fixture';
 
 test.use({ actionTimeout: 15000 });
 const modules = [
@@ -126,6 +127,8 @@ async function setup(page: Page, initial = records()) {
       return json(route, { user: user(), csrfToken: 'export-fixture-token' });
     }
     if (path === '/api/platform') return json(route, { name: '知学' });
+    if (path === '/api/planner/actions')
+      return json(route, emptyLearningActions(new URL(route.request().url())));
     if (path === '/api/notifications') return json(route, { items: [], total: 0, unreadCount: 0 });
     if (path === '/api/academics/catalog') return json(route, { modules, subjects: [], majors: [] });
     if (path === '/api/academics/me')

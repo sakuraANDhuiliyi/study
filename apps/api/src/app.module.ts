@@ -21,6 +21,8 @@ import { LocalPrivateStorage } from './communication/storage';
 import { UploadSafetyService } from './communication/upload-safety.service';
 import { UploadAdmissionInterceptor } from './communication/upload-admission.interceptor';
 import { PlannerController } from './planner/planner.controller';
+import { LearningActionsController } from './planner/actions.controller';
+import { LearningActionsService } from './planner/actions.service';
 import { NotesController } from './notes/notes.controller';
 import { AiStudyController } from './ai-study/ai-study.controller';
 import { AiStudyService } from './ai-study/ai-study.service';
@@ -122,6 +124,7 @@ class CatalogController {
     NotificationController,
     AttachmentsController,
     PlannerController,
+    LearningActionsController,
     NotesController,
     AiStudyController,
     AiAuthoringController,
@@ -140,6 +143,7 @@ class CatalogController {
     PrismaService,
     AuthService,
     AuthGuard,
+    LearningActionsService,
     AuditService,
     JobsService,
     AssessmentService,
