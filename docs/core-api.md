@@ -48,7 +48,12 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 - `GET /admin/audit?search=&action=&actorId=&resourceType=&resourceId=&requestId=&from=&to=&page=&pageSize=` 需 `audit.read`，范围固定为当前机构。组合条件为 AND；`search` 在操作、资源类型／标识、追踪 ID 中做大小写无关的字面子串匹配，旧 `action` 保留原大小写敏感 contains 语义。`from/to` 为含时区偏移的 ISO 瞬间，双端包含；界面明确按北京时间输入到秒，不自动扩展结束日期。已删除或迁出的操作人可以用原始 ID 筛选，姓名只关联当前机构成员，否则显示“历史账号”；空操作人显示“系统”。返回原 `{items,total,page,pageSize}`，计数与稳定分页来自同一查询快照，读取后复核当前会话与权限。
 - `POST /admin/audit/export {search?,action?,actorId?,resourceType?,resourceId?,requestId?,from?,to?,limit?}` 使用相同筛选，严格拒绝机构／用户覆盖与列表分页字段。当前所选角色必须同时具有 `audit.read`、`data.export`，并持有当前机构的独立限时导出授权；超级管理员和误设非敏感的权限配置都不能跳过独立授权。`limit` 为 1–5000 的整数，默认 5000；按最新记录优先，覆盖筛选结果，不限当前列表页。
 - 导出直接返回 `audit-records.csv` 附件，UTF-8 BOM、CRLF、公式保护，至多 8 MiB。只含审计 ID、UTC 时间、操作人 ID／名称、操作、资源类型／标识与追踪 ID，排除详情正文。`X-Export-Matched-Count`、`X-Export-Record-Count`、`X-Export-Truncated` 说明同一数据快照的总数、实际数与数量上限限制；没有匹配记录时返回仅表头的文件，超出字节上限返回 413，不发送部分文件。准备和发送前均复核当前会话与授权；审计 `admin.audit.export` 的 `deliveryState:prepared` 表示准备完成，不宣称客户端已收件。
-- `GET /admin/jobs` 继续提供后台任务分页与详情。
+- 第十四轮合同（完整本机验收通过）：`GET /admin/jobs?action=&status=&page=&pageSize=` 需要当前 `audit.read`。`action` 仅在 `kind` 中做大小写无关的字面包含匹配，最多 200 字符；百分号、下划线和反斜杠不是通配符，非空关键词保留空白。`status` 为 `ALL`（默认）、`PENDING`、`RUNNING`、`SUCCEEDED`、`FAILED`。分页保留原取整与限幅：默认第 1 页、每页 20 项，最大页码 100000、每页 100 项。已知字段拒绝重复参数、对象／数组、NUL 和过长文本；机构、用户、角色、权限或会话覆盖字段不能改变服务器授权范围。
+- 返回 `{items,total,page,pageSize,examDeadlineRuns,stateCounts,scope,serverTime}`。`stateCounts:{pending,running,succeeded,failed,other,all}` 按已应用类型关键词和服务器机构范围完整计数，忽略当前 `status`；列表 `total` 再应用该状态条件。`all` 包含未知存储状态的 `other`，不能由当前页或四种已知状态之和代替。任务按创建时间倒序、ID 升序稳定分页。
+- `scope:platform_institutions` 仅由当前 `org.platform` 决定，覆盖全部 `INSTITUTION`，包含停用机构、排除个人空间；没有该权限时为 `current_organization`，只返回当前机构。角色名称本身不授予平台范围，也没有客户端机构选择器。每行只返回 `id,kind,status,attempts,runAt,lastError,createdAt,organizationId,organizationName`；不返回 `payload,eventKey,details,metadata`，也不虚构后台任务完成时间。最近错误按文本显示；带错误的 `PENDING` 不改称 `FAILED`。
+- `examDeadlineRuns` 保留平台权限下独立的全局考试截止处理最近 20 次运行记录，按开始时间倒序、ID 倒序；不受任务类型／状态条件影响，不计入后台任务列表或六项概览。普通范围返回空数组，查询不读取该全局表。
+- 任务行、总数、状态概览和可选全局运行记录来自同一个 SQL 语句快照；`serverTime` 是该语句开始的 ISO 时间，界面按北京时间显示，不代表任务完成时间。所有私有读取完成后重新解析当前会话，核对账号、机构、所选角色、账号模式和 CSRF，重新要求 `audit.read`，并核对捕获的 `org.platform` 是否仍一致；范围改变时拒绝旧结果。这一语句快照不保证返回瞬间全局状态不再变化。
+- 后台任务界面将草稿与已应用筛选分开，应用／重置回到第 1 页，刷新沿用已应用条件。只读展示和分页；不新增任务创建、执行、重试、删除、取消或 cron 设置。成功空结果显示真实 0；加载、权限拒绝和普通错误不伪装成 0。完整授权与 CSRF 隔离缓存，读取响应头和正文后先核对当前身份，再处理 401；当前 4xx 撤回本域所有筛选／分页旧行和计数，覆盖导航返回和此前在途请求。普通故障仅可带提示保留已授权快照，新成功读取后才恢复被拒绝数据。
 
 实际数据库迁移保留审计操作人的外键保护：仍有审计记录的账号不能硬删除，停用或迁出不改写历史审计。历史账号的原始 ID 仍可用于筛选；不存在或已删除但没有审计记录的 ID 返回空结果，不通过删除外键制造历史数据。
 

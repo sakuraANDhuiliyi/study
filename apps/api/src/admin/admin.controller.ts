@@ -21,6 +21,7 @@ import type { Response } from 'express';
 import { PrismaService } from '../common/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { AdminAuditService } from './audit.service';
+import { AdminJobsService } from './jobs.service';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AuditService } from '../common/audit.service';
 import { hashPasswordAsync } from '../auth/password';
@@ -47,6 +48,7 @@ export class AdminController {
     private auth: AuthService,
     private audit: AuditService,
     private readonly adminAudit: AdminAuditService,
+    private readonly adminJobs: AdminJobsService,
   ) {}
   private roleCeiling(a: Actor, roles: string[]) {
     this.auth.require(a, 'users.manage');
@@ -1034,47 +1036,7 @@ export class AdminController {
     response.setHeader('X-Export-Truncated', String(output.truncated));
     response.type(output.contentType).attachment(output.filename).send(output.buffer);
   }
-  @Get('jobs') async jobs(@CurrentActor() a: Actor, @Query() q: Record<string, string>) {
-    this.auth.require(a, 'audit.read');
-    const p = paging(q);
-    const where = a.permissions.includes('org.platform')
-      ? {
-          organizationId: {
-            in: (
-              await this.db.organization.findMany({ where: { kind: 'INSTITUTION' }, select: { id: true } })
-            ).map((org) => org.id),
-          },
-        }
-      : { organizationId: a.organizationId };
-    const [items, total] = await Promise.all([
-      this.db.backgroundJob.findMany({
-        where,
-        select: {
-          id: true,
-          kind: true,
-          status: true,
-          attempts: true,
-          runAt: true,
-          lastError: true,
-          createdAt: true,
-        },
-        skip: p.skip,
-        take: p.pageSize,
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-      }),
-      this.db.backgroundJob.count({ where }),
-    ]);
-    return {
-      items,
-      total,
-      page: p.page,
-      pageSize: p.pageSize,
-      examDeadlineRuns: a.permissions.includes('org.platform')
-        ? await this.db.assessmentJobRun.findMany({
-            orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
-            take: 20,
-          })
-        : [],
-    };
+  @Get('jobs') async jobs(@CurrentActor() a: Actor, @Query() q: unknown) {
+    return this.adminJobs.list(a, q);
   }
 }

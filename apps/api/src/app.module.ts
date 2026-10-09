@@ -8,6 +8,7 @@ import { JobsService } from './common/jobs.service';
 import { CoursesController } from './courses/courses.controller';
 import { AdminController } from './admin/admin.controller';
 import { AdminAuditService } from './admin/audit.service';
+import { AdminJobsService } from './admin/jobs.service';
 import { AnalyticsController } from './analytics/analytics.controller';
 import { StudentOverviewService } from './analytics/student-overview.service';
 import { AssessmentController } from './assessment/assessment.controller';
@@ -149,6 +150,7 @@ class CatalogController {
     StudentOverviewService,
     AuditService,
     AdminAuditService,
+    AdminJobsService,
     JobsService,
     AssessmentService,
     CommunicationService,

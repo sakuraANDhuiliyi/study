@@ -1,0 +1,118 @@
+.jobs-panel {
+  min-width: 0;
+}
+.jobs-panel h2 {
+  margin: 0 0 16px;
+  font-size: 17px;
+}
+.jobs-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 200px);
+  gap: 12px;
+}
+.jobs-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+}
+.jobs-filters select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  padding: 4px 10px;
+  font: inherit;
+  color: inherit;
+}
+.jobs-filter-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.jobs-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.jobs-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  overflow-wrap: anywhere;
+}
+.jobs-applied .ant-tag {
+  white-space: normal;
+  margin: 0;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.jobs-scope {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.jobs-overview {
+  margin: 16px 0;
+}
+.jobs-overview > p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.jobs-counts {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.jobs-counts > div {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.jobs-counts dt {
+  color: #64748b;
+  font-size: 12px;
+}
+.jobs-counts dd {
+  margin: 4px 0 0;
+  font-size: 21px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.jobs-panel .ant-alert {
+  margin: 12px 0;
+}
+.jobs-panel .ant-tag {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.jobs-table-region {
+  width: 100%;
+  min-width: 0;
+  overflow: auto;
+}
+.jobs-text {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.jobs-text small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+}
+@media (max-width: 700px) {
+  .jobs-counts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .jobs-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

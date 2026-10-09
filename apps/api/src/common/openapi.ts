@@ -372,6 +372,41 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       { in: 'query', name: 'tag', schema: { type: 'string', maxLength: 60 } },
       { in: 'query', name: 'status', schema: { type: 'string', enum: ['todo', 'attempted', 'solved'] } },
     ];
+  const jobsList = doc.paths['/api/admin/jobs']?.get;
+  if (jobsList) {
+    jobsList.description =
+      '只读后台任务，需要当前 audit.read。action 对 kind 做不区分大小写的字面包含匹配，不搜索 payload/eventKey；status 只筛列表和 total。stateCounts:{pending,running,succeeded,failed,other,all} 遵循同一类型关键词/机构范围，但忽略 status，包含全部匹配记录而非当前页。scope=platform_institutions 时包括全部 INSTITUTION（含停用）并排除个人空间，否则 current_organization 仅当前机构。examDeadlineRuns 仅平台返回全局最新20条，与后台任务筛选/统计分离；所有字段来自同一SQL语句快照，serverTime 为该语句开始时间。最后重新验证当前会话、audit.read 与平台scope，旧身份或scope结果不返回。';
+    jobsList.parameters = [
+      ...(jobsList.parameters || []).filter((parameter) => !('in' in parameter) || parameter.in !== 'query'),
+      {
+        in: 'query',
+        name: 'action',
+        schema: { type: 'string', maxLength: 200 },
+        description: 'kind字面关键词；非空关键词保留空白，空字符串不筛选',
+      },
+      {
+        in: 'query',
+        name: 'status',
+        schema: {
+          type: 'string',
+          enum: ['ALL', 'PENDING', 'RUNNING', 'SUCCEEDED', 'FAILED'],
+          default: 'ALL',
+        },
+      },
+      {
+        in: 'query',
+        name: 'page',
+        schema: { type: 'integer', minimum: 1, maximum: 100000, default: 1 },
+        description: '保留旧协议：数值floor后clamp，非法数值回退默认',
+      },
+      {
+        in: 'query',
+        name: 'pageSize',
+        schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+        description: '保留旧协议：数值floor后clamp，非法数值回退默认',
+      },
+    ];
+  }
   const auditList = doc.paths['/api/admin/audit']?.get;
   if (auditList) {
     auditList.description =

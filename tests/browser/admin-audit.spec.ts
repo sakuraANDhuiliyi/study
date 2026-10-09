@@ -122,16 +122,23 @@ async function fixture(
         items: [
           {
             id: 'job-a',
+            organizationId: user().organizationId,
+            organizationName: '审计夹具机构',
             kind: 'fixture.sync',
             status: 'SUCCEEDED',
             attempts: 1,
             runAt: '2026-10-10T08:00:00Z',
-            metadata: { safe: true },
+            createdAt: '2026-10-10T08:00:00Z',
+            lastError: null,
           },
         ],
         total: 1,
         page: 1,
         pageSize: 20,
+        stateCounts: { all: 1, pending: 0, running: 0, succeeded: 1, failed: 0, other: 0 },
+        scope: permissions.includes('org.platform') ? 'platform_institutions' : 'current_organization',
+        serverTime: '2026-10-10T08:00:00Z',
+        examDeadlineRuns: [],
       });
     if (path === '/api/admin/audit' && method === 'GET') {
       const filters = Object.fromEntries(url.searchParams),
