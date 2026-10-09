@@ -12,8 +12,8 @@
       "java"
     ],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-08T23:36:19.377Z",
-    "finishedAt": "2026-10-08T23:43:37.912Z",
+    "startedAt": "2026-10-09T00:07:50.699Z",
+    "finishedAt": "2026-10-09T00:15:08.924Z",
     "passed": true,
     "apiPort": 3002,
     "previewPort": 3003,
@@ -21,48 +21,48 @@
       {
         "id": "generate",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:19.384Z",
-        "durationMs": 604,
+        "startedAt": "2026-10-09T00:07:50.705Z",
+        "durationMs": 511,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "migrate",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:19.989Z",
-        "durationMs": 318,
+        "startedAt": "2026-10-09T00:07:51.216Z",
+        "durationMs": 313,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "seed",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:20.308Z",
-        "durationMs": 1231,
+        "startedAt": "2026-10-09T00:07:51.529Z",
+        "durationMs": 1242,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "typecheck",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:21.539Z",
-        "durationMs": 4139,
+        "startedAt": "2026-10-09T00:07:52.772Z",
+        "durationMs": 4178,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "lint",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:25.678Z",
-        "durationMs": 1957,
+        "startedAt": "2026-10-09T00:07:56.951Z",
+        "durationMs": 1759,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "unit",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:27.635Z",
-        "durationMs": 9072,
+        "startedAt": "2026-10-09T00:07:58.710Z",
+        "durationMs": 9114,
         "exitCode": 0,
         "summary": {
           "tests": 322,
@@ -76,16 +76,16 @@
       {
         "id": "build",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:36.708Z",
-        "durationMs": 20683,
+        "startedAt": "2026-10-09T00:08:07.825Z",
+        "durationMs": 20892,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "audit",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:57.392Z",
-        "durationMs": 1127,
+        "startedAt": "2026-10-09T00:08:28.718Z",
+        "durationMs": 979,
         "exitCode": 0,
         "summary": {
           "info": 0,
@@ -99,8 +99,8 @@
       {
         "id": "trusted-references",
         "status": "passed",
-        "startedAt": "2026-10-08T23:36:58.520Z",
-        "durationMs": 31197,
+        "startedAt": "2026-10-09T00:08:29.698Z",
+        "durationMs": 31048,
         "exitCode": 0,
         "summary": {
           "programsPassed": 76,
@@ -117,15 +117,15 @@
       {
         "id": "servers",
         "status": "passed",
-        "startedAt": "2026-10-08T23:37:29.718Z",
-        "durationMs": 1649,
+        "startedAt": "2026-10-09T00:09:00.746Z",
+        "durationMs": 1654,
         "exitCode": 0
       },
       {
         "id": "e2e",
         "status": "passed",
-        "startedAt": "2026-10-08T23:37:31.367Z",
-        "durationMs": 9921,
+        "startedAt": "2026-10-09T00:09:02.401Z",
+        "durationMs": 9916,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -139,8 +139,8 @@
       {
         "id": "integration:academic-goals.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:37:41.288Z",
-        "durationMs": 4760,
+        "startedAt": "2026-10-09T00:09:12.317Z",
+        "durationMs": 4781,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -154,8 +154,8 @@
       {
         "id": "integration:academic-records-export.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:37:46.049Z",
-        "durationMs": 7036,
+        "startedAt": "2026-10-09T00:09:17.098Z",
+        "durationMs": 7199,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -169,8 +169,8 @@
       {
         "id": "integration:academics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:37:53.086Z",
-        "durationMs": 5047,
+        "startedAt": "2026-10-09T00:09:24.297Z",
+        "durationMs": 5064,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -184,8 +184,8 @@
       {
         "id": "integration:accounts.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:37:58.133Z",
-        "durationMs": 4558,
+        "startedAt": "2026-10-09T00:09:29.362Z",
+        "durationMs": 4449,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -199,8 +199,8 @@
       {
         "id": "integration:ai-authoring.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:02.692Z",
-        "durationMs": 4065,
+        "startedAt": "2026-10-09T00:09:33.812Z",
+        "durationMs": 4060,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -214,8 +214,8 @@
       {
         "id": "integration:ai-study.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:06.758Z",
-        "durationMs": 4003,
+        "startedAt": "2026-10-09T00:09:37.872Z",
+        "durationMs": 4010,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -229,8 +229,8 @@
       {
         "id": "integration:algorithm-history-filters.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:10.762Z",
-        "durationMs": 5022,
+        "startedAt": "2026-10-09T00:09:41.882Z",
+        "durationMs": 5030,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -244,8 +244,8 @@
       {
         "id": "integration:algorithms.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:15.785Z",
-        "durationMs": 4268,
+        "startedAt": "2026-10-09T00:09:46.913Z",
+        "durationMs": 4267,
         "exitCode": 0,
         "summary": {
           "tests": 14,
@@ -259,7 +259,7 @@
       {
         "id": "integration:analytics.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:20.053Z",
+        "startedAt": "2026-10-09T00:09:51.181Z",
         "durationMs": 337,
         "exitCode": 0,
         "summary": {
@@ -274,8 +274,8 @@
       {
         "id": "integration:assessment.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:20.390Z",
-        "durationMs": 1309,
+        "startedAt": "2026-10-09T00:09:51.518Z",
+        "durationMs": 1300,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -289,8 +289,8 @@
       {
         "id": "integration:assessment.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:21.699Z",
-        "durationMs": 1192,
+        "startedAt": "2026-10-09T00:09:52.818Z",
+        "durationMs": 1189,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -304,8 +304,8 @@
       {
         "id": "integration:auth-fixes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:22.891Z",
-        "durationMs": 949,
+        "startedAt": "2026-10-09T00:09:54.007Z",
+        "durationMs": 935,
         "exitCode": 0,
         "summary": {
           "tests": 3,
@@ -319,8 +319,8 @@
       {
         "id": "integration:auth.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:23.840Z",
-        "durationMs": 888,
+        "startedAt": "2026-10-09T00:09:54.943Z",
+        "durationMs": 884,
         "exitCode": 0,
         "summary": {
           "tests": 4,
@@ -334,8 +334,8 @@
       {
         "id": "integration:communication.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:24.728Z",
-        "durationMs": 15801,
+        "startedAt": "2026-10-09T00:09:55.827Z",
+        "durationMs": 15804,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -349,8 +349,8 @@
       {
         "id": "integration:communication.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:40.530Z",
-        "durationMs": 700,
+        "startedAt": "2026-10-09T00:10:11.632Z",
+        "durationMs": 702,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -364,7 +364,7 @@
       {
         "id": "integration:digital-logic.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:41.231Z",
+        "startedAt": "2026-10-09T00:10:12.334Z",
         "durationMs": 4355,
         "exitCode": 0,
         "summary": {
@@ -379,7 +379,7 @@
       {
         "id": "integration:exam-insights.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:45.586Z",
+        "startedAt": "2026-10-09T00:10:16.690Z",
         "durationMs": 609,
         "exitCode": 0,
         "summary": {
@@ -394,8 +394,8 @@
       {
         "id": "integration:minimum-spanning-tree.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:46.195Z",
-        "durationMs": 4740,
+        "startedAt": "2026-10-09T00:10:17.300Z",
+        "durationMs": 4829,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -409,8 +409,8 @@
       {
         "id": "integration:notes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:50.935Z",
-        "durationMs": 480,
+        "startedAt": "2026-10-09T00:10:22.130Z",
+        "durationMs": 478,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -424,8 +424,8 @@
       {
         "id": "integration:planner.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:51.415Z",
-        "durationMs": 410,
+        "startedAt": "2026-10-09T00:10:22.608Z",
+        "durationMs": 359,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -439,8 +439,8 @@
       {
         "id": "integration:population-genetics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:51.825Z",
-        "durationMs": 5098,
+        "startedAt": "2026-10-09T00:10:22.967Z",
+        "durationMs": 5094,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -454,8 +454,8 @@
       {
         "id": "integration:simpson-paradox.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:38:56.924Z",
-        "durationMs": 5419,
+        "startedAt": "2026-10-09T00:10:28.061Z",
+        "durationMs": 5406,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -469,8 +469,8 @@
       {
         "id": "integration:upload-security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-08T23:39:02.344Z",
-        "durationMs": 4561,
+        "startedAt": "2026-10-09T00:10:33.468Z",
+        "durationMs": 4576,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -484,16 +484,16 @@
       {
         "id": "clean-start",
         "status": "passed",
-        "startedAt": "2026-10-08T23:39:06.906Z",
-        "durationMs": 7348,
+        "startedAt": "2026-10-09T00:10:38.045Z",
+        "durationMs": 7352,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "performance",
         "status": "passed",
-        "startedAt": "2026-10-08T23:39:14.255Z",
-        "durationMs": 195,
+        "startedAt": "2026-10-09T00:10:45.398Z",
+        "durationMs": 198,
         "exitCode": 0,
         "summary": {
           "requests": 100,
@@ -501,16 +501,16 @@
           "concurrency": 10,
           "latencyMs": {
             "p50": 9,
-            "p95": 17,
-            "max": 18
+            "p95": 19,
+            "max": 24
           }
         }
       },
       {
         "id": "browser",
         "status": "passed",
-        "startedAt": "2026-10-08T23:39:14.450Z",
-        "durationMs": 263449,
+        "startedAt": "2026-10-09T00:10:45.596Z",
+        "durationMs": 263316,
         "exitCode": 0,
         "summary": {
           "total": 119,
@@ -552,9 +552,10 @@
       "Initial mock run exposed the real out-of-range-page fresh-cache bug; fixed only corrected target-query invalidation and retained exact row/count assertions.",
       "Virtual Select keyboard helper now waits each real active option change; retry locator permits AntD inserted whitespace and refresh locator permits the leaving loading icon while requiring non-loading state.",
       "Real cold JavaScript comparison successively exposed missing IOutlineModelService, ICodeLensCache and treeViewsDndService; preloaded the three public registration features and independently audited the installed dependency graph.",
-      "A warm Vite mock run suffered a dependency-optimizer full document reload proven by safe mock trace and changed dependency hash. No product/test assertion was relaxed; final9 mock cases ran against the compiled production service, also used for the full local browser suite."
+      "A warm Vite mock run suffered a dependency-optimizer full document reload proven by safe mock trace and changed dependency hash. No product/test assertion was relaxed; final9 mock cases ran against the compiled production service, also used for the full local browser suite.",
+      "First remote CI passed118/119 browsers but one mock refresh exact-name locator failed on a remaining AntD loading SVG after nonloading state. Artifact confirms correct history page/filters/rows and only one document request. Unified5 mock refresh calls with anchored optional-loading name and visible/nonloading/enabled wait, retaining one click and all business assertions. Repaired9-case development-browser target passed24.0s; Complete local verification rerun passed37 stages and661/661 tests with no skips before pushing the fix."
     ],
-    "fullVerificationAttempts": 1
+    "fullVerificationAttempts": 2
   },
   "screenshots": {
     "kind": "Safe mocked data at native desktop and390px viewports, root visually inspected. Real service flow separately verified without screenshot, trace or video.",
@@ -569,6 +570,552 @@
   },
   "remoteCI": {
     "conclusion": "pending",
-    "coverage": "Exact pushed commit workflow will be checked before the next feature starts. Local full verification confirms661 tests with no failures or skips."
-  }
+    "coverage": "A repair commit will be pushed only after a fresh complete local verification; its exact commit CI must succeed before the next feature starts."
+  },
+  "remoteCIHistory": [
+    {
+      "commit": "36fe2ae751f0a22ba2e5f85c7245ce515b751f24",
+      "runId": 37861310220,
+      "conclusion": "failure",
+      "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37861310220",
+      "completedAt": "2026-10-09T00:01:43Z",
+      "failedStep": "Browser workflow verification",
+      "browserTests": {
+        "total": 119,
+        "passed": 118,
+        "failed": 1
+      },
+      "failedTest": "algorithm-history-filters: refreshing a shrunken last page",
+      "diagnosis": "Correct history tab, three filters and page2 rows remained. AntD leaving loading SVG kept button accessible name loading + refresh text after ant-btn-loading was removed; exact-name locator timed out. Failed mock trace had only one document navigation.",
+      "repair": "Use the live test approach for5 mock refresh calls: scoped anchored optional-loading name, visible/nonloading/enabled waits and one real click. No product changes, retries, timeout increase or relaxed pagination/data assertions."
+    }
+  ],
+  "previousLocalFullRuns": [
+    {
+      "version": 1,
+      "profile": "full",
+      "requestedReferenceLanguages": [
+        "python",
+        "javascript",
+        "cpp",
+        "java"
+      ],
+      "fullReferenceCoverage": true,
+      "startedAt": "2026-10-08T23:36:19.377Z",
+      "finishedAt": "2026-10-08T23:43:37.912Z",
+      "passed": true,
+      "apiPort": 3002,
+      "previewPort": 3003,
+      "stages": [
+        {
+          "id": "generate",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:19.384Z",
+          "durationMs": 604,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "migrate",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:19.989Z",
+          "durationMs": 318,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "seed",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:20.308Z",
+          "durationMs": 1231,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "typecheck",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:21.539Z",
+          "durationMs": 4139,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "lint",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:25.678Z",
+          "durationMs": 1957,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "unit",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:27.635Z",
+          "durationMs": 9072,
+          "exitCode": 0,
+          "summary": {
+            "tests": 322,
+            "pass": 322,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "build",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:36.708Z",
+          "durationMs": 20683,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "audit",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:57.392Z",
+          "durationMs": 1127,
+          "exitCode": 0,
+          "summary": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 0,
+            "critical": 0,
+            "total": 0
+          }
+        },
+        {
+          "id": "trusted-references",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:36:58.520Z",
+          "durationMs": 31197,
+          "exitCode": 0,
+          "summary": {
+            "programsPassed": 76,
+            "casesPassed": 612,
+            "languages": [
+              "python",
+              "javascript",
+              "cpp",
+              "java"
+            ],
+            "failures": 0
+          }
+        },
+        {
+          "id": "servers",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:37:29.718Z",
+          "durationMs": 1649,
+          "exitCode": 0
+        },
+        {
+          "id": "e2e",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:37:31.367Z",
+          "durationMs": 9921,
+          "exitCode": 0,
+          "summary": {
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:academic-goals.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:37:41.288Z",
+          "durationMs": 4760,
+          "exitCode": 0,
+          "summary": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:academic-records-export.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:37:46.049Z",
+          "durationMs": 7036,
+          "exitCode": 0,
+          "summary": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:academics.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:37:53.086Z",
+          "durationMs": 5047,
+          "exitCode": 0,
+          "summary": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:accounts.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:37:58.133Z",
+          "durationMs": 4558,
+          "exitCode": 0,
+          "summary": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:ai-authoring.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:02.692Z",
+          "durationMs": 4065,
+          "exitCode": 0,
+          "summary": {
+            "tests": 13,
+            "pass": 13,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:ai-study.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:06.758Z",
+          "durationMs": 4003,
+          "exitCode": 0,
+          "summary": {
+            "tests": 13,
+            "pass": 13,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:algorithm-history-filters.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:10.762Z",
+          "durationMs": 5022,
+          "exitCode": 0,
+          "summary": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:algorithms.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:15.785Z",
+          "durationMs": 4268,
+          "exitCode": 0,
+          "summary": {
+            "tests": 14,
+            "pass": 14,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:analytics.security.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:20.053Z",
+          "durationMs": 337,
+          "exitCode": 0,
+          "summary": {
+            "tests": 2,
+            "pass": 2,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:assessment.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:20.390Z",
+          "durationMs": 1309,
+          "exitCode": 0,
+          "summary": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:assessment.security.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:21.699Z",
+          "durationMs": 1192,
+          "exitCode": 0,
+          "summary": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:auth-fixes.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:22.891Z",
+          "durationMs": 949,
+          "exitCode": 0,
+          "summary": {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:auth.security.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:23.840Z",
+          "durationMs": 888,
+          "exitCode": 0,
+          "summary": {
+            "tests": 4,
+            "pass": 4,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:communication.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:24.728Z",
+          "durationMs": 15801,
+          "exitCode": 0,
+          "summary": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:communication.security.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:40.530Z",
+          "durationMs": 700,
+          "exitCode": 0,
+          "summary": {
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:digital-logic.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:41.231Z",
+          "durationMs": 4355,
+          "exitCode": 0,
+          "summary": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:exam-insights.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:45.586Z",
+          "durationMs": 609,
+          "exitCode": 0,
+          "summary": {
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:minimum-spanning-tree.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:46.195Z",
+          "durationMs": 4740,
+          "exitCode": 0,
+          "summary": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:notes.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:50.935Z",
+          "durationMs": 480,
+          "exitCode": 0,
+          "summary": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:planner.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:51.415Z",
+          "durationMs": 410,
+          "exitCode": 0,
+          "summary": {
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:population-genetics.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:51.825Z",
+          "durationMs": 5098,
+          "exitCode": 0,
+          "summary": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:simpson-paradox.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:38:56.924Z",
+          "durationMs": 5419,
+          "exitCode": 0,
+          "summary": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "integration:upload-security.integration.ts",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:39:02.344Z",
+          "durationMs": 4561,
+          "exitCode": 0,
+          "summary": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        },
+        {
+          "id": "clean-start",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:39:06.906Z",
+          "durationMs": 7348,
+          "exitCode": 0,
+          "summary": {}
+        },
+        {
+          "id": "performance",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:39:14.255Z",
+          "durationMs": 195,
+          "exitCode": 0,
+          "summary": {
+            "requests": 100,
+            "errors": 0,
+            "concurrency": 10,
+            "latencyMs": {
+              "p50": 9,
+              "p95": 17,
+              "max": 18
+            }
+          }
+        },
+        {
+          "id": "browser",
+          "status": "passed",
+          "startedAt": "2026-10-08T23:39:14.450Z",
+          "durationMs": 263449,
+          "exitCode": 0,
+          "summary": {
+            "total": 119,
+            "passed": 119,
+            "skipped": 0,
+            "failedOrIncomplete": []
+          }
+        }
+      ],
+      "fullPassed": true,
+      "testCounts": {
+        "total": 661,
+        "passed": 661,
+        "failedOrIncomplete": 0,
+        "skipped": 0
+      }
+    }
+  ]
 }

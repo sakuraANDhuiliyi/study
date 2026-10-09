@@ -300,6 +300,15 @@ const panel = (page: Page) => page.getByRole('tabpanel', { name: '提交记录',
 const rows = (page: Page) => panel(page).locator('.algo-history-item');
 const count = (page: Page) => page.getByLabel('提交记录匹配数量', { exact: true });
 const editor = (page: Page) => page.getByRole('textbox', { name: '算法代码编辑器', exact: true });
+async function refreshHistory(page: Page) {
+  // Ant Design's exiting loading icon can remain in the accessible name after
+  // fetching ends. Keep the same button locator while waiting until it is usable.
+  const button = panel(page).getByRole('button', { name: /^(?:loading )?刷新提交记录$/ });
+  await expect(button).toBeVisible();
+  await expect(button).not.toHaveClass(/ant-btn-loading/);
+  await expect(button).toBeEnabled();
+  await button.click();
+}
 async function open(page: Page) {
   await page.goto('/algorithms/two-sum');
   await page.getByRole('tab', { name: '提交记录', exact: true }).click();
@@ -381,8 +390,7 @@ test('组合条件先筛后分页，改变条件原子回第一页，重置省�
   await expect(count(page)).toHaveText('匹配 20 条');
   const finalQuery = new URL(fixture.lists().at(-1)!.path, 'http://fixture').searchParams;
   // A cached unfiltered query may be reused: force refresh to inspect its request.
-  if (finalQuery.has('kind'))
-    await panel(page).getByRole('button', { name: '刷新提交记录', exact: true }).click();
+  if (finalQuery.has('kind')) await refreshHistory(page);
   await expect
     .poll(() => fixture.lists().at(-1)!.path)
     .toBe('/api/algorithms/problems/two-sum/submissions?page=1&pageSize=8');
@@ -452,7 +460,7 @@ test('刷新后末页缩小自动移至有效页且保留三条件，不一致�
   await panel(page).getByTitle('2', { exact: true }).click();
   await expect(rows(page)).toHaveCount(2);
   fixture.history.a = fixture.history.a.filter((item) => !/^formal-cpp-wa-0[2-9]$/.test(item.id));
-  await panel(page).getByRole('button', { name: '刷新提交记录', exact: true }).click();
+  await refreshHistory(page);
   await expect(count(page)).toHaveText('匹配 2 条');
   await expect
     .poll(() => new URL(fixture.lists().at(-1)!.path, 'http://fixture').searchParams.get('page'))
@@ -467,7 +475,7 @@ test('刷新后末页缩小自动移至有效页且保留三条件，不一致�
     status: 'wrong_answer',
   });
   fixture.inconsistent(true);
-  await panel(page).getByRole('button', { name: '刷新提交记录', exact: true }).click();
+  await refreshHistory(page);
   await expect(page.getByText('记录正在更新', { exact: true })).toBeVisible();
   const before = fixture.lists().length;
   await page.getByRole('button', { name: '刷新记录', exact: true }).focus();
@@ -495,7 +503,7 @@ test('网络失败保留条件可重试，已有缓存的失败明确标为上�
   await expect(count(page)).toHaveText('匹配 1 条');
   await expect(rows(page).first()).toContainText('编译错误');
   fixture.fail((url) => url.searchParams.get('status') === 'compile_error');
-  await panel(page).getByRole('button', { name: '刷新提交记录', exact: true }).click();
+  await refreshHistory(page);
   await expect(count(page)).toHaveText('上次加载匹配 1 条');
   await expect(
     panel(page).getByText('连接暂时不可用，正在显示上次已加载的内容', { exact: true }),
@@ -642,7 +650,7 @@ test('390像素筛选逐行排列、可清除且无外溢，未提交时保留�
   await screenshot(page, 'mobile');
   await panel(page).getByRole('button', { name: '重置筛选', exact: true }).click();
   fixture.history.a = [];
-  await panel(page).getByRole('button', { name: '刷新提交记录', exact: true }).click();
+  await refreshHistory(page);
   await expect(page.getByText('还没有提交记录，先运行一次样例吧', { exact: true })).toBeVisible();
   await expect(count(page)).toHaveText('匹配 0 条');
   expect(fixture.writes()).toEqual([]);
