@@ -1,10 +1,10 @@
 {
-  "iteration": 11,
-  "feature": "Unified private learning actions with effective deadlines, exact bucket counts and current identity guards",
+  "iteration": 12,
+  "feature": "Organization audit combined filters and bounded CSV export with independent current authorization",
   "date": "2026-10-10",
   "sourceFingerprint": {
-    "fileCount": 445,
-    "sha256": "63b9878d3a6fbe221cafaa85d02bf1e6880853e3ab5b6d55e71e0431ecdc400c"
+    "fileCount": 456,
+    "sha256": "b8831f6cc6126714c505008815c3b6eee907b12140982b4e5ab90a0a92fe8bd8"
   },
   "local": {
     "version": 1,
@@ -16,8 +16,8 @@
       "java"
     ],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-09T17:04:42.019Z",
-    "finishedAt": "2026-10-09T17:14:57.294Z",
+    "startedAt": "2026-10-09T17:51:36.087Z",
+    "finishedAt": "2026-10-09T18:03:59.375Z",
     "passed": true,
     "apiPort": 3002,
     "previewPort": 3003,
@@ -25,52 +25,52 @@
       {
         "id": "generate",
         "status": "passed",
-        "startedAt": "2026-10-09T17:04:42.026Z",
-        "durationMs": 633,
+        "startedAt": "2026-10-09T17:51:36.094Z",
+        "durationMs": 712,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "migrate",
         "status": "passed",
-        "startedAt": "2026-10-09T17:04:42.660Z",
-        "durationMs": 327,
+        "startedAt": "2026-10-09T17:51:36.807Z",
+        "durationMs": 379,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "seed",
         "status": "passed",
-        "startedAt": "2026-10-09T17:04:42.987Z",
-        "durationMs": 1254,
+        "startedAt": "2026-10-09T17:51:37.187Z",
+        "durationMs": 1318,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "typecheck",
         "status": "passed",
-        "startedAt": "2026-10-09T17:04:44.242Z",
-        "durationMs": 4817,
+        "startedAt": "2026-10-09T17:51:38.505Z",
+        "durationMs": 6246,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "lint",
         "status": "passed",
-        "startedAt": "2026-10-09T17:04:49.059Z",
-        "durationMs": 2320,
+        "startedAt": "2026-10-09T17:51:44.751Z",
+        "durationMs": 4962,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "unit",
         "status": "passed",
-        "startedAt": "2026-10-09T17:04:51.379Z",
-        "durationMs": 15265,
+        "startedAt": "2026-10-09T17:51:49.716Z",
+        "durationMs": 27955,
         "exitCode": 0,
         "summary": {
-          "tests": 430,
-          "pass": 430,
+          "tests": 445,
+          "pass": 445,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -80,16 +80,16 @@
       {
         "id": "build",
         "status": "passed",
-        "startedAt": "2026-10-09T17:05:06.644Z",
-        "durationMs": 25063,
+        "startedAt": "2026-10-09T17:52:17.671Z",
+        "durationMs": 58896,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "audit",
         "status": "passed",
-        "startedAt": "2026-10-09T17:05:31.708Z",
-        "durationMs": 1250,
+        "startedAt": "2026-10-09T17:53:16.567Z",
+        "durationMs": 1300,
         "exitCode": 0,
         "summary": {
           "info": 0,
@@ -103,8 +103,8 @@
       {
         "id": "trusted-references",
         "status": "passed",
-        "startedAt": "2026-10-09T17:05:32.959Z",
-        "durationMs": 49295,
+        "startedAt": "2026-10-09T17:53:17.867Z",
+        "durationMs": 88167,
         "exitCode": 0,
         "summary": {
           "programsPassed": 176,
@@ -121,8 +121,8 @@
       {
         "id": "creative-expression-browser",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:22.254Z",
-        "durationMs": 9198,
+        "startedAt": "2026-10-09T17:54:46.035Z",
+        "durationMs": 9212,
         "exitCode": 0,
         "summary": {
           "checksPassed": 10,
@@ -134,15 +134,15 @@
       {
         "id": "servers",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:31.453Z",
-        "durationMs": 1242,
+        "startedAt": "2026-10-09T17:54:55.247Z",
+        "durationMs": 1448,
         "exitCode": 0
       },
       {
         "id": "e2e",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:32.695Z",
-        "durationMs": 9425,
+        "startedAt": "2026-10-09T17:54:56.695Z",
+        "durationMs": 9409,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -156,8 +156,8 @@
       {
         "id": "integration:academic-goals.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:42.120Z",
-        "durationMs": 5000,
+        "startedAt": "2026-10-09T17:55:06.105Z",
+        "durationMs": 5049,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -171,8 +171,8 @@
       {
         "id": "integration:academic-records-export.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:47.121Z",
-        "durationMs": 7601,
+        "startedAt": "2026-10-09T17:55:11.154Z",
+        "durationMs": 7893,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -186,8 +186,8 @@
       {
         "id": "integration:academics-admission.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:54.723Z",
-        "durationMs": 586,
+        "startedAt": "2026-10-09T17:55:19.047Z",
+        "durationMs": 602,
         "exitCode": 0,
         "summary": {
           "tests": 6,
@@ -201,8 +201,8 @@
       {
         "id": "integration:academics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:06:55.309Z",
-        "durationMs": 5346,
+        "startedAt": "2026-10-09T17:55:19.649Z",
+        "durationMs": 5372,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -216,8 +216,8 @@
       {
         "id": "integration:accounts.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:00.655Z",
-        "durationMs": 4677,
+        "startedAt": "2026-10-09T17:55:25.021Z",
+        "durationMs": 4708,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -229,9 +229,24 @@
         }
       },
       {
+        "id": "integration:admin-audit.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-09T17:55:29.730Z",
+        "durationMs": 5979,
+        "exitCode": 0,
+        "summary": {
+          "tests": 16,
+          "pass": 16,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
         "id": "integration:ai-authoring.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:05.333Z",
+        "startedAt": "2026-10-09T17:55:35.710Z",
         "durationMs": 4283,
         "exitCode": 0,
         "summary": {
@@ -246,8 +261,8 @@
       {
         "id": "integration:ai-study.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:09.617Z",
-        "durationMs": 4221,
+        "startedAt": "2026-10-09T17:55:39.994Z",
+        "durationMs": 4243,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -261,8 +276,8 @@
       {
         "id": "integration:algorithm-forum.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:13.839Z",
-        "durationMs": 1334,
+        "startedAt": "2026-10-09T17:55:44.238Z",
+        "durationMs": 1343,
         "exitCode": 0,
         "summary": {
           "tests": 13,
@@ -276,8 +291,8 @@
       {
         "id": "integration:algorithm-history-filters.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:15.173Z",
-        "durationMs": 5250,
+        "startedAt": "2026-10-09T17:55:45.581Z",
+        "durationMs": 5252,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -291,8 +306,8 @@
       {
         "id": "integration:algorithm-training-plans.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:20.423Z",
-        "durationMs": 4879,
+        "startedAt": "2026-10-09T17:55:50.834Z",
+        "durationMs": 5920,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -306,8 +321,8 @@
       {
         "id": "integration:algorithms.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:25.302Z",
-        "durationMs": 4627,
+        "startedAt": "2026-10-09T17:55:56.755Z",
+        "durationMs": 5713,
         "exitCode": 0,
         "summary": {
           "tests": 14,
@@ -321,8 +336,8 @@
       {
         "id": "integration:analytics.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:29.930Z",
-        "durationMs": 345,
+        "startedAt": "2026-10-09T17:56:02.470Z",
+        "durationMs": 589,
         "exitCode": 0,
         "summary": {
           "tests": 2,
@@ -336,8 +351,8 @@
       {
         "id": "integration:assessment.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:30.275Z",
-        "durationMs": 2315,
+        "startedAt": "2026-10-09T17:56:03.059Z",
+        "durationMs": 2991,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -351,8 +366,8 @@
       {
         "id": "integration:assessment.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:32.590Z",
-        "durationMs": 1202,
+        "startedAt": "2026-10-09T17:56:06.050Z",
+        "durationMs": 1785,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -366,8 +381,8 @@
       {
         "id": "integration:auth-fixes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:33.792Z",
-        "durationMs": 956,
+        "startedAt": "2026-10-09T17:56:07.835Z",
+        "durationMs": 1490,
         "exitCode": 0,
         "summary": {
           "tests": 3,
@@ -381,8 +396,8 @@
       {
         "id": "integration:auth.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:34.748Z",
-        "durationMs": 894,
+        "startedAt": "2026-10-09T17:56:09.325Z",
+        "durationMs": 1475,
         "exitCode": 0,
         "summary": {
           "tests": 4,
@@ -396,8 +411,8 @@
       {
         "id": "integration:communication.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:35.642Z",
-        "durationMs": 15811,
+        "startedAt": "2026-10-09T17:56:10.801Z",
+        "durationMs": 16409,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -411,8 +426,8 @@
       {
         "id": "integration:communication.security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:51.454Z",
-        "durationMs": 719,
+        "startedAt": "2026-10-09T17:56:27.210Z",
+        "durationMs": 1351,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -426,8 +441,8 @@
       {
         "id": "integration:confusion-matrix.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:52.173Z",
-        "durationMs": 6173,
+        "startedAt": "2026-10-09T17:56:28.562Z",
+        "durationMs": 8567,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -441,8 +456,8 @@
       {
         "id": "integration:creative.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:07:58.347Z",
-        "durationMs": 6873,
+        "startedAt": "2026-10-09T17:56:37.129Z",
+        "durationMs": 8333,
         "exitCode": 0,
         "summary": {
           "tests": 17,
@@ -456,8 +471,8 @@
       {
         "id": "integration:digital-logic.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:05.220Z",
-        "durationMs": 4713,
+        "startedAt": "2026-10-09T17:56:45.463Z",
+        "durationMs": 6056,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -471,8 +486,8 @@
       {
         "id": "integration:exam-insights.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:09.934Z",
-        "durationMs": 609,
+        "startedAt": "2026-10-09T17:56:51.519Z",
+        "durationMs": 1126,
         "exitCode": 0,
         "summary": {
           "tests": 12,
@@ -486,8 +501,8 @@
       {
         "id": "integration:learning-actions.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:10.543Z",
-        "durationMs": 4768,
+        "startedAt": "2026-10-09T17:56:52.645Z",
+        "durationMs": 6036,
         "exitCode": 0,
         "summary": {
           "tests": 14,
@@ -501,8 +516,8 @@
       {
         "id": "integration:minimum-spanning-tree.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:15.311Z",
-        "durationMs": 5116,
+        "startedAt": "2026-10-09T17:56:58.681Z",
+        "durationMs": 5358,
         "exitCode": 0,
         "summary": {
           "tests": 8,
@@ -516,8 +531,8 @@
       {
         "id": "integration:notes.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:20.428Z",
-        "durationMs": 479,
+        "startedAt": "2026-10-09T17:57:04.039Z",
+        "durationMs": 486,
         "exitCode": 0,
         "summary": {
           "tests": 11,
@@ -531,8 +546,8 @@
       {
         "id": "integration:planner.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:20.907Z",
-        "durationMs": 358,
+        "startedAt": "2026-10-09T17:57:04.525Z",
+        "durationMs": 369,
         "exitCode": 0,
         "summary": {
           "tests": 5,
@@ -546,8 +561,8 @@
       {
         "id": "integration:population-genetics.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:21.266Z",
-        "durationMs": 5501,
+        "startedAt": "2026-10-09T17:57:04.894Z",
+        "durationMs": 5587,
         "exitCode": 0,
         "summary": {
           "tests": 9,
@@ -561,8 +576,8 @@
       {
         "id": "integration:programming.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:26.768Z",
-        "durationMs": 6727,
+        "startedAt": "2026-10-09T17:57:10.482Z",
+        "durationMs": 6729,
         "exitCode": 0,
         "summary": {
           "tests": 18,
@@ -576,8 +591,8 @@
       {
         "id": "integration:simpson-paradox.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:33.496Z",
-        "durationMs": 6515,
+        "startedAt": "2026-10-09T17:57:17.212Z",
+        "durationMs": 6502,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -591,8 +606,8 @@
       {
         "id": "integration:upload-security.integration.ts",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:40.011Z",
-        "durationMs": 4798,
+        "startedAt": "2026-10-09T17:57:23.715Z",
+        "durationMs": 4845,
         "exitCode": 0,
         "summary": {
           "tests": 10,
@@ -606,16 +621,16 @@
       {
         "id": "clean-start",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:44.810Z",
-        "durationMs": 7375,
+        "startedAt": "2026-10-09T17:57:28.560Z",
+        "durationMs": 7377,
         "exitCode": 0,
         "summary": {}
       },
       {
         "id": "performance",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:52.186Z",
-        "durationMs": 174,
+        "startedAt": "2026-10-09T17:57:35.937Z",
+        "durationMs": 198,
         "exitCode": 0,
         "summary": {
           "requests": 100,
@@ -623,20 +638,20 @@
           "concurrency": 10,
           "latencyMs": {
             "p50": 8,
-            "p95": 15,
-            "max": 17
+            "p95": 28,
+            "max": 29
           }
         }
       },
       {
         "id": "browser",
         "status": "passed",
-        "startedAt": "2026-10-09T17:08:52.360Z",
-        "durationMs": 364917,
+        "startedAt": "2026-10-09T17:57:36.135Z",
+        "durationMs": 383225,
         "exitCode": 0,
         "summary": {
-          "total": 213,
-          "passed": 213,
+          "total": 244,
+          "passed": 244,
           "skipped": 0,
           "failedOrIncomplete": []
         }
@@ -644,60 +659,111 @@
     ],
     "fullPassed": true,
     "testCounts": {
-      "total": 950,
-      "passed": 950,
+      "total": 1012,
+      "passed": 1012,
       "failedOrIncomplete": 0,
       "skipped": 0
     }
   },
   "features": [
-    "Personal student home and institution student dashboard share a paginated learning action list for assignments, exams and personal tasks",
-    "Shanghai time buckets, individual assignment extensions and exemptions, latest formal submissions, retry limits and own exam-attempt deadlines",
-    "One database snapshot for exact bucket counts and pagination; current course enrollment, current-page audience and final session/permission checks",
-    "Personal task completion uses existing revision-checked update; permission denial hides all cached snapshots and rejects delayed old responses",
-    "Personal tasks remain available without course.read; mobile and keyboard interaction and accessible retry control"
+    "Combined metadata search, historical actor IDs, resource and request IDs, exact offset date range and stable pagination in current organization",
+    "Actor names join only current organization; migrated accounts retain historical IDs without exposing their new organization name",
+    "CSV includes only eight scalar metadata columns with BOM, CRLF and formula protection; latest at most 5000 rows, strict 8 MiB final escaped budget",
+    "Matching count, bounded rows and byte preflight share one SQL snapshot; actual count and truncation headers describe the export",
+    "Selected role template, current session and independent same-organization data.export grant are checked even when the permission sensitive flag is false",
+    "Prepared audit metadata does not claim client delivery; final fresh authorization can still deny file bytes",
+    "Applied filter snapshot, Beijing time input, scoped cache rejection, stale response protection, actual abort on cancel and object URL cleanup"
   ],
   "targetedVerification": {
-    "newUnitTests": 12,
-    "newDatabaseAndHttpTests": 14,
-    "newMockBrowserTests": 37,
-    "newLiveBrowserTests": 2,
-    "existingBrowserCompatibilityTests": 89,
+    "newUnitTests": 15,
+    "newDatabaseAndHttpTests": 16,
+    "newMockBrowserTests": 30,
+    "newLiveBrowserTests": 1,
     "allPassed": true
   },
   "database": {
     "newMigrations": 0,
-    "persistentDatabaseReset": false
+    "persistentDatabaseReset": false,
+    "retainedPhysicalAuditActorForeignKey": true
   },
-  "research": [
+  "correctedFindings": [
     {
-      "topic": "Cross-course and personal task aggregation, late and resubmission states",
-      "url": "https://community.instructure.com/en/kb/articles/662819-how-do-i-use-the-to-do-list-for-all-my-courses-in-the-list-view-dashboard-as-a-student",
-      "type": "official guide and embedded video transcript"
+      "issue": "Final fresh export originally relied on sensitive permission configuration",
+      "fix": "Independent current same-org grant lookup and post-lookup expiry check",
+      "proof": "Owned isolated database trigger waits after authorization at prepared audit INSERT; expire grant with sensitive=false, final 403 without CSV or export headers while prepared event remains truthful"
     },
     {
-      "topic": "Mobile omission report used as a coverage requirement, not a universal platform defect",
-      "url": "https://www.reddit.com/r/canvas/comments/1u81ihu/assignments_not_showing_up_in_the_to_do_list/",
+      "issue": "Modal confirmLoading in installed AntD ignored cancellation while exporting",
+      "fix": "Loading applies only to OK button; cancellation aborts and closes",
+      "proof": "Actual AbortSignal event, no stale download/result/object URL, successful reopen and retry"
+    },
+    {
+      "issue": "Scratch assumed AuditLog scalar Prisma model implied no physical User FK",
+      "fix": "Retain initial RESTRICT FK; historical actor migrates, unaudited actor deletion filters to empty",
+      "proof": "Validated physical FK with delete action r, specifically identified rejected hard delete, preserved User and Audit rows"
+    }
+  ],
+  "targetedPreviousAttempts": [
+    {
+      "result": "HTTP setup rejected audited actor deletion; browser 25 passed and 6 failed",
+      "causes": [
+        "Physical RESTRICT FK",
+        "Zero-second datetime-local normalization",
+        "Busy Modal cancellation was ignored"
+      ]
+    },
+    {
+      "result": "Specific FK assertion initially expected only Prisma P2003",
+      "cause": "Actual PostgreSQL RESTRICT SQLSTATE 23001 is wrapped as UnknownRequestError; now matches exact named FK and preserves row assertions"
+    },
+    {
+      "result": "Browser 30 passed and 1 failed",
+      "cause": "Live fixture zero seconds normalized by Chromium; corrected native input while keeping expected +08:00 seconds and ±1ms database boundaries"
+    }
+  ],
+  "research": [
+    {
+      "topic": "Combined activity log filters and downloads",
+      "url": "https://docs.moodle.org/503/en/Logs_report",
+      "type": "official mature-platform guide"
+    },
+    {
+      "topic": "Actor, action and date filters with explicit apply",
+      "url": "https://community.instructure.com/en/kb/articles/660470-how-do-i-view-the-catalog-audit-log",
+      "type": "official mature-platform guide"
+    },
+    {
+      "topic": "Course activity resource and time tracing",
+      "url": "https://community.instructure.com/en/kb/articles/661415-how-do-i-view-course-activity-for-an-account",
+      "type": "official guide and embedded 1:27 video transcript"
+    },
+    {
+      "topic": "Old-version forum report as a permission/context testing signal only",
+      "url": "https://www.reddit.com/r/moodle/comments/eons0h",
       "type": "first-person forum report"
+    },
+    {
+      "topic": "Statement snapshots under READ COMMITTED",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "type": "official implementation documentation"
+    },
+    {
+      "topic": "Single materialized selection for rows and budget",
+      "url": "https://www.postgresql.org/docs/current/queries-with.html",
+      "type": "official implementation documentation"
     }
   ],
   "limits": [
-    "Counts reflect the first SQL snapshot; audience changes for noncurrent-page items take effect on the next read",
-    "Upcoming covers the seven natural days starting tomorrow; the existing calendar remains available for later items",
-    "Legacy dashboard headline assignment metrics are a separate follow-up and retain their previous calculation",
-    "Local reference verification covers Python, JavaScript, C++ and Java; remote CI explicitly uses Python and JavaScript",
+    "Exports contain audit metadata only; details remain in the authorized paginated interface",
+    "Row limits truncate by count and report this; byte overflow returns 413 without a partial file",
+    "Audited users are protected against hard deletion by the physical migrated database; missing former unaudited actor IDs return empty",
+    "Data totals represent the export statement snapshot; prepared events truthfully do not prove delivery to the browser",
+    "Local references cover Python, JavaScript, C++ and Java; remote CI explicitly uses Python and JavaScript",
     "External AI/Judge providers and target HTTPS/Linux deployment are outside offline review verification"
   ],
   "nextIterations": [
-    "Organization audit combined filters and bounded CSV export with current export authorization",
-    "Align legacy learning overview metrics with individual deadlines and latest formal submission status"
-  ],
-  "remoteCI": {
-    "commit": "93df7587c813c1bd6551f2a03dbb7cf446f9e995",
-    "runId": 37965505888,
-    "status": "completed",
-    "conclusion": "success",
-    "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37965505888",
-    "profile": "ci"
-  }
+    "Student current-pending assignments and actionable exams overview using personal windows and latest formal state without a seven-day cap",
+    "Independent learning action panel and stale dashboard response guards",
+    "Restored exam eligibility permits another attempt after historical cancelled attempt, matching actual startExam behavior"
+  ]
 }

@@ -22,6 +22,7 @@ import {
 import { Plus, Download, Upload as UploadIcon } from 'lucide-react';
 import { useAuth } from '../auth';
 import { RemoteSelect } from '../components/RemoteSelect';
+import { AuditPanel } from '../components/admin/AuditPanel';
 import { date, label, queryString, send, useAction, useData } from '../api';
 import { PageTitle, Panel, QueryState, Status } from '../components/shared';
 import type { Major } from '../components/academics/types';
@@ -833,10 +834,13 @@ export function Organization() {
 }
 export function Audit() {
   const [params] = useSearchParams();
-  const [search, setSearch] = useState('');
   const [tab, setTab] = useState(params.get('tab') === 'jobs' ? 'jobs' : 'audit');
-  const [page, setPage] = useState(1);
-  const query = useData(`/admin/${tab}?${queryString({ action: search, page, pageSize: 20 })}`);
+  const [jobSearch, setJobSearch] = useState('');
+  const [jobPage, setJobPage] = useState(1);
+  const jobs = useData(
+    `/admin/jobs?${queryString({ action: jobSearch, page: jobPage, pageSize: 20 })}`,
+    tab === 'jobs',
+  );
   return (
     <>
       <PageTitle
@@ -844,70 +848,60 @@ export function Audit() {
         title="审计与运行记录"
         description="记录关键业务、授权与安全操作。敏感凭据不会写入业务日志。"
       />
-      <div className="filter-bar">
-        <Input.Search
-          placeholder="搜索操作或资源"
-          allowClear
-          onSearch={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
-          style={{ maxWidth: 350 }}
-        />
-      </div>
       <Panel>
         <Tabs
           activeKey={tab}
-          onChange={(value) => {
-            setTab(value);
-            setPage(1);
-          }}
+          onChange={setTab}
           items={[
             { key: 'audit', label: '操作审计' },
             { key: 'jobs', label: '后台任务' },
           ]}
         />
-        <QueryState query={query}>
-          <Table
-            rowKey="id"
-            dataSource={query.data?.items || []}
-            expandable={{
-              expandedRowRender: (record: any) => (
-                <pre className="audit-detail">
-                  {JSON.stringify(record.details || record.metadata || {}, null, 2)}
-                </pre>
-              ),
-            }}
-            columns={
-              tab === 'jobs'
-                ? [
-                    { title: '任务类型', dataIndex: 'kind' },
-                    { title: '状态', dataIndex: 'status', render: (v) => <Status value={v} /> },
-                    { title: '尝试次数', dataIndex: 'attempts' },
-                    { title: '计划运行时间', dataIndex: 'runAt', render: (v) => date(v) },
-                    { title: '最近错误', dataIndex: 'lastError', render: (v) => v || '—' },
-                  ]
-                : [
-                    { title: '时间', dataIndex: 'createdAt', render: (v) => date(v), width: 135 },
-                    {
-                      title: '操作人',
-                      render: (_, r: any) => r.actor?.name || r.actorName || r.userId || '系统任务',
-                    },
-                    { title: '操作', dataIndex: 'action', render: (v) => <Tag>{v}</Tag> },
-                    { title: '资源类型', dataIndex: 'resourceType' },
-                    { title: '资源标识', dataIndex: 'resourceId', ellipsis: true },
-                    { title: '追踪 ID', dataIndex: 'requestId', ellipsis: true },
-                  ]
-            }
-            pagination={{
-              current: page,
-              pageSize: 20,
-              total: query.data?.total,
-              onChange: setPage,
-              showSizeChanger: false,
-            }}
-          />
-        </QueryState>
+        {tab === 'audit' ? (
+          <AuditPanel />
+        ) : (
+          <>
+            <div className="filter-bar">
+              <Input.Search
+                aria-label="后台任务操作筛选"
+                placeholder="搜索后台任务操作"
+                allowClear
+                onSearch={(value) => {
+                  setJobSearch(value);
+                  setJobPage(1);
+                }}
+                style={{ maxWidth: 350 }}
+              />
+            </div>
+            <QueryState query={jobs}>
+              <Table
+                rowKey="id"
+                dataSource={jobs.data?.items || []}
+                expandable={{
+                  expandedRowRender: (record: any) => (
+                    <pre className="audit-detail">
+                      {JSON.stringify(record.details || record.metadata || {}, null, 2)}
+                    </pre>
+                  ),
+                }}
+                columns={[
+                  { title: '任务类型', dataIndex: 'kind' },
+                  { title: '状态', dataIndex: 'status', render: (value) => <Status value={value} /> },
+                  { title: '尝试次数', dataIndex: 'attempts' },
+                  { title: '计划运行时间', dataIndex: 'runAt', render: (value) => date(value) },
+                  { title: '最近错误', dataIndex: 'lastError', render: (value) => value || '—' },
+                ]}
+                pagination={{
+                  current: jobPage,
+                  pageSize: 20,
+                  total: jobs.data?.total,
+                  onChange: setJobPage,
+                  showSizeChanger: false,
+                }}
+              />
+            </QueryState>
+          </>
+        )}
       </Panel>
     </>
   );

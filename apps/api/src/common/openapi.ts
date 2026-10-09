@@ -5,6 +5,7 @@ import * as c from '../communication/communication.schemas';
 import * as academic from '../academics/academics.schemas';
 import * as goals from '../academics/goals.schemas';
 import { academicRecordExportInput } from '../academics/records-export.schemas';
+import { auditExportInput } from '../admin/audit.schemas';
 import * as programming from '../programming/programming.schemas';
 import { programmingBackupSchema } from '../programming/programming.backup';
 import * as training from '../algorithms/training-plan.schemas';
@@ -115,6 +116,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ['patch', '/academics/preferences', academic.academicPreferencesInput],
     ['post', '/academics/goals', goals.academicGoalCreate],
     ['post', '/academics/records/export', academicRecordExportInput],
+    ['post', '/admin/audit/export', auditExportInput],
     ['patch', '/academics/goals/{id}', goals.academicGoalPatch],
     ['delete', '/academics/goals/{id}', goals.academicGoalDelete],
     ['post', '/academics/modules/{id}/evaluate', academic.academicEvaluationInput],
@@ -366,6 +368,65 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       { in: 'query', name: 'tag', schema: { type: 'string', maxLength: 60 } },
       { in: 'query', name: 'status', schema: { type: 'string', enum: ['todo', 'attempted', 'solved'] } },
     ];
+  const auditList = doc.paths['/api/admin/audit']?.get;
+  if (auditList) {
+    auditList.description =
+      '当前机构审计。组合筛选均为 AND；search 在操作、资源类型、资源标识、追踪 ID 中做大小写无关的字面子串搜索，action 保持原有大小写敏感 contains 行为。from/to 为含偏移的 ISO 瞬时时间，双端包含。操作人 ID 可为已删除或迁出成员的历史标识。';
+    auditList.parameters = [
+      ...(auditList.parameters || []),
+      ...Object.entries({
+        search: 200,
+        action: 200,
+        actorId: 128,
+        resourceType: 100,
+        resourceId: 256,
+        requestId: 200,
+      }).map(([name, maxLength]) => ({
+        in: 'query' as const,
+        name,
+        schema: { type: 'string' as const, maxLength },
+      })),
+      {
+        in: 'query',
+        name: 'from',
+        schema: { type: 'string', format: 'date-time' },
+        description: '含偏移的开始瞬时时间，包含边界',
+      },
+      {
+        in: 'query',
+        name: 'to',
+        schema: { type: 'string', format: 'date-time' },
+        description: '含偏移的结束瞬时时间，包含边界',
+      },
+    ];
+  }
+  const auditExport = doc.paths['/api/admin/audit/export']?.post;
+  if (auditExport) {
+    auditExport.description =
+      '需要当前机构 audit.read 和独立限时 data.export 授权。导出应用筛选下最新最多 5000 条；只包含白名单标量字段，排除 details。操作人姓名仅在当前机构内关联，历史账号保留 ID。审计记录表示文件准备完成，不宣称网络送达。';
+    auditExport.responses = {
+      '200': {
+        description: 'UTF-8 BOM/CRLF CSV 附件，完整文件至多 8 MiB；记录数和匹配总数来自同一语句快照',
+        headers: {
+          'Content-Disposition': {
+            schema: { type: 'string' },
+            description: 'attachment; filename="audit-records.csv"',
+          },
+          'X-Export-Matched-Count': {
+            schema: { type: 'integer' },
+            description: '匹配快照总数，不包含本次准备导出事件',
+          },
+          'X-Export-Record-Count': { schema: { type: 'integer' }, description: '文件实际记录数，允许为 0' },
+          'X-Export-Truncated': {
+            schema: { type: 'string', enum: ['true', 'false'] },
+            description: '实际数小于匹配数时为 true；不截断单行或字节',
+          },
+        },
+        content: { 'text/csv': { schema: { type: 'string', format: 'binary' } } },
+      },
+      '413': { description: '标量预检或完整转义后 CSV 超过 8 MiB，请缩小数量或筛选范围' },
+    };
+  }
   const aiExport = doc.paths['/api/ai-study/reports/{id}/export']?.get;
   const recordExport = doc.paths['/api/academics/records/export']?.post;
   const academicRecords = doc.paths['/api/academics/records']?.get;

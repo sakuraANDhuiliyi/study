@@ -1,0 +1,111 @@
+.audit-panel {
+  min-width: 0;
+}
+.audit-panel h2 {
+  margin: 8px 0 16px;
+  font-size: 18px;
+}
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.audit-filters label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.audit-filters input {
+  min-width: 0;
+}
+.audit-time-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #52627a;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.audit-filter-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.audit-export-hint {
+  color: #52627a;
+  font-size: 13px;
+}
+.audit-applied {
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 2;
+  overflow-wrap: anywhere;
+}
+.audit-applied .ant-tag {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.audit-panel .ant-alert {
+  margin: 12px 0;
+}
+.audit-table {
+  max-width: 100%;
+  min-width: 0;
+}
+.audit-table td {
+  overflow-wrap: anywhere;
+}
+.audit-table small {
+  color: #52627a;
+}
+.audit-table .audit-detail {
+  max-height: 320px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
+}
+.audit-export-content {
+  display: grid;
+  gap: 12px;
+}
+.audit-export-content p {
+  margin: 0;
+  line-height: 1.75;
+}
+.audit-export-content ul {
+  margin: 0;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.audit-export-limit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.audit-export-content .ant-alert {
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .audit-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .audit-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .audit-filter-actions > .ant-btn {
+    flex: 1 1 100%;
+  }
+  .audit-panel .ant-pagination {
+    flex-wrap: wrap;
+  }
+  .audit-export-content {
+    min-width: 0;
+  }
+}

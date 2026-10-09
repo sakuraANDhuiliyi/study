@@ -45,7 +45,12 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 - `GET /admin/roles`；`PATCH /admin/roles/:id {permissions,reason}` 需 roles.manage，拒绝修改自身角色和超出授权上限。
 - `POST /admin/grants {userId,permissionId,reason,expiresAt}` 独立敏感授权，最长 30 天，拒绝自行授予。
 - `GET /admin/settings` → `{items:[{key,value}]}`；`PATCH … {key,value,reason}`。
-- `GET /admin/audit?action=&page=&pageSize=`、`GET /admin/jobs`。
+- `GET /admin/audit?search=&action=&actorId=&resourceType=&resourceId=&requestId=&from=&to=&page=&pageSize=` 需 `audit.read`，范围固定为当前机构。组合条件为 AND；`search` 在操作、资源类型／标识、追踪 ID 中做大小写无关的字面子串匹配，旧 `action` 保留原大小写敏感 contains 语义。`from/to` 为含时区偏移的 ISO 瞬间，双端包含；界面明确按北京时间输入到秒，不自动扩展结束日期。已删除或迁出的操作人可以用原始 ID 筛选，姓名只关联当前机构成员，否则显示“历史账号”；空操作人显示“系统”。返回原 `{items,total,page,pageSize}`，计数与稳定分页来自同一查询快照，读取后复核当前会话与权限。
+- `POST /admin/audit/export {search?,action?,actorId?,resourceType?,resourceId?,requestId?,from?,to?,limit?}` 使用相同筛选，严格拒绝机构／用户覆盖与列表分页字段。当前所选角色必须同时具有 `audit.read`、`data.export`，并持有当前机构的独立限时导出授权；超级管理员和误设非敏感的权限配置都不能跳过独立授权。`limit` 为 1–5000 的整数，默认 5000；按最新记录优先，覆盖筛选结果，不限当前列表页。
+- 导出直接返回 `audit-records.csv` 附件，UTF-8 BOM、CRLF、公式保护，至多 8 MiB。只含审计 ID、UTC 时间、操作人 ID／名称、操作、资源类型／标识与追踪 ID，排除详情正文。`X-Export-Matched-Count`、`X-Export-Record-Count`、`X-Export-Truncated` 说明同一数据快照的总数、实际数与数量上限限制；没有匹配记录时返回仅表头的文件，超出字节上限返回 413，不发送部分文件。准备和发送前均复核当前会话与授权；审计 `admin.audit.export` 的 `deliveryState:prepared` 表示准备完成，不宣称客户端已收件。
+- `GET /admin/jobs` 继续提供后台任务分页与详情。
+
+实际数据库迁移保留审计操作人的外键保护：仍有审计记录的账号不能硬删除，停用或迁出不改写历史审计。历史账号的原始 ID 仍可用于筛选；不存在或已删除但没有审计记录的 ID 返回空结果，不通过删除外键制造历史数据。
 
 配置 key：dataDictionary、platformName、logoUrl、notificationEnabled、maxUploadMB、allowedFileTypes、features、loginPolicy。安全和功能开关需 settings.platform；实际登录时长、上传策略、通知开关和功能开关由服务端执行。
 

@@ -7,6 +7,7 @@ import { AuditService } from './common/audit.service';
 import { JobsService } from './common/jobs.service';
 import { CoursesController } from './courses/courses.controller';
 import { AdminController } from './admin/admin.controller';
+import { AdminAuditService } from './admin/audit.service';
 import { AnalyticsController } from './analytics/analytics.controller';
 import { AssessmentController } from './assessment/assessment.controller';
 import { AssessmentService } from './assessment/assessment.service';
@@ -145,6 +146,7 @@ class CatalogController {
     AuthGuard,
     LearningActionsService,
     AuditService,
+    AdminAuditService,
     JobsService,
     AssessmentService,
     CommunicationService,

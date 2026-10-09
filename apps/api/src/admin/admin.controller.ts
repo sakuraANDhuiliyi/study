@@ -12,6 +12,7 @@ import {
   NotFoundException,
   BadRequestException,
   Res,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
@@ -19,6 +20,7 @@ import { z } from 'zod';
 import type { Response } from 'express';
 import { PrismaService } from '../common/prisma.service';
 import { AuthService } from '../auth/auth.service';
+import { AdminAuditService } from './audit.service';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AuditService } from '../common/audit.service';
 import { hashPasswordAsync } from '../auth/password';
@@ -44,6 +46,7 @@ export class AdminController {
     private db: PrismaService,
     private auth: AuthService,
     private audit: AuditService,
+    private readonly adminAudit: AdminAuditService,
   ) {}
   private roleCeiling(a: Actor, roles: string[]) {
     this.auth.require(a, 'users.manage');
@@ -1019,32 +1022,17 @@ export class AdminController {
     });
     return result;
   }
-  @Get('audit') async auditList(@CurrentActor() a: Actor, @Query() q: Record<string, string>) {
-    this.auth.require(a, 'audit.read');
-    const p = paging(q);
-    const where = {
-      organizationId: a.organizationId,
-      ...(q.action ? { action: { contains: q.action } } : {}),
-    };
-    const [items, total] = await Promise.all([
-      this.db.auditLog.findMany({
-        where,
-        skip: p.skip,
-        take: p.pageSize,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      }),
-      this.db.auditLog.count({ where }),
-    ]);
-    const users = await this.db.user.findMany({
-      where: { id: { in: items.flatMap((i) => (i.userId ? [i.userId] : [])) } },
-      select: { id: true, name: true },
-    });
-    return {
-      items: items.map((i) => ({ ...i, actorName: users.find((u) => u.id === i.userId)?.name || '系统' })),
-      total,
-      page: p.page,
-      pageSize: p.pageSize,
-    };
+  @Get('audit') async auditList(@CurrentActor() a: Actor, @Query() q: unknown) {
+    return this.adminAudit.list(a, q);
+  }
+  @Post('audit/export')
+  @HttpCode(200)
+  async exportAudit(@CurrentActor() a: Actor, @Body() body: unknown, @Res() response: Response) {
+    const output = await this.adminAudit.export(a, body);
+    response.setHeader('X-Export-Matched-Count', output.matchedCount);
+    response.setHeader('X-Export-Record-Count', output.recordCount);
+    response.setHeader('X-Export-Truncated', String(output.truncated));
+    response.type(output.contentType).attachment(output.filename).send(output.buffer);
   }
   @Get('jobs') async jobs(@CurrentActor() a: Actor, @Query() q: Record<string, string>) {
     this.auth.require(a, 'audit.read');
