@@ -222,19 +222,9 @@ test('后台任务只读筛选：独立数据库真实HTTP、机构范围与精�
       makeUser('platform', 'JOBS_PLATFORM'),
       makeUser('no-read', 'JOBS_EMPTY'),
     ]);
-    // DISABLE_JOBS currently disables only AssessmentService's timer. Disable
-    // this suite-owned child's common JobsService too, without production hooks.
-    const workerPath = join(directory, 'fixture-worker.cjs');
-    writeFileSync(
-      workerPath,
-      'const {JobsService}=require(' +
-        JSON.stringify(resolve('apps/api/dist/common/jobs.service.js')) +
-        ');' +
-        'if(typeof JobsService?.prototype?.onModuleInit!=="function")throw new Error("Fixture worker module missing");' +
-        'JobsService.prototype.onModuleInit=function(){};',
-      { mode: 0o600 },
-    );
-    api = spawn(process.execPath, ['--require', workerPath, 'apps/api/dist/main.js'], {
+    // The actual exacttrue production policy now suppresses both automatic schedulers.
+    // No fixture module/prototype preload hides Common startup behavior.
+    api = spawn(process.execPath, ['apps/api/dist/main.js'], {
       env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });

@@ -1,0 +1,42 @@
+.scheduler-status-panel {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.scheduler-status-panel h3 {
+  margin: 0 0 10px;
+}
+.scheduler-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.scheduler-status-grid > div {
+  min-width: 0;
+}
+.scheduler-status-grid dl {
+  margin: 8px 0 0;
+}
+.scheduler-status-grid dl > div {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+.scheduler-status-grid dt {
+  color: #64748b;
+}
+.scheduler-status-grid dd {
+  margin: 0;
+  text-align: right;
+}
+.scheduler-status-note {
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .scheduler-status-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

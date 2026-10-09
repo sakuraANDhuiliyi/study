@@ -14,6 +14,8 @@
 
 后台任务支持类型关键词／状态筛选、完整状态概览和机构归属。平台权限覆盖全部机构及停用机构历史，普通权限限当前机构；支持手动刷新和手机分页。完整本机验收通过，合同见 [核心 API](docs/core-api.md#后台)，结果见 [第十四轮验收记录](docs/verification/iteration-014.json)。
 
+平台后台任务页还显示本次响应 API 实例的自动调度配置、生命周期、轮询间隔和是否有轮询在途；其他机构不返回或显示该状态。精确的 `DISABLE_JOBS=true` 启动配置说明见 [核心 API](docs/core-api.md#后台)；实例状态不代表全平台或集群健康。本轮测试记录见 [第十六轮记录](docs/verification/iteration-016.json)。
+
 ## 环境要求
 
 - Node.js 22.11+（建议 Node 22 LTS）、npm 10+。

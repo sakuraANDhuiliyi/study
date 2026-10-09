@@ -12,6 +12,7 @@ import { Prisma, type QuestionVersion } from '@prisma/client';
 import { randomInt } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { PrismaService } from '../common/prisma.service';
+import type { SchedulerLifecycle, SchedulerSnapshot } from '../common/scheduler-status';
 import { AuditService } from '../common/audit.service';
 import { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
@@ -43,6 +44,8 @@ const unique = <T>(values: T[]) => [...new Set(values)];
 export class AssessmentService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
+  private automaticEnabled = process.env.DISABLE_JOBS !== 'true';
+  private lifecycle: SchedulerLifecycle = 'not_initialized';
   private readonly deadlineRetries = new Map<string, number>();
   private readonly logger = new Logger(AssessmentService.name);
   constructor(
@@ -51,14 +54,26 @@ export class AssessmentService implements OnModuleInit, OnModuleDestroy {
     private readonly audit: AuditService,
   ) {}
   onModuleInit() {
-    if (process.env.DISABLE_JOBS !== 'true') {
+    this.automaticEnabled = process.env.DISABLE_JOBS !== 'true';
+    if (this.automaticEnabled) {
       this.timer = setInterval(() => void this.sweepDueAttempts(), 10000);
       this.timer.unref();
+      this.lifecycle = 'scheduled';
       void this.sweepDueAttempts();
-    }
+    } else this.lifecycle = 'disabled';
   }
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
+    this.timer = undefined;
+    this.lifecycle = 'stopped';
+  }
+  schedulerSnapshot(): SchedulerSnapshot {
+    return {
+      automaticEnabled: this.automaticEnabled,
+      lifecycle: this.lifecycle,
+      pollIntervalMs: 10000,
+      pollInProgress: this.running,
+    };
   }
   private require(actor: Actor, permission: string) {
     this.auth.require(actor, permission);

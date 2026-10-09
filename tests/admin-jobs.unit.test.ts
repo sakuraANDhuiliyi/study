@@ -65,7 +65,30 @@ function fixture(options: { current?: Actor | null; result?: any; afterRead?: ()
       return options.current === undefined ? actor : options.current;
     },
   } as unknown as AuthService;
-  return { service: new AdminJobsService(db, auth), sql, operations };
+  return {
+    service: new AdminJobsService(
+      db,
+      auth,
+      {
+        schedulerSnapshot: () => ({
+          automaticEnabled: false,
+          lifecycle: 'disabled',
+          pollIntervalMs: 5000,
+          pollInProgress: false,
+        }),
+      } as never,
+      {
+        schedulerSnapshot: () => ({
+          automaticEnabled: false,
+          lifecycle: 'disabled',
+          pollIntervalMs: 10000,
+          pollInProgress: false,
+        }),
+      } as never,
+    ),
+    sql,
+    operations,
+  };
 }
 
 test('Known job query fields are scalar, bounded and cannot override authority', () => {

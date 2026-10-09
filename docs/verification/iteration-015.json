@@ -757,9 +757,11 @@
     "report": ".data/iteration-6lVlz7/report.json"
   },
   "remote": {
-    "commit": null,
-    "ciStatus": "pending",
-    "ciRun": null
+    "commit": "1d3f9b43f6c9018a5d69ea9ac811e8f519b04a49",
+    "ciStatus": "success",
+    "ciRun": 37997508625,
+    "ciUrl": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37997508625",
+    "headSha": "1d3f9b43f6c9018a5d69ea9ac811e8f519b04a49"
   },
   "acceptedForPush": true
 }

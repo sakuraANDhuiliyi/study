@@ -2,10 +2,13 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { PrismaService } from './prisma.service';
 import { CommunicationService } from '../communication/communication.service';
 import { UploadSafetyService } from '../communication/upload-safety.service';
+import type { SchedulerLifecycle, SchedulerSnapshot } from './scheduler-status';
 @Injectable()
 export class JobsService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private busy = false;
+  private automaticEnabled = process.env.DISABLE_JOBS !== 'true';
+  private lifecycle: SchedulerLifecycle = 'not_initialized';
   private lastUploadCleanup = 0;
   private logger = new Logger('Jobs');
   constructor(
@@ -14,11 +17,27 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private uploads: UploadSafetyService,
   ) {}
   onModuleInit() {
+    this.automaticEnabled = process.env.DISABLE_JOBS !== 'true';
+    if (!this.automaticEnabled) {
+      this.lifecycle = 'disabled';
+      return;
+    }
     this.timer = setInterval(() => void this.run(), 5000);
+    this.lifecycle = 'scheduled';
     void this.run();
   }
   onModuleDestroy() {
     if (this.timer) clearInterval(this.timer);
+    this.timer = undefined;
+    this.lifecycle = 'stopped';
+  }
+  schedulerSnapshot(): SchedulerSnapshot {
+    return {
+      automaticEnabled: this.automaticEnabled,
+      lifecycle: this.lifecycle,
+      pollIntervalMs: 5000,
+      pollInProgress: this.busy,
+    };
   }
   async run() {
     if (this.busy) return;

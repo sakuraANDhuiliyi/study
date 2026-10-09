@@ -3,6 +3,9 @@ import { Prisma } from '@prisma/client';
 import type { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../common/prisma.service';
+import { JobsService } from '../common/jobs.service';
+import { AssessmentService } from '../assessment/assessment.service';
+import { schedulerSnapshotDto } from '../common/scheduler-status';
 import { jobsKindPattern, parseJobsQuery } from './jobs.schemas';
 
 type JobRow = {
@@ -45,6 +48,8 @@ export class AdminJobsService {
   constructor(
     private readonly db: PrismaService,
     private readonly auth: AuthService,
+    private readonly jobs: JobsService,
+    private readonly assessment: AssessmentService,
   ) {}
 
   async list(actor: Actor, query: unknown) {
@@ -93,6 +98,14 @@ export class AdminJobsService {
           'all', COUNT(*)) FROM base) AS "stateCounts",
         ${runResult} AS "examDeadlineRuns", statement_timestamp() AS "serverTime"
     `;
+    const schedulerStatus = platform
+      ? {
+          scope: 'responding_api_instance' as const,
+          observedAt: new Date().toISOString(),
+          common: schedulerSnapshotDto(this.jobs.schedulerSnapshot()),
+          examDeadline: schedulerSnapshotDto(this.assessment.schedulerSnapshot()),
+        }
+      : undefined;
     // No transaction is held while AuthService borrows its own connection. The
     // last check follows every private read, including platform global run history.
     const current = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
@@ -136,6 +149,7 @@ export class AdminJobsService {
         startedAt: new Date(run.startedAt).toISOString(),
         completedAt: run.completedAt ? new Date(run.completedAt).toISOString() : null,
       })),
+      ...(schedulerStatus ? { schedulerStatus } : {}),
     };
   }
 }

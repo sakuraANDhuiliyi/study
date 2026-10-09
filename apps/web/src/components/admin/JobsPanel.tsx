@@ -4,6 +4,7 @@ import { Alert, Button, Input, Spin, Table, Tag } from 'antd';
 import { ApiError, getCsrf, queryString, type User } from '../../api';
 import { useAuth } from '../../auth';
 import './jobs.css';
+import { SchedulerStatusPanel } from './SchedulerStatusPanel';
 
 type JobStatus = 'ALL' | 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
 type JobFilters = { action: string; status: JobStatus };
@@ -19,6 +20,7 @@ type JobRecord = {
   createdAt: string;
 };
 type JobsResponse = {
+  schedulerStatus?: unknown;
   items: JobRecord[];
   total: number;
   page: number;
@@ -323,6 +325,7 @@ function JobsPanelContent({
       )}
       {data && (
         <>
+          {platform && <SchedulerStatusPanel value={data.schedulerStatus} />}
           <div role="status" aria-label="任务状态概览" className="jobs-overview">
             <p>状态概览按已应用的类型关键词和上述机构范围统计全部状态，不受列表状态或分页影响。</p>
             <dl className="jobs-counts">

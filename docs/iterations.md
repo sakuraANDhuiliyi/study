@@ -311,4 +311,14 @@ F1 使用直接计数公式，未定义精确率不连带抹掉合法的零 F1�
 
 本轮真实 HTTP／随机数据库专项 **45 项全通过**；新筛选浏览器与真实场景 **37 项全通过**，既有学习行动、概览及主流程兼容浏览器 **76 项全通过**。默认完整门禁 **49 个阶段、1,205 项测试全通过，零失败、零跳过**；其中全量浏览器 355 项、四语言可信参考 176 个程序／1,280 个用例。空库迁移与启动、构建、依赖审计通过；100 次请求、10 并发零错误，p95 24ms。481 个源码／配置／资源文件在完整验收前后指纹一致，精确报告见 [第十五轮结构化记录](verification/iteration-015.json)。实现没有新增数据表、迁移、依赖或个人待办课程关系。
 
-调研参考 [Canvas 学生工作台官方指南及视频文字稿 00:20–00:26](https://community.instructure.com/en/kb/articles/664424-how-do-i-customize-my-dashboard-as-a-student)对课程和提交状态筛选的表达、[Moodle Timeline 官方指南](https://docs.moodle.org/503/en/Timeline_block)对当前课程访问资格的要求，以及 [Canvas 官方产品讨论](https://community.instructure.com/en/discussion/665539/customizable-dashboard-for-learners-q2-2026-feature-overview)中的跨课程查找和状态文案反馈。论坛内容只作需求信号，不证明本项目存在同类缺陷；未下载或播放视频。对应提交的远程 CI 结果在推送后补录。
+调研参考 [Canvas 学生工作台官方指南及视频文字稿 00:20–00:26](https://community.instructure.com/en/kb/articles/664424-how-do-i-customize-my-dashboard-as-a-student)对课程和提交状态筛选的表达、[Moodle Timeline 官方指南](https://docs.moodle.org/503/en/Timeline_block)对当前课程访问资格的要求，以及 [Canvas 官方产品讨论](https://community.instructure.com/en/discussion/665539/customizable-dashboard-for-learners-q2-2026-feature-overview)中的跨课程查找和状态文案反馈。论坛内容只作需求信号，不证明本项目存在同类缺陷；未下载或播放视频。对应提交的远程 CI 已通过 [运行 37997508625](https://github.com/sakuraANDhuiliyi/study/actions/runs/37997508625)。
+
+## 第十六轮：平台任务页的实例调度状态
+
+平台管理员打开后台任务页时，可看到处理这次请求的 API 实例是否启用了通用任务和考试截止自动调度、配置轮询间隔、当前生命周期及是否有轮询在途。`DISABLE_JOBS` 仅在实例初始化时精确等于小写字符串 `true` 才关闭这两类自动调度，未设置及其他值保持现有启动行为；调整后须重启对应实例。没有增加停用/启动控制、执行/重试入口或额外轮询。
+
+元数据只在任务查询的 SQL 和同步实例快照读取后，经过原有最后会话、CSRF、`audit.read` 与平台权限复查后返回；普通机构省略字段，前端也不会展示其错误泄露的元数据。调度生命周期和 `pollInProgress` 分开表达，因此停止定时器后仍在途的轮询会如实显示。观测时间独立于任务 SQL 统计时间；一个 API 实例的状态不代表整个集群或共享任务队列的健康情况。完整合同见 [核心 API](core-api.md#后台)。
+
+调研参考 [NestJS 官方生命周期文档](https://docs.nestjs.com/fundamentals/lifecycle-events)对初始化与销毁阶段的描述、[Moodle 官方 Scheduled tasks 指南](https://docs.moodle.org/503/en/Scheduled_tasks)对已关闭/运行中任务的状态区分，以及 [Canvas SIS 官方指南及视频文字稿 03:20–04:05](https://community.instructure.com/en/kb/articles/661610-how-do-i-import-and-view-sis-data-in-a-canvas-account)对处理结果和刷新后最近记录的呈现。仅借鉴准确的只读状态和刷新表述；不推断本项目的集群能力，也未下载或播放视频。
+
+定向 worker 单元测试 **14/14**、真实 HTTP／随机数据库测试 **18/18**、新状态面板浏览器 **30/30**，后台任务／审计／主工作流兼容浏览器 **76/76**。完整门禁 **50 个阶段、1,255 项测试全通过，零失败、零跳过**；其中完整浏览器 385 项，四语言可信参考程序 176 个、1,280 个用例。空库迁移与启动、依赖审计、构建通过；100 次请求、10 并发零错误，p95 22ms。487 个源码／配置／资源文件在验收前后指纹一致，精确报告见 [第十六轮结构化记录](verification/iteration-016.json)。对应提交的远程 CI 在推送后核验。

@@ -55,6 +55,8 @@ API 前缀 `/api`，UTC ISO 时间，JSON 请求体。成功返回资源或 `{it
 - 任务行、总数、状态概览和可选全局运行记录来自同一个 SQL 语句快照；`serverTime` 是该语句开始的 ISO 时间，界面按北京时间显示，不代表任务完成时间。所有私有读取完成后重新解析当前会话，核对账号、机构、所选角色、账号模式和 CSRF，重新要求 `audit.read`，并核对捕获的 `org.platform` 是否仍一致；范围改变时拒绝旧结果。这一语句快照不保证返回瞬间全局状态不再变化。
 - 后台任务界面将草稿与已应用筛选分开，应用／重置回到第 1 页，刷新沿用已应用条件。只读展示和分页；不新增任务创建、执行、重试、删除、取消或 cron 设置。成功空结果显示真实 0；加载、权限拒绝和普通错误不伪装成 0。完整授权与 CSRF 隔离缓存，读取响应头和正文后先核对当前身份，再处理 401；当前 4xx 撤回本域所有筛选／分页旧行和计数，覆盖导航返回和此前在途请求。普通故障仅可带提示保留已授权快照，新成功读取后才恢复被拒绝数据。
 
+- 第十六轮在平台范围的 `GET /admin/jobs` 响应里另加可选 `schedulerStatus:{scope:'responding_api_instance',observedAt,common,examDeadline}`。只有当前 `org.platform` 和 `audit.read` 均通过后才返回；普通机构不查询也不返回实例快照。`common` 和 `examDeadline` 分别包含 `automaticEnabled`、`lifecycle`、`pollIntervalMs` 和 `pollInProgress`。仅当启动时 `DISABLE_JOBS` 精确为小写字符串 `true` 才关闭自动调度；其他值保持既有启动行为，修改需重启该实例。状态仅说明响应当前请求的 API 实例，不代表其他实例、集群健康或任务成功；`stopped` 可以与 `pollInProgress:true` 同时出现，不含强制终止或排空语义。`observedAt` 是进程状态观测时间，独立于数据库语句的 `serverTime`。缺少或无效的可选元数据不影响既有任务列表。
+
 实际数据库迁移保留审计操作人的外键保护：仍有审计记录的账号不能硬删除，停用或迁出不改写历史审计。历史账号的原始 ID 仍可用于筛选；不存在或已删除但没有审计记录的 ID 返回空结果，不通过删除外键制造历史数据。
 
 配置 key：dataDictionary、platformName、logoUrl、notificationEnabled、maxUploadMB、allowedFileTypes、features、loginPolicy。安全和功能开关需 settings.platform；实际登录时长、上传策略、通知开关和功能开关由服务端执行。

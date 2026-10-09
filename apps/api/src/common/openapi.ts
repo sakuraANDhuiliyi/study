@@ -383,7 +383,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
   const jobsList = doc.paths['/api/admin/jobs']?.get;
   if (jobsList) {
     jobsList.description =
-      '只读后台任务，需要当前 audit.read。action 对 kind 做不区分大小写的字面包含匹配，不搜索 payload/eventKey；status 只筛列表和 total。stateCounts:{pending,running,succeeded,failed,other,all} 遵循同一类型关键词/机构范围，但忽略 status，包含全部匹配记录而非当前页。scope=platform_institutions 时包括全部 INSTITUTION（含停用）并排除个人空间，否则 current_organization 仅当前机构。examDeadlineRuns 仅平台返回全局最新20条，与后台任务筛选/统计分离；所有字段来自同一SQL语句快照，serverTime 为该语句开始时间。最后重新验证当前会话、audit.read 与平台scope，旧身份或scope结果不返回。';
+      '只读后台任务，需要当前 audit.read。action 对 kind 做不区分大小写的字面包含匹配，不搜索 payload/eventKey；status 只筛列表和 total。stateCounts:{pending,running,succeeded,failed,other,all} 遵循同一类型关键词/机构范围，但忽略 status，包含全部匹配记录而非当前页。scope=platform_institutions 时包括全部 INSTITUTION（含停用）并排除个人空间，否则 current_organization 仅当前机构。examDeadlineRuns 仅平台返回全局最新20条，与后台任务筛选/统计分离；任务列表、统计与截止运行记录来自同一SQL语句快照，serverTime 为该语句开始时间。平台响应可另含 schedulerStatus:{scope:responding_api_instance,observedAt,common,examDeadline}，仅表示响应当前API实例的调度配置/生命周期，不表示平台或集群健康；observedAt 是此进程状态观测时间，独立于 serverTime。两个调度项仅含 automaticEnabled、lifecycle（not_initialized/disabled/scheduled/stopped）、pollIntervalMs（5000/10000）、pollInProgress；停用只抑制启动时自动轮询，手动业务API仍可能处理任务，stopped 时在途轮询可能未结束。普通机构不返回此字段。最后重新验证当前会话、audit.read 与平台scope，旧身份或scope结果不返回。';
     jobsList.parameters = [
       ...(jobsList.parameters || []).filter((parameter) => !('in' in parameter) || parameter.in !== 'query'),
       {
