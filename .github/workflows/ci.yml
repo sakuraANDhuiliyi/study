@@ -55,6 +55,7 @@ jobs:
           npm run test:digital-logic
           npm run test:population-genetics
           npm run test:simpson-paradox
+          npm run test:confusion-matrix
           npm run test:clean-start
       - name: Browser workflow verification
         run: |

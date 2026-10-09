@@ -328,7 +328,10 @@ test('推荐仅追加四个公共专业且模块不重复，结果可JSON持久�
   ]);
   for (const major of recommended) {
     assert.equal(major.moduleIds.filter((moduleId) => moduleId === id).length, 1);
-    assert.equal(major.moduleIds.at(-1), id);
+    // Later curriculum additions may follow this module; its original position stays stable.
+    const previousEnd = major.moduleIds.indexOf('study-notebook');
+    assert.ok(previousEnd >= 0);
+    assert.equal(major.moduleIds.indexOf(id), previousEnd + 1);
   }
   const output = run();
   assert.deepEqual(JSON.parse(JSON.stringify(output)), output);

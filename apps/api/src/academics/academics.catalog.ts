@@ -52,6 +52,7 @@ const major = (
         ? ['population-genetics']
         : []),
       ...(['statistics', 'data-science', 'economics', 'marketing'].includes(id) ? ['simpson-paradox'] : []),
+      ...(['statistics', 'data-science', 'artificial-intelligence'].includes(id) ? ['confusion-matrix'] : []),
     ]),
   ],
 });

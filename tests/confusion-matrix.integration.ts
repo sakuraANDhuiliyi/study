@@ -13,159 +13,104 @@ import { hashPasswordAsync } from '../apps/api/src/auth/password';
 import { permissionDefinitions, roleDefinitions } from '../apps/api/src/auth/permissions';
 import type { StudyResult } from '../apps/api/src/academics/academics.types';
 
-const moduleId = 'simpson-paradox';
-const fields = [
-  'aSuccess1',
-  'aTotal1',
-  'bSuccess1',
-  'bTotal1',
-  'aSuccess2',
-  'aTotal2',
-  'bSuccess2',
-  'bTotal2',
-] as const;
-const counts = (...values: number[]) => Object.fromEntries(fields.map((field, i) => [field, values[i]]));
-const defaults = counts(9, 10, 80, 100, 20, 100, 1, 10);
-
-// Independent oracle: expand all four strata to a shared integer population grid.
-// The common-weight numerator is a sum of replicated successes on that grid, without
-// importing the production evaluator or using its normalized-fraction arithmetic.
-type Fraction = readonly [bigint, bigint];
-const fraction = (numerator: bigint | number, denominator: bigint | number = 1): Fraction => [
-  BigInt(numerator),
-  BigInt(denominator),
+const moduleId = 'confusion-matrix';
+const fields = ['tp', 'fp', 'fn', 'tn'] as const;
+const counts = (tp: number, fp: number, fn: number, tn: number) => ({ tp, fp, fn, tn });
+type Counts = ReturnType<typeof counts>;
+const defaults = counts(45, 5, 10, 40);
+const rareValues = counts(0, 0, 1, 99);
+const metricLabels = [
+  '准确率 Accuracy',
+  '精确率 Precision',
+  '召回率 Recall',
+  '负类召回率 Specificity',
+  'F1',
+  '二分类平衡准确率',
 ];
-const subtract = (a: Fraction, b: Fraction): Fraction => [a[0] * b[1] - b[0] * a[1], a[1] * b[1]];
-const sign = (a: Fraction) => (a[0] === 0n ? 0 : a[0] > 0n ? 1 : -1);
-const number = (a: Fraction) => Number(a[0]) / Number(a[1]);
-const percentage = (a: Fraction) => Number(a[0] * 100n) / Number(a[1]);
-const direction = (value: Fraction) => ['方案B较高', '持平', '方案A较高'][sign(value) + 1];
-function assertSimpson(result: StudyResult, values: Record<string, number>) {
-  const inputs = [
-    [values.aSuccess1, values.aTotal1, values.bSuccess1, values.bTotal1],
-    [values.aSuccess2, values.aTotal2, values.bSuccess2, values.bTotal2],
-  ];
-  const totalA = values.aTotal1 + values.aTotal2,
-    totalB = values.bTotal1 + values.bTotal2;
-  const rates = inputs.map(([a, an, b, bn]) => [fraction(a, an), fraction(b, bn)]);
-  const weights = inputs.map(([, an, , bn]) => fraction(an + bn, totalA + totalB));
-  const aggregate = [
-    fraction(values.aSuccess1 + values.aSuccess2, totalA),
-    fraction(values.bSuccess1 + values.bSuccess2, totalB),
-  ];
-  const grid = inputs.reduce((scale, row) => scale * BigInt(row[1]) * BigInt(row[3]), 1n);
-  const standardized = [0, 1].map((group) =>
-    fraction(
-      inputs.reduce(
-        (successes, row) =>
-          successes + BigInt(row[group * 2]) * (grid / BigInt(row[group * 2 + 1])) * BigInt(row[1] + row[3]),
-        0n,
-      ),
-      grid * BigInt(totalA + totalB),
-    ),
-  );
-  const comparisons = [...rates, aggregate, standardized];
-  const differences = comparisons.map(([a, b]) => subtract(a, b));
-  const signs = differences.map(sign);
-  const classification =
-    signs[0] === 0 || signs[1] === 0
-      ? '分层持平'
-      : signs[0] !== signs[1]
-        ? '分层混向'
-        : signs[2] === 0
-          ? '汇总持平'
-          : signs[2] !== signs[0]
-            ? '严格反转'
-            : '方向一致';
-  const close = (actual: unknown, expected: number) => {
-    assert.equal(typeof actual, 'number');
-    assert.ok(Number.isFinite(actual));
-    if (expected === 0) assert.equal(actual, 0);
-    else
-      assert.ok(
-        Math.abs((Number(actual) - expected) / expected) < 1e-10,
-        'Result differs from independent exact fraction oracle',
-      );
-  };
-  assert.equal(result.metrics.find((item) => item.label === '比较分类')?.value, classification);
-  assert.equal(result.tables.length, 3);
-  const [raw, contributions, comparison] = result.tables;
-  assert.equal(raw.title, '分层原始数据');
-  assert.deepEqual(
-    raw.columns.map((item) => item.key),
-    [
-      'layer',
-      'aSuccess',
-      'aTotal',
-      'bSuccess',
-      'bTotal',
-      'aPercent',
-      'bPercent',
-      'aWeight',
-      'bWeight',
-      'differencePp',
-    ],
-  );
-  assert.equal(raw.rows.length, 2);
-  raw.rows.forEach((row, i) => {
-    assert.equal(row.layer, `分层${i + 1}`);
-    for (const [j, key] of ['aSuccess', 'aTotal', 'bSuccess', 'bTotal'].entries())
-      assert.equal(row[key], inputs[i][j]);
-    close(row.aPercent, percentage(rates[i][0]));
-    close(row.bPercent, percentage(rates[i][1]));
-    close(row.aWeight, inputs[i][1] / totalA);
-    close(row.bWeight, inputs[i][3] / totalB);
-    close(row.differencePp, percentage(differences[i]));
-  });
-  assert.equal(contributions.title, '共同权重与贡献');
-  assert.deepEqual(
-    contributions.columns.map((item) => item.key),
-    ['layer', 'aTotal', 'bTotal', 'pooledTotal', 'pooledWeight', 'aContributionPp', 'bContributionPp'],
-  );
-  assert.equal(contributions.rows.length, 2);
-  contributions.rows.forEach((row, i) => {
-    assert.equal(row.layer, `分层${i + 1}`);
-    assert.equal(row.aTotal, inputs[i][1]);
-    assert.equal(row.bTotal, inputs[i][3]);
-    assert.equal(row.pooledTotal, inputs[i][1] + inputs[i][3]);
-    close(row.pooledWeight, number(weights[i]));
-    close(
-      row.aContributionPp,
-      percentage(fraction(BigInt(inputs[i][0]) * weights[i][0], BigInt(inputs[i][1]) * weights[i][1])),
+const close = (actual: unknown, expected: number) => {
+  assert.equal(typeof actual, 'number');
+  assert.ok(Number.isFinite(actual));
+  if (expected === 0) assert.equal(actual, 0);
+  else
+    assert.ok(
+      Math.abs((Number(actual) - expected) / expected) < 1e-10,
+      'Result differs from independent confusion-matrix arithmetic',
     );
-    close(
-      row.bContributionPp,
-      percentage(fraction(BigInt(inputs[i][2]) * weights[i][0], BigInt(inputs[i][3]) * weights[i][1])),
-    );
-  });
-  assert.equal(comparison.title, '四种口径比较');
-  assert.deepEqual(
-    comparison.columns.map((item) => item.key),
-    ['basis', 'aPercent', 'bPercent', 'differencePp', 'direction'],
+};
+
+// Independent oracle: sum the observed confusion cells and compute the two class
+// recalls separately. No production evaluator, formatter, or fraction helper is imported.
+function assertConfusion(result: StudyResult, values: Counts) {
+  const { tp, fp, fn, tn } = values;
+  const total = tp + fp + fn + tn;
+  const actualPositive = tp + fn,
+    actualNegative = tn + fp;
+  const fractions = [
+    [tp + tn, total],
+    [tp, tp + fp],
+    [tp, actualPositive],
+    [tn, actualNegative],
+    [2 * tp, 2 * tp + fp + fn],
+    [tp * actualNegative + tn * actualPositive, 2 * actualPositive * actualNegative],
+  ];
+  const expected = fractions.map(([n, d], index) =>
+    d === 0 ? undefined : index === 5 ? (tp / actualPositive + tn / actualNegative) * 50 : (n / d) * 100,
   );
-  const categories = ['分层1', '分层2', '原始汇总', '共同权重'];
-  assert.equal(comparison.rows.length, 4);
-  comparison.rows.forEach((row, i) => {
-    assert.equal(row.basis, categories[i]);
-    assert.equal(row.direction, direction(differences[i]));
-    close(row.aPercent, percentage(comparisons[i][0]));
-    close(row.bPercent, percentage(comparisons[i][1]));
-    close(row.differencePp, percentage(differences[i]));
-  });
-  const chart = result.categoryChart!;
-  assert.equal(chart.title, '分层与汇总达成比例');
-  assert.equal(chart.yAxisLabel, '达成比例（%）');
-  assert.deepEqual(chart.categories, categories);
   assert.deepEqual(
-    chart.series.map((series) => series.name),
-    ['方案A', '方案B'],
+    result.metrics.map((item) => item.label),
+    metricLabels,
   );
-  chart.series.forEach((series, group) => {
-    assert.equal(series.values.length, 4);
-    series.values.forEach((value, i) => close(value, percentage(comparisons[i][group])));
+  result.metrics.forEach((item, i) => {
+    if (expected[i] === undefined) {
+      assert.equal(item.value, '未定义');
+      assert.equal(Object.hasOwn(item, 'unit'), false);
+    } else {
+      close(item.value, expected[i]!);
+      assert.equal(item.unit, '%');
+    }
   });
+  assert.equal(result.tables.length, 2);
+  const [matrix, metrics] = result.tables;
+  assert.equal(matrix.title, '混淆矩阵（行实际，列预测）');
+  assert.deepEqual(
+    matrix.columns.map((item) => item.key),
+    ['actual', 'predictedNegative', 'predictedPositive', 'total'],
+  );
+  assert.deepEqual(matrix.rows, [
+    { actual: '实际负类', predictedNegative: tn, predictedPositive: fp, total: actualNegative },
+    { actual: '实际正类', predictedNegative: fn, predictedPositive: tp, total: actualPositive },
+    { actual: '合计', predictedNegative: tn + fn, predictedPositive: tp + fp, total },
+  ]);
+  assert.equal(metrics.title, '指标分子与分母');
+  assert.deepEqual(
+    metrics.columns.map((item) => item.key),
+    ['metric', 'formula', 'numerator', 'denominator', 'percent', 'reason'],
+  );
+  assert.equal(metrics.rows.length, 6);
+  metrics.rows.forEach((row, i) => {
+    assert.equal(row.metric, metricLabels[i]);
+    assert.equal(typeof row.formula, 'string');
+    assert.ok(String(row.formula).length > 3);
+    assert.equal(row.numerator, fractions[i][0]);
+    assert.equal(row.denominator, fractions[i][1]);
+    if (expected[i] === undefined) {
+      assert.equal(row.percent, '未定义');
+      assert.equal(typeof row.reason, 'string');
+      assert.ok(String(row.reason).length > 5);
+    } else {
+      close(row.percent, expected[i]!);
+      assert.equal(row.reason, '');
+    }
+  });
+  assert.deepEqual(result.categoryChart, {
+    title: '四格样本计数',
+    categories: ['TP', 'FP', 'FN', 'TN'],
+    series: [{ name: '计数', values: [tp, fp, fn, tn] }],
+    yAxisLabel: '样本数',
+  });
+  assert.equal(Object.hasOwn(result, 'chart'), false);
   assert.ok(!('score' in result) && !('mastered' in result));
-  return { classification, weights, standardized, differences };
+  return expected;
 }
 
 // This suite creates and drops ONLY its own random database. Never seeds, truncates or changes
@@ -183,7 +128,7 @@ async function freePort() {
   return port;
 }
 
-test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP验收', { timeout: 180_000 }, async (t) => {
+test('二分类混淆矩阵指标与增量迁移：独立PostgreSQL与真实HTTP验收', { timeout: 180_000 }, async (t) => {
   assert.notEqual(process.env.NODE_ENV, 'production', '集成测试禁止在production模式运行');
   const configured = process.env.ACADEMICS_TEST_ADMIN_DATABASE_URL || process.env.DATABASE_URL;
   assert.ok(
@@ -194,8 +139,8 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
   assert.ok(['127.0.0.1', 'localhost', '[::1]'].includes(adminUrl.hostname), '本测试只连接本机PostgreSQL');
   assert.ok(['postgres:', 'postgresql:'].includes(adminUrl.protocol));
   const suffix = randomBytes(8).toString('hex');
-  const name = `simpson_paradox_it_${suffix}`;
-  assert.match(name, /^simpson_paradox_it_[a-f0-9]{16}$/);
+  const name = `confusion_matrix_it_${suffix}`;
+  assert.match(name, /^confusion_matrix_it_[a-f0-9]{16}$/);
   const isolatedUrl = new URL(adminUrl);
   isolatedUrl.pathname = `/${name}`;
   // Exercise the service with the same small connection pool used by CI fixtures.
@@ -214,7 +159,7 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
       )
       .replace(/lms_session=[^;\s"]+/gi, 'lms_session=[redacted]');
   const port = await freePort();
-  const directory = mkdtempSync(join(tmpdir(), 'simpson-paradox-http-'));
+  const directory = mkdtempSync(join(tmpdir(), 'confusion-matrix-http-'));
   const configPath = join(directory, 'config.yaml');
   const owner = new PrismaClient({ datasourceUrl: adminUrl.href });
   let db: PrismaClient | undefined;
@@ -333,8 +278,8 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         '无法创建隔离测试库；请确认本机数据库运行且测试账号具有CREATEDB权限。未修改现有数据库。',
       );
     }
-    const beforeSchema = schemaThrough(19);
-    const targetSchema = schemaThrough(20);
+    const beforeSchema = schemaThrough(20);
+    const targetSchema = schemaThrough(21);
     await deploy(beforeSchema);
     db = new PrismaClient({ datasourceUrl: isolatedUrl.href });
     await db.permission.createMany({
@@ -352,14 +297,14 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         skipDuplicates: true,
       });
     }
-    const institution = await db.organization.create({ data: { name: '辛普森反转验收机构' } });
+    const institution = await db.organization.create({ data: { name: '混淆矩阵验收机构' } });
     const hash = await hashPasswordAsync(password);
     const fixtures: { id: string; username: string }[] = [];
     for (const roleId of ['ADMIN', 'TEACHER', 'STUDENT']) {
       fixtures.push(
         await db.user.create({
           data: {
-            username: `simpson_${suffix}_${roleId.toLowerCase()}`,
+            username: `confusion_${suffix}_${roleId.toLowerCase()}`,
             name: roleId,
             organizationId: institution.id,
             passwordHash: hash,
@@ -368,22 +313,24 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         }),
       );
     }
-    await t.test('020仅追加四类公共专业，顺序/已包含项/机构模板/个人偏好及重复部署稳定', async () => {
+    await t.test('021仅追加三类公共专业，顺序/已包含项/机构模板/个人偏好及重复部署稳定', async () => {
       const migrationsBefore = await appliedMigrations();
-      assert.equal(migrationsBefore.length, 19);
-      assert.equal(new Set(migrationsBefore).size, 19);
-      assert.equal(migrationsBefore.at(-1), '202610090019_population_genetics');
-      const targets = ['major-statistics', 'major-data-science', 'major-economics', 'major-marketing'];
+      assert.equal(migrationsBefore.length, 20);
+      assert.equal(new Set(migrationsBefore).size, 20);
+      assert.equal(migrationsBefore.at(-1), '202610090020_simpson_paradox');
+      const targets = ['major-statistics', 'major-data-science', 'major-artificial-intelligence'];
       const oldDate = new Date('2001-01-01T00:00:00.000Z');
       for (const id of targets) {
         const major = await db!.academicsMajor.findUniqueOrThrow({ where: { id } });
-        assert.ok(!major.moduleIds.includes('simpson-paradox'), '019之前不应预先包含新模块');
+        assert.ok(!major.moduleIds.includes('confusion-matrix'), '020之前不应预先包含新模块');
         await db!.academicsMajor.update({
           where: { id },
           data: {
             revision: 7,
             updatedAt: oldDate,
-            ...(id === 'major-economics' ? { moduleIds: [...major.moduleIds, 'simpson-paradox'] } : {}),
+            ...(id === 'major-artificial-intelligence'
+              ? { moduleIds: [...major.moduleIds, 'confusion-matrix'] }
+              : {}),
           },
         });
       }
@@ -416,7 +363,7 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
           personalOrganizationId: personalSpace.id,
           accountMode: 'PERSONAL',
           personalMajorId: 'major-statistics',
-          username: `simpson_${suffix}_before_migration`,
+          username: `confusion_${suffix}_before_migration`,
           name: '迁移前个人同学',
           passwordHash: hash,
           roles: { create: { roleId: 'STUDENT' } },
@@ -439,8 +386,8 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
       });
       await deploy(targetSchema);
       const migrationsAfter = await appliedMigrations();
-      assert.deepEqual(migrationsAfter, [...migrationsBefore, '202610090020_simpson_paradox']);
-      assert.equal(migrationsAfter.length, 20);
+      assert.deepEqual(migrationsAfter, [...migrationsBefore, '202610090021_confusion_matrix']);
+      assert.equal(migrationsAfter.length, 21);
       const after = await db!.academicsMajor.findMany({ orderBy: { id: 'asc' } });
       assert.equal(after.length, before.length);
       for (const previous of before) {
@@ -448,9 +395,9 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         const changed =
           targets.includes(previous.id) &&
           previous.organizationId === null &&
-          !previous.moduleIds.includes('simpson-paradox');
+          !previous.moduleIds.includes('confusion-matrix');
         if (changed) {
-          assert.deepEqual(current.moduleIds, [...previous.moduleIds, 'simpson-paradox']);
+          assert.deepEqual(current.moduleIds, [...previous.moduleIds, 'confusion-matrix']);
           assert.equal(current.revision, previous.revision + 1);
           assert.ok(current.updatedAt.getTime() > previous.updatedAt.getTime());
           assert.deepEqual(
@@ -466,7 +413,8 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
       }
       for (const id of targets)
         assert.equal(
-          after.find((item) => item.id === id)!.moduleIds.filter((item) => item === 'simpson-paradox').length,
+          after.find((item) => item.id === id)!.moduleIds.filter((item) => item === 'confusion-matrix')
+            .length,
           1,
         );
       assert.deepEqual(
@@ -502,7 +450,7 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
       });
     let ready = false;
     for (let attempt = 0; attempt < 150; attempt++) {
-      if (api.exitCode !== null) throw new Error(`测试API启动失败：${safe(logs)}`);
+      if (api.exitCode !== null || api.signalCode !== null) throw new Error(`测试API启动失败：${safe(logs)}`);
       try {
         if ((await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(1000) })).ok) {
           ready = true;
@@ -515,7 +463,7 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
     }
     assert.ok(ready, `独立测试服务未就绪，请先构建API：${safe(logs)}`);
     const [admin, teacher, other] = await Promise.all(fixtures.map((user) => login(user.username)));
-    const personal = await register('simpson_personal');
+    const personal = await register('confusion_personal');
     const endpoint = `/academics/modules/${moduleId}/evaluate`;
     const scope = { userId: personal.user.id, organizationId: personal.user.organizationId };
     const run = async (values: Record<string, unknown>, title?: string) =>
@@ -524,18 +472,16 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         result: StudyResult;
       };
     let baseline: any;
-    let unequal: any;
-    let near: any;
-    await t.test('自由学习目录、八个严格计数字段与默认反转按手算和独立有理数复核', async () => {
+    let rare: any;
+    await t.test('自由学习目录、四个严格整数字段与默认矩阵指标按独立手算复核', async () => {
       const me = (await call(personal, '/academics/me')).body;
       assert.equal(me.accountMode, 'PERSONAL');
       assert.equal(me.majorId, null);
       assert.deepEqual(me.selectedModuleIds, []);
-      assert.ok(
-        (await call(personal, '/academics/catalog')).body.modules.some((item: any) => item.id === moduleId),
-      );
+      const catalog = (await call(personal, '/academics/catalog')).body;
+      assert.ok(catalog.modules.some((item: any) => item.id === moduleId && item.kind === 'calculator'));
       const module = (await call(personal, `/academics/modules/${moduleId}`)).body;
-      assert.equal(module.title, '分层与汇总比例：辛普森反转');
+      assert.equal(module.title, '二分类混淆矩阵与指标');
       assert.deepEqual(module.defaultValues, defaults);
       assert.deepEqual(
         module.fields.map((field: any) => field.key),
@@ -544,105 +490,148 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
       for (const field of module.fields)
         assert.deepEqual(
           (({ type, required, min, max, step }: any) => ({ type, required, min, max, step }))(field),
-          { type: 'number', required: true, min: field.key.includes('Total') ? 1 : 0, max: 1000000, step: 1 },
+          { type: 'number', required: true, min: 0, max: 1000000, step: 1 },
         );
-      baseline = await run(defaults, '默认反转：实验并非因果结论');
-      const checked = assertSimpson(baseline.result, defaults);
-      assert.equal(checked.classification, '严格反转');
-      assert.deepEqual(checked.weights.map(number), [0.5, 0.5]);
-      assert.deepEqual(checked.standardized.map(percentage), [55, 45]);
-      assert.deepEqual(
-        baseline.result.tables[2].rows.map((row: any) => row.direction),
-        ['方案A较高', '方案A较高', '方案B较高', '方案A较高'],
-      );
+      baseline = await run(defaults, '默认混合预测');
+      const expected = assertConfusion(baseline.result, defaults);
+      assert.deepEqual(expected.slice(0, 2), [85, 90]);
+      close(expected[2], 900 / 11);
+      close(expected[3], 800 / 9);
+      close(expected[4], 600 / 7);
+      close(expected[5], (900 / 11 + 800 / 9) / 2);
       assert.equal(baseline.record.status, 'COMPLETED');
-      assert.match(baseline.result.sections.map((section: any) => section.content).join(' '), /因果/);
     });
 
-    await t.test('非等权、反向反转、持平和混向分类均按未舍入有理数判断', async () => {
-      const nonEqual = counts(9, 10, 160, 200, 20, 100, 1, 10);
-      unequal = await run(nonEqual, '非等权21比11');
-      const check = assertSimpson(unequal.result, nonEqual);
-      assert.deepEqual(check.weights.map(number), [21 / 32, 11 / 32]);
-      assert.deepEqual(check.standardized.map(percentage), [65.9375, 55.9375]);
-      const examples: [number[], string][] = [
-        [[80, 100, 9, 10, 1, 10, 20, 100], '严格反转'],
-        [[1, 2, 1, 2, 1, 2, 0, 1], '分层持平'],
-        [[9, 10, 8, 10, 1, 10, 2, 10], '分层混向'],
-        [[9, 10, 48, 60, 1, 10, 2, 40], '汇总持平'],
-        [[9, 10, 8, 10, 2, 10, 1, 10], '方向一致'],
-        [[0, 1, 0, 1000000, 1000000, 1000000, 1, 1], '分层持平'],
-      ];
-      for (const [input, classification] of examples) {
-        const values = counts(...input),
-          output = await run(values);
-        assert.equal(assertSimpson(output.result, values).classification, classification);
-        const persisted = await db!.academicsRecord.findUniqueOrThrow({ where: { id: output.record.id } });
-        assert.deepEqual(persisted.values, values);
-        assert.deepEqual(persisted.result, output.result);
+    await t.test('六组原创示例和零分母分别保留未定义，高准确率不能替代正类召回', async () => {
+      const module = (await call(personal, `/academics/modules/${moduleId}`)).body;
+      assert.equal(module.examples.length, 6);
+      assert.deepEqual(
+        module.examples.map((item: any) => item.values),
+        [
+          defaults,
+          rareValues,
+          counts(30, 0, 0, 70),
+          counts(0, 40, 60, 0),
+          counts(25, 0, 0, 0),
+          counts(0, 0, 0, 100),
+        ],
+      );
+      for (const example of module.examples) {
+        const output = await run(example.values, example.title);
+        const expected = assertConfusion(output.result, example.values);
+        const stored = await db!.academicsRecord.findUniqueOrThrow({ where: { id: output.record.id } });
+        assert.deepEqual(stored.values, example.values);
+        assert.deepEqual(stored.result, output.result);
+        if (example.values.fn === 1) {
+          rare = output;
+          assert.deepEqual(expected, [99, undefined, 0, 100, 0, 50]);
+          assert.equal(output.result.metrics[1].value, '未定义');
+          assert.equal(output.result.metrics[4].value, 0, 'F1 uses its own count denominator');
+        }
+        if (example.values.tn === 100)
+          assert.deepEqual(expected, [100, undefined, undefined, 100, undefined, undefined]);
+        if (example.values.tp === 25) assert.deepEqual(expected, [100, 100, 100, undefined, 100, undefined]);
+        assert.equal(output.record.status, 'COMPLETED');
       }
+      assert.ok(rare);
     });
 
-    await t.test('百万上限与超53位分母保持极小非零差值，显示近似不能篡改方向', async () => {
-      const input = counts(999999, 1000000, 999998, 999999, 999982, 999983, 999981, 999982);
-      near = await run(input, '精确微小差值');
-      const checked = assertSimpson(near.result, input);
-      assert.ok(checked.differences[3][1] > BigInt(Number.MAX_SAFE_INTEGER));
-      assert.equal(checked.classification, '方向一致');
-      for (const row of near.result.tables[2].rows) {
-        assert.equal(row.direction, '方案A较高');
-        assert.ok(row.differencePp > 0 && row.differencePp < 1e-8);
+    await t.test('上限、微小非零比例与缩放/交换标签/转置关系均符合独立计数算术', async () => {
+      // Numeric exploration is a separate learner's session. Keep each real
+      // account within the unchanged 20-records/minute evaluation policy.
+      const numeric = await register('numeric_oracle');
+      const numericScope = { userId: numeric.user.id, organizationId: numeric.user.organizationId };
+      assert.notEqual(numericScope.userId, scope.userId);
+      assert.notEqual(numericScope.organizationId, scope.organizationId);
+      const personalCount = await db!.academicsRecord.count({ where: scope });
+      const runNumeric = async (values: Counts) => {
+        const output = (await call(numeric, endpoint, 'POST', { values, title: 'NUMERIC_ORACLE_PRIVATE' }))
+          .body as { record: any; result: StudyResult };
+        const stored = await db!.academicsRecord.findUniqueOrThrow({ where: { id: output.record.id } });
+        assert.equal(stored.userId, numericScope.userId);
+        assert.equal(stored.organizationId, numericScope.organizationId);
+        assert.equal(stored.status, 'COMPLETED');
+        assert.deepEqual(stored.values, values);
+        assert.deepEqual(stored.result, output.result);
+        return output;
+      };
+      const inputs = [counts(1000000, 1000000, 1000000, 1000000), counts(1, 1000000, 999999, 1000000)];
+      let seed = 92741;
+      for (let i = 0; i < 5; i++) {
+        const next = () => {
+          seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+          return seed % 10001;
+        };
+        inputs.push(counts(next(), next(), next(), next()));
       }
-      const swapped = counts(999998, 999999, 999999, 1000000, 999981, 999982, 999982, 999983);
-      const negative = await run(swapped);
-      assertSimpson(negative.result, swapped);
-      assert.ok(negative.result.tables[2].rows.every((row: any) => row.differencePp < 0));
-      const cancellation = counts(999999, 1000000, 999998, 999999, 999997, 999998, 999998, 999999);
-      const cancelled = await run(cancellation, '抵消后仍有方向');
-      assert.equal(assertSimpson(cancelled.result, cancellation).classification, '分层混向');
-      const last = cancelled.result.tables[2].rows[3];
-      assert.equal(last.aPercent, last.bPercent, 'Display rounding is allowed to show equal rates');
-      assert.equal(last.direction, '方案B较高');
-      assert.ok(typeof last.differencePp === 'number');
-      assert.ok(last.differencePp < 0 && last.differencePp > -1e-15);
-      const manual = -50 / (1000000 * 999999 * 999998);
-      assert.ok(Math.abs((last.differencePp - manual) / manual) < 1e-10);
+      for (const values of inputs) {
+        const output = await runNumeric(values);
+        assertConfusion(output.result, values);
+        if (values.tp === 1) {
+          assert.ok(Number(output.result.metrics[1].value) > 0);
+          assert.ok(Number(output.result.metrics[1].value) < 0.001);
+        }
+      }
+      const values = counts(13, 7, 9, 21);
+      const base = assertConfusion((await runNumeric(values)).result, values);
+      const scaledValues = counts(91, 49, 63, 147);
+      const scaled = assertConfusion((await runNumeric(scaledValues)).result, scaledValues);
+      base.forEach((value, i) => close(scaled[i], value!));
+      const swappedValues = counts(values.tn, values.fn, values.fp, values.tp);
+      const swapped = assertConfusion((await runNumeric(swappedValues)).result, swappedValues);
+      close(swapped[0], base[0]!);
+      close(swapped[2], base[3]!);
+      close(swapped[3], base[2]!);
+      close(swapped[5], base[5]!);
+      const transposedValues = counts(values.tp, values.fn, values.fp, values.tn);
+      const transposed = assertConfusion((await runNumeric(transposedValues)).result, transposedValues);
+      close(transposed[0], base[0]!);
+      close(transposed[1], base[2]!);
+      close(transposed[2], base[1]!);
+      close(transposed[4], base[4]!);
+      assert.equal(await db!.academicsRecord.count({ where: numericScope }), inputs.length + 4);
+      assert.equal(await db!.academicsRecord.count({ where: scope }), personalCount);
     });
 
-    await t.test('每个字段的非法类型/范围、超出分母、CSRF和管理角色均拒绝且不落库', async () => {
+    await t.test('非法类型/全零/非有限/额外字段、CSRF、角色和失效会话均拒绝且不落库', async () => {
       const before = await db!.academicsRecord.count();
       for (const field of fields) {
-        const without = { ...defaults };
+        const without: Partial<Counts> = { ...defaults };
         delete without[field];
         await call(personal, endpoint, 'POST', { values: without }, 400);
-        for (const value of [-1, 0.25, 1000001, 1e100, '1', '', null, true, [], {}])
+        for (const value of [-1, 0.5, 1000001, 1e100, '1', '', null, true, [], {}])
           await call(personal, endpoint, 'POST', { values: { ...defaults, [field]: value } }, 400);
-        if (field.includes('Total'))
-          await call(personal, endpoint, 'POST', { values: { ...defaults, [field]: 0 } }, 400);
+        const nonFinite = await fetch(`${origin}/api${endpoint}`, {
+          method: 'POST',
+          signal: AbortSignal.timeout(15000),
+          headers: {
+            origin,
+            'content-type': 'application/json',
+            cookie: personal.cookie,
+            'x-csrf-token': personal.csrf,
+          },
+          body: JSON.stringify({ values: defaults }).replace(
+            `"${field}":${defaults[field]}`,
+            `"${field}":1e309`,
+          ),
+        });
+        assert.equal(nonFinite.status, 400);
+        await nonFinite.arrayBuffer();
       }
-      for (const [success, total] of [
-        ['aSuccess1', 'aTotal1'],
-        ['bSuccess1', 'bTotal1'],
-        ['aSuccess2', 'aTotal2'],
-        ['bSuccess2', 'bTotal2'],
-      ])
-        await call(
-          personal,
-          endpoint,
-          'POST',
-          { values: { ...defaults, [success]: defaults[total] + 1 } },
-          400,
-        );
+      await call(personal, endpoint, 'POST', { values: counts(0, 0, 0, 0) }, 400);
       await call(personal, endpoint, 'POST', { values: { ...defaults, unknown: 1 } }, 400);
       await call(personal, endpoint, 'POST', { values: defaults, result: { score: 100 } }, 400);
       await call(null, endpoint, 'POST', { values: defaults }, 401);
       await call(personal, endpoint, 'POST', { values: defaults }, 403, false);
       for (const account of [admin, teacher])
         await call(account, endpoint, 'POST', { values: defaults }, 403);
+      const revoked = await register('revoked');
+      await db!.session.deleteMany({ where: { userId: revoked.user.id } });
+      await call(revoked, endpoint, 'POST', { values: defaults }, 401);
       assert.equal(await db!.academicsRecord.count(), before);
     });
 
-    await t.test('功能和学习权限撤销禁止新记录，本人及当前空间隔离不可越权读写', async () => {
+    await t.test('功能和学习权限撤销不留记录，跨账号与当前空间外记录不可读写或导出', async () => {
       const before = await db!.academicsRecord.count({ where: scope });
       await db!.systemSetting.create({
         data: { organizationId: scope.organizationId, key: 'features', value: { practice: false } },
@@ -663,46 +652,31 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         await db!.rolePermission.create({ data: { roleId: 'STUDENT', permissionId: 'learning.use' } });
       }
       assert.equal(await db!.academicsRecord.count({ where: scope }), before);
-      await call(other, `/academics/records/${unequal.record.id}`, 'GET', undefined, 404);
-      await call(
-        other,
-        `/academics/records/${unequal.record.id}`,
-        'PATCH',
-        { revision: 0, notes: '越权' },
-        404,
-      );
-      await call(other, `/academics/records/${unequal.record.id}`, 'DELETE', undefined, 404);
-      const outsider = await db!.academicsRecord.create({
-        data: {
-          organizationId: institution.id,
-          userId: other.user.id,
-          moduleId,
-          title: 'OTHER_USER_RECORD',
-          values: defaults,
-          result: baseline.result,
-        },
-      });
-      const foreign = await db!.academicsRecord.create({
-        data: {
-          ...scope,
-          organizationId: institution.id,
-          moduleId,
-          title: 'OTHER_SPACE_RECORD',
-          values: defaults,
-          result: baseline.result,
-        },
-      });
-      for (const item of [outsider, foreign])
+      await call(other, `/academics/records/${rare.record.id}`, 'GET', undefined, 404);
+      await call(other, `/academics/records/${rare.record.id}`, 'PATCH', { revision: 0, notes: '越权' }, 404);
+      await call(other, `/academics/records/${rare.record.id}`, 'DELETE', undefined, 404);
+      const outsiders: { id: string }[] = [];
+      for (const data of [
+        { organizationId: institution.id, userId: other.user.id, title: 'OTHER_USER_RECORD' },
+        { ...scope, organizationId: institution.id, title: 'OTHER_SPACE_RECORD' },
+      ])
+        outsiders.push(
+          await db!.academicsRecord.create({
+            data: { ...data, moduleId, values: defaults, result: baseline.result },
+          }),
+        );
+      for (const item of outsiders)
         await call(personal, `/academics/records/${item.id}`, 'GET', undefined, 404);
       const listed = (await call(personal, `/academics/records?moduleId=${moduleId}&pageSize=20`)).body;
-      assert.ok(!listed.items.some((item: any) => [outsider.id, foreign.id].includes(item.id)));
+      assert.ok(!listed.items.some((item: any) => outsiders.some((outsider) => outsider.id === item.id)));
+      assert.equal(listed.total, before);
     });
 
-    await t.test('目标统计完成实验次数，反转或持平都不自动代表能力掌握', async () => {
+    await t.test('目标仅统计完成实验次数，完美或全部预测错误均不自动代表能力评分', async () => {
       const goal = (
         await call(personal, '/academics/goals', 'POST', {
           moduleId,
-          title: '比较两个不同的统计口径',
+          title: '分析两种预测分布',
           targetCount: 2,
         })
       ).body;
@@ -711,16 +685,17 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
           (item: any) => item.id === goal.id,
         );
       assert.equal((await readGoal()).progressCount, 0);
-      const first = await run(defaults);
-      assert.equal(first.record.status, 'COMPLETED');
+      const perfect = await run(counts(30, 0, 0, 70));
+      assert.equal(perfect.record.status, 'COMPLETED');
       assert.equal((await readGoal()).progressCount, 1);
-      await run(counts(1, 2, 1, 2, 1, 2, 1, 2));
+      const wrong = await run(counts(0, 40, 60, 0));
+      assert.equal(wrong.record.status, 'COMPLETED');
       const progress = await readGoal();
       assert.equal(progress.progressCount, 2);
       assert.equal(progress.unit, '次');
       assert.equal(progress.completed, true);
       assert.ok(!('score' in progress) && !('mastered' in progress));
-      await call(personal, `/academics/records/${first.record.id}`, 'PATCH', {
+      await call(personal, `/academics/records/${wrong.record.id}`, 'PATCH', {
         revision: 0,
         status: 'DRAFT',
       });
@@ -728,9 +703,9 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
       assert.equal((await readGoal()).completed, false);
     });
 
-    await t.test('笔记CAS与历史输入/表/图保持原样，后续运行不会重算历史快照', async () => {
+    await t.test('笔记CAS与历史矩阵/未定义/图保持原样，后续实验不重算旧快照', async () => {
       const notes =
-        '统一权重是21/32与11/32；原始计数必须保留。\n```\n<script>literal</script>\n``````\n反转不推出因果结论。';
+        '准确率99%，但全部正类被漏掉；Precision未定义，F1为0。\n```\n<script>literal</script>\n``````\n记录完成不表示掌握。';
       const historical = await db!.academicsRecord.create({
         data: {
           ...scope,
@@ -742,33 +717,31 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         },
       });
       const saved = (
-        await call(personal, `/academics/records/${unequal.record.id}`, 'PATCH', { revision: 0, notes })
+        await call(personal, `/academics/records/${rare.record.id}`, 'PATCH', { revision: 0, notes })
       ).body;
       assert.equal(saved.revision, 1);
       assert.equal(saved.notes, notes);
-      assert.deepEqual(saved.values, unequal.record.values);
-      assert.deepEqual(saved.result, unequal.result);
+      assert.deepEqual(saved.values, rareValues);
+      assert.deepEqual(saved.result, rare.result);
       await call(
         personal,
-        `/academics/records/${unequal.record.id}`,
+        `/academics/records/${rare.record.id}`,
         'PATCH',
         { revision: 0, notes: 'stale' },
         409,
       );
-      await run(counts(1, 3, 0, 2, 3, 7, 2, 9));
+      await run(counts(1, 3, 5, 7));
       const old = (await call(personal, `/academics/records/${historical.id}`)).body;
       assert.deepEqual(old.values, historical.values);
       assert.deepEqual(old.result, historical.result);
-      const current = (await call(personal, `/academics/records/${unequal.record.id}`)).body;
+      const current = (await call(personal, `/academics/records/${rare.record.id}`)).body;
       assert.equal(current.notes, notes);
-      assert.deepEqual(current.result, unequal.result);
-      assert.deepEqual(
-        (await call(personal, `/academics/records/${near.record.id}`)).body.result,
-        near.result,
-      );
+      assert.deepEqual(current.result, rare.result);
+      assert.equal(current.result.metrics[1].value, '未定义');
+      assert.equal(current.result.metrics[4].value, 0);
     });
 
-    await t.test('CSV总览与Markdown完整计数/权重/差值/分类图JSON及笔记均隔离其他空间', async () => {
+    await t.test('实际CSV总览与Markdown完整矩阵/分子分母/未定义/图和笔记只包含本人当前空间', async () => {
       const persisted = await db!.academicsRecord.findMany({ where: { ...scope, moduleId } });
       assert.ok(persisted.length < 50);
       for (const format of ['csv', 'md']) {
@@ -797,9 +770,19 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
         assert.equal(response.headers.get('x-export-truncated'), 'false');
         assert.match(response.headers.get('content-disposition') || '', /attachment/);
         assert.ok(!text.includes('OTHER_USER_RECORD') && !text.includes('OTHER_SPACE_RECORD'));
+        assert.ok(!text.includes('NUMERIC_ORACLE_PRIVATE'));
         for (const item of persisted) assert.ok(text.includes((item.result as any).summary));
-        if (format === 'csv') assert.equal(bytes.subarray(0, 3).toString('hex'), 'efbbbf');
-        else {
+        if (format === 'csv') {
+          assert.equal(bytes.subarray(0, 3).toString('hex'), 'efbbbf');
+          assert.ok(
+            !text.includes('<script>literal</script>'),
+            'CSV contains only overview and a notes marker',
+          );
+          assert.ok(
+            !text.includes('predictedNegative'),
+            'CSV must not claim to contain complete matrix JSON',
+          );
+        } else {
           const blocks = [...text.matchAll(/^(`{3,})(json|text)\n([\s\S]*?)\n\1\n/gm)];
           const json = blocks.filter((block) => block[2] === 'json').map((block) => JSON.parse(block[3]));
           const includes = (value: unknown) =>
@@ -816,8 +799,8 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
             assert.ok(includes(item.result));
             if (item.notes) assert.ok(blocks.some((block) => block[3] === item.notes));
           }
-          assert.ok(includes(unequal.result));
-          assert.ok(includes(near.result));
+          assert.ok(includes(rare.result));
+          assert.ok(text.includes('未定义'));
         }
       }
       assert.equal(await db!.auditLog.count({ where: { ...scope, action: 'academics.records.export' } }), 2);
@@ -849,7 +832,7 @@ test('辛普森反转精确比例与增量迁移：独立PostgreSQL与真实HTTP
     }
     if (created)
       try {
-        assert.match(name, /^simpson_paradox_it_[a-f0-9]{16}$/);
+        assert.match(name, /^confusion_matrix_it_[a-f0-9]{16}$/);
         await owner.$executeRawUnsafe(`DROP DATABASE "${name}" WITH (FORCE)`);
       } catch {
         cleanupErrors.push('Owned random database cleanup failed');

@@ -43,6 +43,7 @@
     "test:digital-logic": "node --import tsx --test --test-concurrency=1 tests/digital-logic.integration.ts",
     "test:population-genetics": "node --import tsx --test --test-concurrency=1 tests/population-genetics.integration.ts",
     "test:simpson-paradox": "node --import tsx --test --test-concurrency=1 tests/simpson-paradox.integration.ts",
+    "test:confusion-matrix": "node --import tsx --test --test-concurrency=1 tests/confusion-matrix.integration.ts",
     "verify:iteration": "node scripts/verify-iteration.mjs",
     "test:algorithm-references": "node scripts/verify-algorithm-references.mjs"
   },

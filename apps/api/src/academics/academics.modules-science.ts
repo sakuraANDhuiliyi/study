@@ -111,6 +111,113 @@ export const scienceModules: StudyModule[] = [
     defaultValues: { x: '[1,2,3,4,5]', y: '[2,4,5,4,5]' },
   }),
   m({
+    id: 'confusion-matrix',
+    title: '二分类混淆矩阵与指标',
+    kind: 'calculator',
+    subjectIds: [...science, 'subject-interdisciplinary', 'subject-engineering'],
+    tags: ['统计', '数据科学', '分类指标', '混淆矩阵'],
+    estimatedMinutes: 25,
+    description:
+      '从TP、FP、FN、TN四格计数核算六项二分类指标，对照真实与预测类别、不同分母和未定义情况，解释类别构成对指标的影响。',
+    learningObjectives: [
+      '按行实际、列预测的约定还原二分类混淆矩阵及边际合计',
+      '区分准确率、精确率、两类召回率、F1和平衡准确率的分母',
+      '识别类别失衡与零分母，写出给定样本能够支持的有限结论',
+    ],
+    concepts: [
+      {
+        title: '四格计数与矩阵方向',
+        content:
+          '正类与负类是任务约定的两种标签，不表示好坏。TP是真实为正且预测为正；FP是真实为负却预测为正；FN是真实为正却预测为负；TN是真实为负且预测为负。本模块固定行表示实际类别、列表示预测类别，先核对轴向再读数。',
+      },
+      {
+        title: '分母决定问题',
+        content:
+          'Accuracy=(TP+TN)/N。Precision=TP/(TP+FP)，从预测正类中问有多少实际为正；Recall=TP/(TP+FN)，从实际正类中问有多少预测为正；Specificity=TN/(TN+FP)，是负类召回率。四格原始计数是这些指标共同的依据。',
+      },
+      {
+        title: 'F1与二分类平衡准确率',
+        content:
+          'F1=2TP/(2TP+FP+FN)，直接由整数计数计算，避免用已舍入的Precision和Recall继续运算。二分类平衡准确率=(Recall+Specificity)/2，给两种真实类别相同权重；它不是按样本数量加权的普通准确率。',
+      },
+      {
+        title: '未定义不是零分',
+        content:
+          '每项指标独立检查分母。没有预测正类时Precision未定义；没有实际正类时Recall未定义；没有实际负类时Specificity未定义；F1只在TP=FP=FN=0时未定义。平衡准确率要求两种实际类别都存在。未定义表示数据缺少计算所需的分母，不表示模型或学习者获得零分。',
+      },
+    ],
+    instructions: [
+      '先约定正类与负类的含义，预测本组计数中哪种错误较多，以及准确率能否概括全部结果。',
+      '输入TP、FP、FN、TN，各项为0至1000000的整数，四项总和必须大于0。',
+      '按“行实际、列预测”核对矩阵，检查两行、两列及全样本的合计。',
+      '逐项阅读分子与分母表，先用整数计算比例，再乘100；遇到未定义时解释缺少的是哪一类样本。',
+      '对照罕见正类、全部正确、全部错误和单一真实类别示例，把指标差别、零分母原因与解释范围写进笔记。完成实验不表示分类模型达到某种标准，也不产生学生能力评分。',
+    ],
+    fields: [
+      { ...n('tp', '真正类 TP', 0, 1e6), step: 1, help: '实际为正类，预测也为正类的样本数。' },
+      { ...n('fp', '假正类 FP', 0, 1e6), step: 1, help: '实际为负类，却预测为正类的样本数。' },
+      { ...n('fn', '假负类 FN', 0, 1e6), step: 1, help: '实际为正类，却预测为负类的样本数。' },
+      { ...n('tn', '真负类 TN', 0, 1e6), step: 1, help: '实际为负类，预测也为负类的样本数。' },
+    ],
+    defaultValues: { tp: 45, fp: 5, fn: 10, tn: 40 },
+    examples: [
+      {
+        title: '混合预测结果',
+        values: { tp: 45, fp: 5, fn: 10, tn: 40 },
+        explanation:
+          '共100个样本，85个预测正确。Precision为45/50=90%，Recall为45/55，负类召回率为40/45；F1为90/105。先比较各分母，再核对平衡准确率的4225/4950，解释它为何与85%的普通准确率不同。',
+      },
+      {
+        title: '罕见正类全部预测负类',
+        values: { tp: 0, fp: 0, fn: 1, tn: 99 },
+        explanation:
+          '全部100个样本都预测为负类，准确率仍达99%，但唯一实际正类未被找回。Precision因没有预测正类而未定义；Recall和F1为0%，负类召回率为100%，平衡准确率为50%。高准确率没有消除漏掉正类的事实。',
+      },
+      {
+        title: '两类均预测正确',
+        values: { tp: 30, fp: 0, fn: 0, tn: 70 },
+        explanation:
+          '两种实际类别都存在，且没有FP或FN；六项指标都有定义并等于100%。这只描述本组给定样本，不保证新样本中仍然全部正确。',
+      },
+      {
+        title: '两类均预测错误',
+        values: { tp: 0, fp: 40, fn: 60, tn: 0 },
+        explanation:
+          '两种实际类别和两种预测类别都存在，但全部预测错误。六项指标的分母均大于0，数值均为0%；这里的零与分母缺失造成的未定义不同。',
+      },
+      {
+        title: '仅实际正类且全部正确',
+        values: { tp: 25, fp: 0, fn: 0, tn: 0 },
+        explanation:
+          'Accuracy、Precision、Recall和F1为100%。没有实际负类，所以Specificity及二分类平衡准确率未定义；不能用正类的正确结果补出负类的表现。',
+      },
+      {
+        title: '仅实际负类且全部正确',
+        values: { tp: 0, fp: 0, fn: 0, tn: 100 },
+        explanation:
+          'Accuracy与Specificity为100%。实际正类和预测正类均不存在，因此Precision、Recall、F1和平衡准确率未定义。它们不会被替换成0%或100%。',
+      },
+    ],
+    resources: [
+      {
+        title: 'scikit-learn：混淆矩阵的行列约定',
+        url: 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html',
+      },
+      {
+        title: 'scikit-learn：Precision与零分母',
+        url: 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html',
+      },
+      {
+        title: 'scikit-learn：F1的计数公式',
+        url: 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html',
+      },
+      {
+        title: 'scikit-learn：平衡准确率',
+        url: 'https://scikit-learn.org/stable/modules/generated/sklearn.metrics.balanced_accuracy_score.html',
+      },
+    ],
+  }),
+  m({
     id: 'simpson-paradox',
     title: '分层与汇总比例：辛普森反转',
     kind: 'calculator',

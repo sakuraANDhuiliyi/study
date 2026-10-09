@@ -1,5 +1,6 @@
 import { result, table, type StudyResult, type ResultCell } from './academics.types';
 import { evaluateSimpsonParadox } from './tools-simpson';
+import { evaluateConfusionMatrix } from './tools-confusion-matrix';
 import {
   choice,
   ensureJson,
@@ -18,6 +19,7 @@ const fields: Record<string, string[]> = {
   'matrix-lab': ['operation', 'a', 'b'],
   'calculus-lab': ['coefficients', 'x', 'left', 'right', 'intervals'],
   'statistics-lab': ['x', 'y'],
+  'confusion-matrix': ['tp', 'fp', 'fn', 'tn'],
   'simpson-paradox': [
     'aSuccess1',
     'aTotal1',
@@ -1114,6 +1116,8 @@ export function evaluateScienceModule(moduleId: string, values: Inputs): StudyRe
       return calculusTool(values);
     case 'statistics-lab':
       return statisticsTool(values);
+    case 'confusion-matrix':
+      return evaluateConfusionMatrix(values);
     case 'simpson-paradox':
       return evaluateSimpsonParadox(values);
     case 'probability-lab':
