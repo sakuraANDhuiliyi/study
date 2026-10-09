@@ -9,6 +9,7 @@ import { CoursesController } from './courses/courses.controller';
 import { AdminController } from './admin/admin.controller';
 import { AdminAuditService } from './admin/audit.service';
 import { AnalyticsController } from './analytics/analytics.controller';
+import { StudentOverviewService } from './analytics/student-overview.service';
 import { AssessmentController } from './assessment/assessment.controller';
 import { AssessmentService } from './assessment/assessment.service';
 import {
@@ -145,6 +146,7 @@ class CatalogController {
     AuthService,
     AuthGuard,
     LearningActionsService,
+    StudentOverviewService,
     AuditService,
     AdminAuditService,
     JobsService,

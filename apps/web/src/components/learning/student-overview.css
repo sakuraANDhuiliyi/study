@@ -1,0 +1,77 @@
+.lms-dash-student-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  align-items: start;
+  gap: 24px;
+}
+.lms-dash-student-dashboard .lms-dash-heading {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+.lms-dash-student-overview {
+  grid-column: 1;
+  grid-row: 2;
+}
+.lms-dash-student-actions {
+  grid-column: 2;
+  grid-row: 2;
+}
+.lms-dash-student-overview,
+.lms-dash-student-actions {
+  min-width: 0;
+}
+.lms-dash-student-overview .lms-dash-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.lms-dash-student-overview .lms-dash-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.lms-dash-overview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.lms-dash-overview-heading h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.lms-dash-overview-stamp {
+  font-size: 12px;
+  color: var(--dash-muted);
+  line-height: 1.7;
+  margin: 0 0 16px;
+  overflow-wrap: anywhere;
+}
+.lms-dash-student-overview .ant-alert {
+  margin: 12px 0;
+}
+.lms-dash-student-actions .learning-actions {
+  margin: 0;
+}
+@media (max-width: 1280px) {
+  .lms-dash-student-dashboard {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+  }
+}
+@media (max-width: 1080px) {
+  .lms-dash-student-dashboard {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .lms-dash-student-actions {
+    order: 0;
+  }
+  .lms-dash-student-overview {
+    order: 1;
+  }
+}
+@media (max-width: 700px) {
+  .lms-dash-student-overview .lms-dash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

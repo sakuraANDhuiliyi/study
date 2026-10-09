@@ -1432,5 +1432,12 @@
     },
     "reason": "PostgreSQL17 Prisma P2003 named-constraint shape was rejected by the test-only matcher; the FK did reject deletion and no production behavior failed. The isolated HTTP suite failed at setup so 15 child cases had not run."
   },
-  "correctedAt": "2026-10-09T18:49:07.703Z"
+  "correctedAt": "2026-10-09T18:49:07.703Z",
+  "remoteCI": {
+    "commit": "08bdf9d1c3cfaf3c77717f15cd7a50bf21f9468e",
+    "runId": 37975980880,
+    "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37975980880",
+    "conclusion": "success",
+    "completedAt": "2026-10-09T19:06:48Z"
+  }
 }

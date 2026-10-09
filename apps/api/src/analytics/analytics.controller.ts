@@ -6,6 +6,7 @@ import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AuditService } from '../common/audit.service';
 import { CoursesController } from '../courses/courses.controller';
 import { csvCell } from '../common/utils';
+import { StudentOverviewService } from './student-overview.service';
 import type { Response } from 'express';
 @ApiTags('工作台与学习分析')
 @ApiCookieAuth()
@@ -16,8 +17,10 @@ export class AnalyticsController {
     private db: PrismaService,
     private auth: AuthService,
     private audit: AuditService,
+    private overview: StudentOverviewService,
   ) {}
   @Get('dashboard') async dashboard(@CurrentActor() a: Actor) {
+    if (a.role === 'STUDENT') this.overview.requireStudent(a);
     const courseIds = await this.auth.courseIds(a);
     const now = new Date();
     const courseController = new CoursesController(this.db, this.auth, this.audit);
@@ -29,6 +32,7 @@ export class AnalyticsController {
           dueAt: { gt: now },
           ...(a.role === 'STUDENT'
             ? {
+                organizationId: a.organizationId,
                 status: 'published',
                 opensAt: { lte: now },
                 audience: { some: { userId: a.id } },
@@ -50,7 +54,11 @@ export class AnalyticsController {
           courseId: { in: courseIds },
           endsAt: { gt: now },
           ...(a.role === 'STUDENT'
-            ? { status: 'published', audience: { some: { userId: a.id, eligible: true } } }
+            ? {
+                organizationId: a.organizationId,
+                status: 'published',
+                audience: { some: { userId: a.id, eligible: true } },
+              }
             : {}),
         },
         orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
@@ -98,25 +106,29 @@ export class AnalyticsController {
           },
         },
       }),
-      this.db.assignment.count({
-        where: {
-          courseId: { in: courseIds },
-          status: 'published',
-          opensAt: { lte: now },
-          dueAt: { gt: now },
-          audience: { some: { userId: a.id } },
-          exceptions: { none: { userId: a.id, exempt: true } },
-          submissions: { none: { userId: a.id, status: 'submitted' } },
-        },
-      }),
-      this.db.exam.count({
-        where: {
-          courseId: { in: courseIds },
-          status: 'published',
-          startsAt: { gt: now },
-          audience: { some: { userId: a.id, eligible: true } },
-        },
-      }),
+      a.role === 'STUDENT'
+        ? Promise.resolve(0)
+        : this.db.assignment.count({
+            where: {
+              courseId: { in: courseIds },
+              status: 'published',
+              opensAt: { lte: now },
+              dueAt: { gt: now },
+              audience: { some: { userId: a.id } },
+              exceptions: { none: { userId: a.id, exempt: true } },
+              submissions: { none: { userId: a.id, status: 'submitted' } },
+            },
+          }),
+      a.role === 'STUDENT'
+        ? Promise.resolve(0)
+        : this.db.exam.count({
+            where: {
+              courseId: { in: courseIds },
+              status: 'published',
+              startsAt: { gt: now },
+              audience: { some: { userId: a.id, eligible: true } },
+            },
+          }),
       this.db.assignmentSubmission.count({
         where: { assignment: { courseId: { in: courseIds } }, status: 'submitted', gradingStatus: 'pending' },
       }),
@@ -206,8 +218,39 @@ export class AnalyticsController {
       where: { id: { in: progress.slice(0, 8).map((x) => x.lessonId) } },
       select: { id: true, title: true },
     });
+    let learningOverview;
+    if (a.role === 'STUDENT') {
+      const sources = new Map<string, string>([
+        ...assignments.map((item) => [`assignment:${item.id}`, item.courseId] as const),
+        ...exams.map((item) => [`exam:${item.id}`, item.courseId] as const),
+      ]);
+      const counts = await this.overview.read(
+        a,
+        now,
+        courseIds,
+        tasks.map((item) => ({
+          id: item.id,
+          type: item.type,
+          courseId: sources.get(`${item.type}:${item.id}`)!,
+        })),
+      );
+      metrics[1] = {
+        label: '当前待交作业',
+        value: counts.assignmentCount,
+        detail: '未交或退回且现在可提交，不限7天',
+        path: '/assignments',
+      };
+      metrics[2] = {
+        label: '当前可作答考试',
+        value: counts.examCount,
+        detail: '现在可进入或继续作答，尚未开始不计入',
+        path: '/exams',
+      };
+      learningOverview = counts.metadata;
+    }
     return {
       metrics,
+      ...(learningOverview ? { learningOverview } : {}),
       courses,
       tasks,
       unread,

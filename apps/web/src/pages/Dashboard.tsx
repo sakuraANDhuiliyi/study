@@ -19,11 +19,19 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { useData, date, isTeacher, isAdmin } from '../api';
+import { useData, date, isTeacher, isAdmin, getCsrf } from '../api';
 import { Chart, chartTheme, EmptyState, QueryState, RichContent } from '../components/shared';
 import '../dashboard.css';
 import { Academics } from './Academics';
 import { ActionPanel } from '../components/learning/ActionPanel';
+import {
+  overviewAuthorization,
+  overviewOwner,
+  StudentOverviewState,
+  useStudentOverview,
+  type StudentOverviewIdentity,
+} from '../components/learning/StudentOverview';
+import '../components/learning/student-overview.css';
 
 function DashboardPanel({
   title,
@@ -66,9 +74,41 @@ export function Dashboard() {
 }
 function OrganizationDashboard() {
   const { user } = useAuth();
+  if (user?.role === 'STUDENT') {
+    const identity = {
+      owner: overviewOwner(user),
+      authorization: overviewAuthorization(user),
+      csrf: getCsrf(),
+    };
+    return (
+      <StudentOrganizationDashboard key={`${identity.authorization}:${identity.csrf}`} identity={identity} />
+    );
+  }
+  return <StaffOrganizationDashboard />;
+}
+function StudentOrganizationDashboard({ identity }: { identity: StudentOverviewIdentity }) {
+  const { user } = useAuth();
+  const canReadDashboard =
+    !!user?.permissions.includes('course.read') && !!user.permissions.includes('learning.use');
+  const query = useStudentOverview(identity, canReadDashboard);
+  return <OrganizationDashboardContent query={query} canReadDashboard={canReadDashboard} student />;
+}
+function StaffOrganizationDashboard() {
+  const query = useData('/dashboard');
+  return <OrganizationDashboardContent query={query} canReadDashboard />;
+}
+function OrganizationDashboardContent({
+  query,
+  canReadDashboard,
+  student = false,
+}: {
+  query: any;
+  canReadDashboard: boolean;
+  student?: boolean;
+}) {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const canReadDashboard = user?.role !== 'STUDENT' || !!user?.permissions.includes('course.read');
-  const query = useData('/dashboard', canReadDashboard);
+  const OverviewGate = student ? StudentOverviewState : QueryState;
   const d = query.data;
   const teacher = isTeacher(user);
   const admin = isAdmin(user);
@@ -122,7 +162,7 @@ function OrganizationDashboard() {
     },
   ].filter((item) => can(item.permission));
   return (
-    <div className="lms-dashboard">
+    <div className={`lms-dashboard${student && canReadDashboard ? ' lms-dash-student-dashboard' : ''}`}>
       <header className="lms-dash-heading dashboard-heading">
         <div>
           <div className="lms-dash-date">
@@ -162,7 +202,7 @@ function OrganizationDashboard() {
         </div>
       </header>
       {canReadDashboard ? (
-        <QueryState query={query}>
+        <OverviewGate query={query}>
           {d && (
             <>
               <div className="lms-dash-metrics">
@@ -342,9 +382,7 @@ function OrganizationDashboard() {
                       </div>
                       {!managementLinks.length && <EmptyState description="暂无已授权的管理入口" />}
                     </DashboardPanel>
-                  ) : user?.role === 'STUDENT' ? (
-                    <ActionPanel />
-                  ) : (
+                  ) : user?.role === 'STUDENT' ? null : (
                     <DashboardPanel
                       title="待办任务"
                       extra={<span className="lms-dash-count">{d.tasks?.length || 0}</span>}
@@ -419,9 +457,14 @@ function OrganizationDashboard() {
               </div>
             </>
           )}
-        </QueryState>
+        </OverviewGate>
       ) : (
         <ActionPanel />
+      )}
+      {student && canReadDashboard && (
+        <aside className="lms-dash-student-actions">
+          <ActionPanel />
+        </aside>
       )}
     </div>
   );

@@ -287,6 +287,10 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       ];
   }
   const programmingList = doc.paths['/api/programming/projects']?.get;
+  const dashboard = doc.paths['/api/dashboard']?.get;
+  if (dashboard)
+    dashboard.description =
+      '学生概览需 learning.use 与 course.read。metrics 保留 label/value/detail/path：当前待交作业按最新正式未交/退回、个人截止和次数统计，不限7天，不含已交后的可选再次提交；当前可作答考试按现在可进入或继续本人答卷统计，未开始不计。作业精确截止仍允许，考试个人截止/入场截止严格大于 serverTime。学生另返回 learningOverview:{serverTime,timezone:Asia/Shanghai,scope:actionable_now}，教师与管理角色保持原指标。计数来自最终完整SQL语句快照，完成后复核会话和权限；业务状态可在响应后发生变化。';
   const learningActions = doc.paths['/api/planner/actions']?.get;
   if (learningActions)
     learningActions.description =

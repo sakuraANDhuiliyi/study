@@ -5,6 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../common/prisma.service';
 import { learningActionDto, type LearningActionRow } from './actions.dto';
 import { learningActionRange, learningActionsQuery } from './actions.schemas';
+import { courseActionFacts } from './course-action-facts';
 
 type ActionResult = {
   items: LearningActionRow[];
@@ -31,12 +32,7 @@ export class LearningActionsService {
       actor.permissions.includes('course.read') && actor.permissions.includes('learning.use');
     const direction = input.bucket === 'overdue' ? Prisma.sql`DESC` : Prisma.sql`ASC`;
     const [result] = await this.db.$queryRaw<ActionResult[]>`
-      WITH allowed_courses AS (
-        SELECT c.id, c.title FROM "Course" c
-        JOIN "Enrollment" e ON e."courseId" = c.id AND e."userId" = ${actor.id} AND e.active
-        WHERE ${courseContent} AND c."organizationId" = ${actor.organizationId}
-          AND c.status IN ('PUBLISHED', 'ARCHIVED')
-      ), facts AS (
+      WITH ${courseActionFacts(actor, now, courseContent)}, facts AS (
         SELECT t.id, 'personal'::text AS kind, t.title, t."dueAt" AS "dueAt",
           NULL::text AS "courseId", NULL::text AS "courseTitle", t.revision,
           NULL::timestamptz AS "originalDueAt", NULL::timestamptz AS "startsAt",
@@ -46,48 +42,11 @@ export class LearningActionsService {
         WHERE t."organizationId" = ${actor.organizationId} AND t."userId" = ${actor.id}
           AND t."completedAt" IS NULL AND t."dueAt" < ${range.upcomingEnd}
         UNION ALL
-        SELECT a.id, 'assignment', a.title,
-          GREATEST(a."dueAt", COALESCE(exception."allowUntil", a."dueAt")),
-          a."courseId", c.title, NULL::int, a."dueAt", NULL::timestamptz,
-          latest.status, latest.version, a."maxAttempts", COALESCE(exception."extraAttempts", 0),
-          a."allowLate", NULL::text
-        FROM "Assignment" a
-        JOIN allowed_courses c ON c.id = a."courseId"
-        JOIN "AssignmentAudience" audience ON audience."assignmentId" = a.id AND audience."userId" = ${actor.id}
-        LEFT JOIN "AssignmentException" exception ON exception."assignmentId" = a.id AND exception."userId" = ${actor.id}
-        LEFT JOIN LATERAL (
-          SELECT s.status, s.version FROM "AssignmentSubmission" s
-          WHERE s."assignmentId" = a.id AND s."userId" = ${actor.id}
-          ORDER BY s.version DESC LIMIT 1
-        ) latest ON TRUE
-        WHERE a."organizationId" = ${actor.organizationId} AND a.status = 'published'
-          AND a."opensAt" <= ${now} AND a."dueAt" < ${range.upcomingEnd}
-          AND GREATEST(a."dueAt", COALESCE(exception."allowUntil", a."dueAt")) < ${range.upcomingEnd}
-          AND COALESCE(exception.exempt, FALSE) = FALSE
-          AND (latest.status IS NULL OR latest.status = 'returned')
-        UNION ALL
-        SELECT x.id, 'exam', x.title,
-          CASE WHEN latest.status = 'in_progress' THEN latest."deadlineAt"
-            WHEN x."startsAt" > ${now} THEN x."startsAt"
-            ELSE COALESCE(extension."deadlineAt", x."entryClosesAt") END,
-          x."courseId", c.title, NULL::int, NULL::timestamptz, x."startsAt",
-          latest.status, latest.number, x."maxAttempts", COALESCE(extension."extraAttempts", 0),
-          NULL::boolean, latest.id
-        FROM "Exam" x
-        JOIN allowed_courses c ON c.id = x."courseId"
-        JOIN "ExamAudience" audience ON audience."examId" = x.id AND audience."userId" = ${actor.id} AND audience.eligible
-        LEFT JOIN "ExamExtension" extension ON extension."examId" = x.id AND extension."userId" = ${actor.id}
-        LEFT JOIN LATERAL (
-          SELECT attempt.id, attempt.status, attempt.number, attempt."deadlineAt" FROM "ExamAttempt" attempt
-          WHERE attempt."examId" = x.id AND attempt."userId" = ${actor.id}
-          ORDER BY attempt.number DESC LIMIT 1
-        ) latest ON TRUE
-        WHERE x."organizationId" = ${actor.organizationId} AND x.status = 'published'
-          AND x."gradesReleasedAt" IS NULL
-          AND ((latest.status = 'in_progress' AND latest."deadlineAt" > ${now})
-            OR ((latest.id IS NULL OR latest.status IN ('submitted', 'timed_out'))
-              AND COALESCE(latest.number, 0) < x."maxAttempts" + COALESCE(extension."extraAttempts", 0)
-              AND COALESCE(extension."deadlineAt", x."entryClosesAt") > ${now}))
+        SELECT id, kind, title, "dueAt", "courseId", "courseTitle", revision,
+          "originalDueAt", "startsAt", "latestStatus", "latestNumber", "maxAttempts",
+          "extraAttempts", "allowLate", "attemptId"
+        FROM course_action_facts WHERE "showInPlanner" AND "dueAt" < ${range.upcomingEnd}
+          AND (kind <> 'assignment' OR "originalDueAt" < ${range.upcomingEnd})
       ), classified AS (
         SELECT facts.*, CASE WHEN "dueAt" < ${now} THEN 'overdue'
           WHEN "dueAt" < ${range.tomorrowStart} THEN 'today' ELSE 'upcoming' END AS bucket
