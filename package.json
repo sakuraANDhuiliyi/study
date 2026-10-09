@@ -33,6 +33,7 @@
     "test:extensions": "node --import tsx --test --test-concurrency=1 tests/planner.integration.ts tests/notes.integration.ts tests/exam-insights.integration.ts",
     "test:learning-actions": "node --import tsx --test --test-concurrency=1 tests/learning-actions.integration.ts",
     "test:learning-overview": "node --import tsx --test --test-concurrency=1 tests/learning-overview.integration.ts",
+    "test:learning-action-filters": "node --import tsx --test --test-concurrency=1 tests/learning-action-filters.integration.ts",
     "test:ai-study": "node --import tsx --test --test-concurrency=1 tests/ai-study.integration.ts",
     "test:ai-authoring": "node --import tsx --test --test-concurrency=1 tests/ai-authoring.integration.ts",
     "test:programming": "node --import tsx --test --test-concurrency=1 tests/programming.integration.ts",

@@ -1,0 +1,78 @@
+.learning-filters {
+  margin: 12px 0;
+  min-width: 0;
+}
+.learning-filters > form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.learning-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+}
+.learning-filters select {
+  min-height: 34px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+.learning-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+.learning-course-picker {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+  min-width: 0;
+}
+.learning-course-picker form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.learning-course-picker .ant-input {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.learning-course-picker p {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.learning-filter-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.learning-filter-applied .ant-tag {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  margin: 0;
+}
+.learning-filter-hint {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  margin: 10px 0;
+}
+@media (max-width: 550px) {
+  .learning-filters > form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

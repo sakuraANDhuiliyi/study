@@ -20,7 +20,7 @@ import {
   joinReviewSchema,
 } from '../accounts/accounts.schemas';
 import { taskInput, taskPatch, taskDelete } from '../planner/planner.schemas';
-import { learningActionsQuery } from '../planner/actions.schemas';
+import { learningActionsQuery, learningActionCoursesQuery } from '../planner/actions.schemas';
 import { noteInput } from '../notes/notes.controller';
 import { createAiReportInput, searchAiReportInput } from '../ai-study/ai-study.schemas';
 import { authoringGenerateInput, authoringCommitInput } from '../ai-authoring/ai-authoring.schemas';
@@ -295,6 +295,13 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
   if (learningActions)
     learningActions.description =
       '仅学生且具有 learning.use 权限；课程任务另需 course.read、当前机构有效课程授权及本人受众资格。按实际本人截止和最新正式提交判定，草稿不当作提交。逾期包括今天已过截止；今天为服务器当前时间至上海明日零点；未来7日为上海明日起七个自然日，右边界不含。每桶独立分页并返回同一查询快照的完整匹配总数；未完成但关闭提交的作业仅可查看，不能直接提交。';
+  if (learningActions)
+    learningActions.description +=
+      ' type=all|personal|assignment|exam、courseId可组合，先筛选再对三桶计数/分页；选课程排除未归属课程的个人待办，personal+courseId为400。显式课程或作业/考试来源需要course.read；所选无行动课程仍独立验证当前同机构有效Enrollment及PUBLISHED/ARCHIVED，缺失或无资格统一403，不回退全部。filters回显已应用type和courseId（未选null）。筛选不影响Dashboard全量指标。所有私有查询后复核当前会话/CSRF/空间/角色/accountMode和所需权限。';
+  const actionCourses = doc.paths['/api/planner/actions/courses']?.get;
+  if (actionCourses)
+    actionCourses.description =
+      '仅学生且同时有learning.use/course.read。本人当前同机构有效Enrollment的PUBLISHED/ARCHIVED课程，包括0行动课程；字面ILIKE search不trim、转义百分号/下划线/反斜杠。返回items仅id/title及精确total/page/pageSize，title ASC/id ASC。有限重读返回当前第二语句完整分页/总数，旧显示页课程资格撤销整次403，最后fresh身份/权限；不枚举全部课程ID，不承诺全局serializable。';
   const trainingList = doc.paths['/api/algorithms/training-plans']?.get;
   if (trainingList)
     trainingList.description =
@@ -339,6 +346,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ];
   for (const [path, query] of [
     ['/api/planner/actions', learningActionsQuery],
+    ['/api/planner/actions/courses', learningActionCoursesQuery],
     ['/api/algorithm-forum/posts', forum.forumListQuery],
     ['/api/algorithm-forum/posts/{id}/replies', forum.forumPageQuery],
   ] as const) {

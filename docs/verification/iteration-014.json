@@ -10,7 +10,12 @@
   "local": {
     "version": 1,
     "profile": "full",
-    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "requestedReferenceLanguages": [
+      "python",
+      "javascript",
+      "cpp",
+      "java"
+    ],
     "fullReferenceCoverage": true,
     "startedAt": "2026-10-09T20:09:59.886Z",
     "finishedAt": "2026-10-09T20:25:54.276Z",
@@ -105,7 +110,12 @@
         "summary": {
           "programsPassed": 176,
           "casesPassed": 1280,
-          "languages": ["python", "javascript", "cpp", "java"],
+          "languages": [
+            "python",
+            "javascript",
+            "cpp",
+            "java"
+          ],
           "failures": 0
         }
       },
@@ -688,7 +698,7 @@
   },
   "summary": {
     "iteration": 14,
-    "status": "local_full_passed_pending_exact_commit_remote_ci",
+    "status": "full_local_and_exact_commit_ci_passed",
     "local": {
       "profile": "full",
       "startedAt": "2026-10-09T20:09:59.886Z",
@@ -715,15 +725,14 @@
       "sha256": "58a1bdb5cc8a7751f05954e3015f8914fe007fdc468c84d49641f6f9e9fd5bba"
     },
     "remoteCI": {
-      "status": "pending",
-      "commit": null,
-      "runId": null
+      "status": "success",
+      "commit": "d715e11e18bdfedeb0d1805d0e6b2692f8525645",
+      "runId": 37987103967,
+      "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37987103967",
+      "conclusion": "success",
+      "updatedAt": "2026-10-09T20:46:53Z"
     },
-    "requiredBeforePublication": [
-      "Root supplies actual matching before/after formal source fingerprints.",
-      "Root supplies the actual feature commit and successful exact-head CI outcome.",
-      "This report helper neither executes tests nor verifies a future remote CI."
-    ]
+    "requiredBeforePublication": []
   },
   "targetedVerification": {
     "verifiedAtUtc": "2026-10-09T20:01:12Z",
@@ -836,6 +845,11 @@
     "External providers and target deployment remain outside offline review acceptance"
   ],
   "remoteCI": {
-    "status": "pending exact pushed feature commit"
+    "status": "success",
+    "commit": "d715e11e18bdfedeb0d1805d0e6b2692f8525645",
+    "runId": 37987103967,
+    "url": "https://github.com/sakuraANDhuiliyi/study/actions/runs/37987103967",
+    "conclusion": "success",
+    "updatedAt": "2026-10-09T20:46:53Z"
   }
 }

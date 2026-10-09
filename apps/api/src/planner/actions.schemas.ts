@@ -1,14 +1,48 @@
 import { z } from 'zod';
 
+// Express query values must be scalar. Keep numeric direct callers compatible,
+// but never let number coercion silently accept a one-element array/object.
+const pageNumber = (maximum: number) =>
+  z.preprocess(
+    (value) => (typeof value === 'number' || (typeof value === 'string' && value.length <= 20) ? value : NaN),
+    z.coerce.number().int().min(1).max(maximum),
+  );
+const text = (maximum: number) =>
+  z
+    .string()
+    .max(maximum)
+    .refine((value) => !value.includes('\0'));
+const optionalCourse = text(128)
+  .transform((value) => (value === '' ? undefined : value))
+  .optional();
+
 export const learningActionsQuery = z
   .object({
     bucket: z.enum(['today', 'upcoming', 'overdue']).default('today'),
-    page: z.coerce.number().int().min(1).max(10000).default(1),
-    pageSize: z.coerce.number().int().min(1).max(20).default(10),
+    page: pageNumber(10000).default(1),
+    pageSize: pageNumber(20).default(10),
+    type: z.enum(['all', 'personal', 'assignment', 'exam']).default('all'),
+    courseId: optionalCourse,
   })
-  .strict();
+  .strict()
+  .refine((input) => input.type !== 'personal' || !input.courseId, {
+    path: ['courseId'],
+    message: '个人待办未归属课程，不能同时筛选课程',
+  });
 export type LearningActionsQuery = z.infer<typeof learningActionsQuery>;
 export type ActionBucket = LearningActionsQuery['bucket'];
+
+export const learningActionCoursesQuery = z
+  .object({
+    search: text(100).default(''),
+    page: pageNumber(10000).default(1),
+    pageSize: pageNumber(50).default(20),
+  })
+  .strict();
+
+export function learningCourseSearchPattern(search: string) {
+  return `%${search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
+}
 
 /** Today uses the server clock in Shanghai; upcoming is the following seven calendar days. */
 export function learningActionRange(now: Date) {

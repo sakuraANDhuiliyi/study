@@ -66,6 +66,10 @@ test('iteration rejects production, remote/nonreview DB and alternative DB witho
     { ADMIN_JOBS_TEST_ADMIN_DATABASE_URL: 'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review' },
     { LEARNING_ACTIONS_TEST_ADMIN_DATABASE_URL: 'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review' },
     {
+      LEARNING_ACTION_FILTERS_TEST_ADMIN_DATABASE_URL:
+        'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review',
+    },
+    {
       LEARNING_OVERVIEW_TEST_ADMIN_DATABASE_URL: 'postgresql://user:PRIVATE_DB_VALUE@127.0.0.1/other_review',
     },
     {

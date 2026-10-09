@@ -1,0 +1,765 @@
+{
+  "iteration": 15,
+  "feature": "Student learning action source and authorized course filters",
+  "date": "2026-10-10",
+  "sourceParent": "d715e11e18bdfedeb0d1805d0e6b2692f8525645",
+  "sourceFingerprint": {
+    "before": {
+      "fileCount": 481,
+      "sha256": "00255bd483cd1ef318badb52240447eabb05a06cbf678365e220ffe59ef2bafd"
+    },
+    "after": {
+      "fileCount": 481,
+      "sha256": "00255bd483cd1ef318badb52240447eabb05a06cbf678365e220ffe59ef2bafd"
+    },
+    "stable": true
+  },
+  "implementation": {
+    "behavior": [
+      "Filter by all, personal tasks, assignments, or exams, optionally intersected with an enrolled current-organization course.",
+      "Personal tasks have no course association; selected course scopes assignments and exams only.",
+      "Paginated literal course search returns complete counts, including courses with no current actions.",
+      "Retain independent full learning overview, legacy defaults and personal-task completion behavior."
+    ],
+    "authorization": [
+      "learning.use is required for student action lists.",
+      "course.read is additionally required for course selection or course-backed action filters; personal/default lists remain available without it.",
+      "Every private query rechecks current session, account mode, organization, role, CSRF and permissions after database reads.",
+      "Course qualification and page/count snapshots are revalidated; stale private rows and picker names are fenced across identity/permission changes."
+    ],
+    "persistence": "No schema migration, new dependency, or personal-task course relationship."
+  },
+  "research": {
+    "sources": [
+      {
+        "title": "How do I customize my Dashboard as a student?",
+        "url": "https://community.instructure.com/en/kb/articles/664424-how-do-i-customize-my-dashboard-as-a-student",
+        "detail": "Official guide and video transcript 00:20–00:26 on course/status filtering."
+      },
+      {
+        "title": "Timeline block — MoodleDocs 5.3",
+        "url": "https://docs.moodle.org/503/en/Timeline_block",
+        "detail": "Official documentation on current course visibility and limited display."
+      },
+      {
+        "title": "Customizable Dashboard for Learners | Q2 2026 | Feature Overview",
+        "url": "https://community.instructure.com/en/discussion/665539/customizable-dashboard-for-learners-q2-2026-feature-overview",
+        "detail": "Official product discussion; community comments are treated only as demand-language signals."
+      }
+    ],
+    "mediaDownloadedOrPlayed": false
+  },
+  "targeted": {
+    "unitTests": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    "realDatabaseHttp": {
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".data/learning-filters-http.log"
+    },
+    "featureBrowser": {
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".data/learning-filters-browser.log"
+    },
+    "compatibilityBrowser": {
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".data/learning-filters-compatibility.log"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "initialFixtureAttempt": {
+      "failed": true,
+      "reason": "The test fixture used an exam end time before its overridden future start time, and expected a picker query to reject when revocation happened before the picker query returned any private course rows.",
+      "resolution": "Set future exam close times relative to its overridden start and asserted the safe empty picker snapshot after pre-read revocation; reran all 45 HTTP/database cases successfully."
+    }
+  },
+  "local": {
+    "version": 1,
+    "profile": "full",
+    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "fullReferenceCoverage": true,
+    "startedAt": "2026-10-09T21:52:46.002Z",
+    "finishedAt": "2026-10-09T22:04:55.446Z",
+    "passed": true,
+    "fullPassed": true,
+    "counts": {
+      "total": 1205,
+      "pass": 1205,
+      "fail": 0,
+      "skipped": 0
+    },
+    "unit": {
+      "tests": 484,
+      "pass": 484,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "browser": {
+      "total": 355,
+      "passed": 355,
+      "skipped": 0,
+      "failedOrIncomplete": []
+    },
+    "references": {
+      "programsPassed": 176,
+      "casesPassed": 1280,
+      "languages": ["python", "javascript", "cpp", "java"],
+      "failures": 0
+    },
+    "performance": {
+      "requests": 100,
+      "errors": 0,
+      "concurrency": 10,
+      "latencyMs": {
+        "p50": 9,
+        "p95": 24,
+        "max": 27
+      }
+    },
+    "stages": [
+      {
+        "id": "generate",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 623,
+        "summary": {}
+      },
+      {
+        "id": "migrate",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 340,
+        "summary": {}
+      },
+      {
+        "id": "seed",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 806,
+        "summary": {}
+      },
+      {
+        "id": "typecheck",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5562,
+        "summary": {}
+      },
+      {
+        "id": "lint",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 2896,
+        "summary": {}
+      },
+      {
+        "id": "unit",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 17261,
+        "summary": {
+          "tests": 484,
+          "pass": 484,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "build",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 31883,
+        "summary": {}
+      },
+      {
+        "id": "audit",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 1082,
+        "summary": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        }
+      },
+      {
+        "id": "trusted-references",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 50544,
+        "summary": {
+          "programsPassed": 176,
+          "casesPassed": 1280,
+          "languages": ["python", "javascript", "cpp", "java"],
+          "failures": 0
+        }
+      },
+      {
+        "id": "creative-expression-browser",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 9047,
+        "summary": {
+          "checksPassed": 10,
+          "expressionsPassed": 32,
+          "externalRequests": 0,
+          "pageErrors": 0
+        }
+      },
+      {
+        "id": "servers",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 1247
+      },
+      {
+        "id": "e2e",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 9464,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academic-goals.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5048,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academic-records-export.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 7593,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academics-admission.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 652,
+        "summary": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academics.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5393,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:accounts.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4707,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:admin-audit.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 6291,
+        "summary": {
+          "tests": 16,
+          "pass": 16,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:admin-jobs.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5133,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:ai-authoring.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4301,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:ai-study.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4234,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-forum.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 1354,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-history-filters.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5276,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-training-plans.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4909,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithms.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4655,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:analytics.security.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 369,
+        "summary": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:assessment.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5414,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:assessment.security.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 1213,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:auth-fixes.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 992,
+        "summary": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:auth.security.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 931,
+        "summary": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:communication.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 15810,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:communication.security.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 783,
+        "summary": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:confusion-matrix.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 6151,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:creative.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 6882,
+        "summary": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:digital-logic.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4703,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:exam-insights.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 636,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-action-filters.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5704,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-actions.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4778,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-overview.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 6042,
+        "summary": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:minimum-spanning-tree.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5104,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:notes.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 482,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:planner.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 364,
+        "summary": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:population-genetics.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 5502,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:programming.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 6713,
+        "summary": {
+          "tests": 18,
+          "pass": 18,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:simpson-paradox.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 6473,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:upload-security.integration.ts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 4813,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "clean-start",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 7370,
+        "summary": {}
+      },
+      {
+        "id": "performance",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 196,
+        "summary": {
+          "requests": 100,
+          "errors": 0,
+          "concurrency": 10,
+          "latencyMs": {
+            "p50": 9,
+            "p95": 24,
+            "max": 27
+          }
+        }
+      },
+      {
+        "id": "browser",
+        "status": "passed",
+        "exitCode": 0,
+        "durationMs": 441674,
+        "summary": {
+          "total": 355,
+          "passed": 355,
+          "skipped": 0,
+          "failedOrIncomplete": []
+        }
+      }
+    ],
+    "report": ".data/iteration-6lVlz7/report.json"
+  },
+  "remote": {
+    "commit": null,
+    "ciStatus": "pending",
+    "ciRun": null
+  },
+  "acceptedForPush": true
+}

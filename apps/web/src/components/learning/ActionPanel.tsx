@@ -1,13 +1,14 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, App, Button, Pagination, Spin, Tag } from 'antd';
 import { Check, ChevronRight, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api, ApiError, getCsrf, queryString } from '../../api';
-import type { User } from '../../api';
+import { ApiError, getCsrf, queryString } from '../../api';
 import { useAuth } from '../../auth';
 import { EmptyState } from '../shared';
 import './learning-actions.css';
+import { ActionFilters } from './ActionFilters';
+import { learningAuthorization, useLearningActionDomain, type LearningFilters } from './action-domain';
 
 type Bucket = 'today' | 'upcoming' | 'overdue';
 type ActionItem = {
@@ -28,6 +29,7 @@ type ActionItem = {
   reason: 'deadline_passed' | 'attempt_limit' | 'exam_not_started' | null;
 };
 type ActionsResponse = {
+  filters?: { type: LearningFilters['type']; courseId: string | null };
   items: ActionItem[];
   counts: Record<Bucket, number>;
   total: number;
@@ -38,9 +40,6 @@ type ActionsResponse = {
   serverTime: string;
   range: { todayStart: string; tomorrowStart: string; upcomingEnd: string };
 };
-// Cache objects can survive route changes. Weak keys keep a known rejected
-// snapshot rejected across remounts without retaining personal rows or sessions.
-const deniedSnapshots = new WeakMap<ActionsResponse, ApiError>();
 const buckets: { key: Bucket; label: string; empty: string }[] = [
   { key: 'today', label: '今日', empty: '今天余下时间没有待处理的学习行动。' },
   { key: 'upcoming', label: '未来7天', empty: '从明天起的7天内没有待处理的学习行动。' },
@@ -72,8 +71,6 @@ const timestamp = (value: string) =>
     minute: '2-digit',
     hourCycle: 'h23',
   }).format(new Date(value));
-const ownerOf = (user?: User) => [user?.organizationId, user?.id, user?.role].join(':');
-const permissionsOf = (user?: User) => [...(user?.permissions ?? [])].sort().join(',');
 const timeLabel = (item: ActionItem) =>
   item.type === 'personal'
     ? '计划时间'
@@ -101,108 +98,61 @@ function safePath(item: ActionItem) {
 export function ActionPanel() {
   const { user } = useAuth();
   if (user?.role !== 'STUDENT' || !user.permissions.includes('learning.use')) return null;
-  return <ActionPanelContent key={`${ownerOf(user)}:${getCsrf()}:${permissionsOf(user)}`} />;
+  return <ActionPanelContent key={`${learningAuthorization(user)}:${getCsrf()}`} />;
 }
 
 function ActionPanelContent() {
   const { user } = useAuth();
   const client = useQueryClient();
   const { message } = App.useApp();
-  const owner = ownerOf(user);
-  const csrf = getCsrf();
-  const permissions = permissionsOf(user);
+  const domain = useLearningActionDomain();
+  const isCurrent = domain.isCurrent;
+  const generation = domain.generation;
+  const [filters, setFilters] = useState<LearningFilters>({ type: 'all' });
+  const serialized = queryString(filters);
   const [bucket, setBucket] = useState<Bucket>('today');
   const [page, setPage] = useState(1);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [expired, setExpired] = useState(false);
-  const expiredRef = useRef(false);
-  const mounted = useRef(true);
-  const generation = useRef(0);
   const operation = useRef(false);
-  const readDenial = useRef<{ error: ApiError } | null>(null);
   const tabRefs = useRef<Partial<Record<Bucket, HTMLButtonElement>>>({});
   const identifier = useId();
-  const scope = useMemo(
-    () => ['/planner/actions', owner, csrf, permissions] as const,
-    [owner, csrf, permissions],
-  );
-
-  function isCurrent() {
-    const current = client.getQueryData<{ user: User }>(['auth'])?.user;
-    return (
-      mounted.current &&
-      !expiredRef.current &&
-      !!current &&
-      ownerOf(current) === owner &&
-      getCsrf() === csrf &&
-      permissionsOf(current) === permissions &&
-      current.role === 'STUDENT' &&
-      current.permissions.includes('learning.use')
-    );
-  }
-  useEffect(() => {
-    mounted.current = true;
-    const expire = () => {
-      generation.current++;
-      expiredRef.current = true;
-      setExpired(true);
-      void client.cancelQueries({ queryKey: scope });
-    };
-    window.addEventListener('auth-expired', expire);
-    return () => {
-      mounted.current = false;
-      generation.current++;
-      window.removeEventListener('auth-expired', expire);
-    };
-    // A scope change remounts the content. Pagination does not expire its session.
-  }, [client, scope]);
-
-  const query = useQuery<ActionsResponse>({
-    queryKey: [...scope, bucket, page],
-    queryFn: async ({ signal }) => {
-      const issued = generation.current;
-      try {
-        const response = await api<ActionsResponse>(
-          `/planner/actions?${queryString({ bucket, page, pageSize: 10 })}`,
-          { signal },
-        );
-        // api() intentionally returns ordinary stale 200 bodies. Reject them before
-        // React Query can cache any private counts or rows in the current component.
-        if (!isCurrent() || signal.aborted || issued !== generation.current)
-          throw new DOMException('学习行动请求已失效', 'AbortError');
-        return response;
-      } catch (error) {
-        if (
-          error instanceof ApiError &&
-          [401, 403].includes(error.status) &&
-          isCurrent() &&
-          issued === generation.current
-        ) {
-          // A denied read also revokes other cached buckets/pages in this scope.
-          // New reads can recover independently; earlier in-flight reads cannot.
-          generation.current++;
-          for (const [, snapshot] of client.getQueriesData<ActionsResponse>({ queryKey: scope }))
-            if (snapshot) deniedSnapshots.set(snapshot, error);
-          readDenial.current = { error };
-          void client.invalidateQueries({ queryKey: scope, refetchType: 'none' });
-        }
-        throw error;
-      }
-    },
+  const rawQuery = useQuery<ActionsResponse>({
+    queryKey: [...domain.scope, 'items', serialized, bucket, page],
+    queryFn: ({ signal }) =>
+      domain.request<ActionsResponse>(
+        `/planner/actions?${queryString({ ...filters, bucket, page, pageSize: 10 })}`,
+        { signal },
+        !!filters.courseId || filters.type === 'assignment' || filters.type === 'exam',
+        (body) => {
+          if (
+            !Array.isArray(body.items) ||
+            !Number.isSafeInteger(body.total) ||
+            body.total < 0 ||
+            !body.counts ||
+            ['today', 'upcoming', 'overdue'].some(
+              (key) => !Number.isSafeInteger(body.counts[key as Bucket]) || body.counts[key as Bucket] < 0,
+            )
+          )
+            throw new ApiError(502, '学习行动响应不完整，请刷新重试。');
+          // Earlier default responses remain compatible; explicit filters must be echoed.
+          if (
+            (body.filters &&
+              (body.filters.type !== filters.type || body.filters.courseId !== (filters.courseId ?? null))) ||
+            (!body.filters && (filters.type !== 'all' || filters.courseId))
+          )
+            throw new ApiError(502, '学习筛选返回范围不一致，请刷新重试。');
+        },
+      ),
     retry: false,
     staleTime: 0,
-    // A freshly authorized body must not reuse a previously denied snapshot.
     structuralSharing: false,
     refetchInterval: 60000,
   });
-  // Membership and audience can change without changing owner, CSRF or the
-  // permission list. A denied fresh read must never keep its older private rows.
-  const snapshotDenial = query.data ? deniedSnapshots.get(query.data) : undefined;
-  const blockedSnapshot = !!snapshotDenial || (!query.data && !!readDenial.current);
-  const readError = snapshotDenial ?? (blockedSnapshot ? readDenial.current!.error : query.error);
-  const denied = readError instanceof ApiError && [401, 403].includes(readError.status);
-  const data = denied || blockedSnapshot ? undefined : query.data;
+  const query = { ...rawQuery, ...domain.expose(rawQuery) };
+  const data = query.data;
+  const readError = query.error;
+  const denied = readError instanceof ApiError && readError.status >= 400 && readError.status < 500;
   useEffect(() => {
     if (data) {
       const last = Math.max(1, Math.ceil(data.total / data.pageSize));
@@ -231,7 +181,12 @@ function ActionPanelContent() {
   }
   async function refresh() {
     await client.invalidateQueries({
-      predicate: (query) => typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/planner'),
+      // Course metadata cannot hold the personal CAS completion open. Refresh
+      // every Action filter/bucket and existing calendar reads independently.
+      predicate: (query) =>
+        typeof query.queryKey[0] === 'string' &&
+        query.queryKey[0].startsWith('/planner') &&
+        !(query.queryKey[0] === '/planner/actions' && query.queryKey[4] === 'courses'),
     });
   }
   async function complete(item: ActionItem) {
@@ -249,7 +204,7 @@ function ActionPanelContent() {
     setPendingId(item.id);
     setActionError(null);
     try {
-      await api(`/planner/tasks/${encodeURIComponent(item.id)}`, {
+      await domain.request(`/planner/tasks/${encodeURIComponent(item.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({ revision: item.revision, completed: true }),
       });
@@ -274,7 +229,7 @@ function ActionPanelContent() {
       if (isCurrent()) setPendingId(null);
     }
   }
-  if (expired || !isCurrent()) return null;
+  if (domain.expired || !isCurrent()) return null;
   const selected = buckets.find((item) => item.key === bucket)!;
   return (
     <section className="learning-actions panel" aria-labelledby={`${identifier}-heading`}>
@@ -291,6 +246,17 @@ function ActionPanelContent() {
           安排个人待办 <ChevronRight size={14} aria-hidden="true" />
         </Link>
       </div>
+      <ActionFilters
+        domain={domain}
+        filters={filters}
+        busy={pendingId !== null}
+        onApply={(value) => {
+          if (operation.current) return;
+          setFilters(value);
+          setPage(1);
+          setActionError(null);
+        }}
+      />
       <div className="learning-action-tabs" role="tablist" aria-label="学习行动时间范围">
         {buckets.map((item) => (
           <button
@@ -330,7 +296,7 @@ function ActionPanelContent() {
           </p>
         )}
         {actionError && <Alert type="warning" showIcon message={actionError} />}
-        {(query.isLoading || (blockedSnapshot && query.isFetching)) && (
+        {query.isLoading && (
           <div className="learning-actions-loading" role="status" aria-label="学习行动加载状态">
             <Spin size="small" /> 正在载入学习行动…
           </div>
@@ -341,9 +307,11 @@ function ActionPanelContent() {
             showIcon
             message={
               denied
-                ? readError instanceof ApiError && readError.status === 403
-                  ? '无权访问学习行动清单，请确认当前权限'
-                  : '当前登录已失效，请重新登录'
+                ? readError instanceof ApiError && readError.status === 401
+                  ? '当前登录已失效，请重新登录'
+                  : readError instanceof ApiError && readError.status === 403
+                    ? '无权访问学习行动清单，请确认当前权限'
+                    : '学习行动访问范围已失效，请确认筛选或权限'
                 : data
                   ? '暂时无法刷新，正在显示上次加载的清单'
                   : '暂时无法加载学习行动'

@@ -3,13 +3,20 @@ import type { Actor } from '../auth/auth.guard';
 
 // Both consumers use these full course facts. The planner alone adds its seven-day
 // horizon; dashboard counts never depend on a displayed page or a sampled list.
-export function courseActionFacts(actor: Actor, now: Date, courseContent = true) {
+export function allowedActionCourses(actor: Actor, courseContent = true, courseId?: string) {
+  return Prisma.sql`
+    SELECT c.id, c.title FROM "Course" c
+    JOIN "Enrollment" e ON e."courseId" = c.id AND e."userId" = ${actor.id} AND e.active
+    WHERE ${courseContent} AND c."organizationId" = ${actor.organizationId}
+      AND c.status IN ('PUBLISHED', 'ARCHIVED')
+      ${courseId ? Prisma.sql`AND c.id = ${courseId}` : Prisma.empty}
+  `;
+}
+
+export function courseActionFacts(actor: Actor, now: Date, courseContent = true, courseId?: string) {
   return Prisma.sql`
     allowed_courses AS (
-      SELECT c.id, c.title FROM "Course" c
-      JOIN "Enrollment" e ON e."courseId" = c.id AND e."userId" = ${actor.id} AND e.active
-      WHERE ${courseContent} AND c."organizationId" = ${actor.organizationId}
-        AND c.status IN ('PUBLISHED', 'ARCHIVED')
+      ${allowedActionCourses(actor, courseContent, courseId)}
     ), assignment_facts AS (
       SELECT a.id, 'assignment'::text AS kind, a.title,
         GREATEST(a."dueAt", COALESCE(exception."allowUntil", a."dueAt")) AS "dueAt",

@@ -47,11 +47,12 @@ test('Shanghai day and next-seven-day boundaries cross year without browser-time
 });
 
 test('Learning action pagination is bounded and caller-supplied dates and owners are rejected', () => {
-  assert.deepEqual(learningActionsQuery.parse({}), { bucket: 'today', page: 1, pageSize: 10 });
+  assert.deepEqual(learningActionsQuery.parse({}), { bucket: 'today', page: 1, pageSize: 10, type: 'all' });
   assert.deepEqual(learningActionsQuery.parse({ bucket: 'overdue', page: '10000', pageSize: '20' }), {
     bucket: 'overdue',
     page: 10000,
     pageSize: 20,
+    type: 'all',
   });
   for (const input of [
     { bucket: 'all' },
@@ -67,7 +68,7 @@ test('Learning action pagination is bounded and caller-supplied dates and owners
     { now: '2000-01-01' },
     { userId: 'peer' },
     { organizationId: 'foreign' },
-    { type: 'assignment' },
+    { type: 'unknown' },
   ])
     assert.equal(learningActionsQuery.safeParse(input).success, false, JSON.stringify(input));
 });
