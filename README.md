@@ -40,7 +40,13 @@ AI 错题复盘、联网找同类题及来源下载使用根目录 `config.yaml`
 
 教师可在“题库与试卷”或侧栏“AI 出题”中生成题目与试卷初稿，编辑确认后保存到私有题库和固定版本试卷，再在考试中心选用。沿用同一 DeepSeek 配置，支持单选、多选、判断、填空和简答；说明见 [教师 AI 出题](docs/ai-authoring.md)。
 
-学生侧栏新增“算法练习”：内置 19 道原创题和 4 条学习路线，支持本地 Monaco 四语言编辑器、样例与自定义测试、隐藏用例判题、详细题解与四语言参考程序、AI 提示/解析/诊断，以及个人收藏、笔记、复习和提交历史。题解包含解法比较、正确性说明、复杂度推导和样例逐步演示；每日题、章节进度和活动图基于当前学生记录。代码执行需在 `config.yaml` 的 `judge0` 中填写独立 Judge0 CE 服务地址和认证令牌，AI 沿用同文件的 DeepSeek 配置；未配置时页面明确提示，不生成模拟判题结果。使用流程与接口见 [算法练习](docs/algorithms.md)，执行服务隔离与配置见 [判题服务](docs/algorithm-judge.md)。升级时须应用新增数据库迁移。
+学生侧栏“编程工作室”提供个人及机构学习空间的多文件网页项目：从 HTML/CSS/JavaScript 模板开始，用桌面 Monaco 或手机简易编辑器修改源码，运行独立来源的本地预览并查看日志。DeepSeek 生成的完整候选代码先展示差异，由学生确认应用；替换前保存原源码版本，可恢复历史及下载 ZIP。默认学习平台使用 localhost:5173，预览使用 127.0.0.1:4173；本版提供本地工作区，不含公开子域名发布。配置、边界、官方调研及 Android-Agent 流程参考见 [编程工作室](docs/programming.md)。
+
+学生侧栏“算法练习”内置 **119 道原创题和 10 条学习路线**，支持 Monaco 四语言编辑器、样例与自定义测试、隐藏用例判题、详细题解、AI 提示/解析/诊断，以及个人收藏、笔记、复习和提交历史。新增 100 题涵盖数论、数据结构、字符串、动态规划、图论、树与计算几何，包含四语言起始代码与完整 JavaScript 参考解；原 19 题的编号、ID和四语言参考解保持不变。整库有 821 个判题用例，每题提供提示、具体样例推演、正确性与复杂度说明。题目与资料来源见 [题库扩展](docs/algorithm-catalog.md)。代码执行需在 `config.yaml` 的 `judge0` 中填写独立 Judge0 CE 服务地址和认证令牌，AI 沿用同文件的 DeepSeek 配置；未配置时页面明确提示，不生成模拟判题结果。使用流程与接口见 [算法练习](docs/algorithms.md)，执行服务隔离与配置见 [判题服务](docs/algorithm-judge.md)。升级时须应用新增数据库迁移。
+
+“算法论坛”支持关联题目的提问、题解与讨论、搜索、回复、标记解决及管理。新帖明确选择可见范围：**公共社区供全站登录身份阅读，本机构讨论仅当前学校/机构可读**；个人学习空间只发布公共帖子。原有课程讨论不转为公开内容。帖子使用学习者别名，权限与版本冲突处理见 [算法论坛](docs/algorithm-forum.md)。
+
+编程“创意广场”收录 **40 件 UI 作品，来自 40 个 GitHub 仓库**。本次新增 20 件完整场景，包括地球航线、液态玻璃、节点编排、多轨剪辑、分轨编曲、城市沙盘和知识星图。学生可按新增/第一批筛选、分类搜索、私有收藏、运行隔离互动预览、查看完整来源与源码，或创建为自己的编程项目后继续编辑与使用 DeepSeek。仅迁入 HTML/CSS/JavaScript 界面和交互，保留固定来源版本及完整 MIT/ISC 许可；项目与 AI 候选均保留 `NOTICE.txt`。使用说明见 [创意广场](docs/creative-square.md)，逐件来源与视频对应证据见 [来源清单](docs/creative-sources.md) 和 [本次新增20件](docs/creative-wave2-sources.md)。
 
 “专业学习中心”提供 15 个学科分类、76 个专业模板和 55 个学习模块：33 个实际计算工具、18 个结构化学习工作台、2 组原创知识练习、只读 SQL 实验室及算法入口。学生可以修改参数、运行课程模型、保存结果并补充个人笔记；工作台做结构检查与明确的数值核对，不生成虚构 AI 评分。专业目录是可扩展的起步模板，不是官方完整专业目录。公共目录随数据库迁移初始化，普通计算与笔记不需要外部 AI 密钥；完整模块清单、权限与 API 见 [专业学习中心](docs/academics.md)。
 
@@ -203,6 +209,14 @@ node scripts/backup.mjs restore .data/backups/manual --confirm
 - [官方平台功能调研及学习日历、私人笔记、题目分析扩展](docs/feature-expansion.md)
 - [DeepSeek 错题复盘、Tavily 检索与来源下载配置](docs/ai-study.md)
 - [学生算法练习、代码草稿、提交与 AI 解析](docs/algorithms.md)
+- [119 道题、学习路线与官方算法资料来源](docs/algorithm-catalog.md)
+- [公共与学校/机构算法论坛](docs/algorithm-forum.md)
+- [多文件编程工作室、DeepSeek 候选审阅、版本与独立预览](docs/programming.md)
+- [创意广场使用与来源归属保护](docs/creative-square.md)
+- [第一批20件 UI 的 GitHub 来源与许可](docs/creative-sources.md)
+- [新增20件完整交互场景与视频核对](docs/creative-wave2-sources.md)
+- [创意广场第二批验收记录](docs/verification/creative-wave2.json)
+- [题库、论坛与创意广场验收记录](docs/verification/community-creative.json)
 - [独立 Judge0 编译运行服务配置](docs/algorithm-judge.md)
 - [学科专业学习中心、个人注册、组织审批与学习模块](docs/academics.md)
 - [持续迭代、完整验收与专业学习目标](docs/iterations.md)

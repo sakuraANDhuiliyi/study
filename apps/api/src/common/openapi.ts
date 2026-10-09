@@ -5,6 +5,9 @@ import * as c from '../communication/communication.schemas';
 import * as academic from '../academics/academics.schemas';
 import * as goals from '../academics/goals.schemas';
 import { academicRecordExportInput } from '../academics/records-export.schemas';
+import * as programming from '../programming/programming.schemas';
+import * as creative from '../programming/creative.schemas';
+import * as forum from '../algorithm-forum/algorithm-forum.schemas';
 import { courseInput, lessonInput } from '../courses/courses.controller';
 import { newUser } from '../admin/admin.controller';
 import {
@@ -77,6 +80,22 @@ function schema(value: z.ZodTypeAny): any {
 }
 export function enrichOpenAPI(doc: OpenAPIObject) {
   const map: [string, string, z.ZodTypeAny][] = [
+    ['post', '/algorithm-forum/posts', forum.forumPostInput],
+    ['patch', '/algorithm-forum/posts/{id}', forum.forumPostUpdateInput],
+    ['delete', '/algorithm-forum/posts/{id}', forum.forumRevisionInput],
+    ['patch', '/algorithm-forum/posts/{id}/moderation', forum.forumModerationInput],
+    ['post', '/algorithm-forum/posts/{id}/replies', forum.forumReplyInput],
+    ['delete', '/algorithm-forum/posts/{postId}/replies/{id}', forum.forumRevisionInput],
+    ['put', '/programming/creative/{id}/favorite', creative.creativeFavoriteInput],
+    ['post', '/programming/creative/{id}/preview', creative.creativeRevisionInput],
+    ['post', '/programming/creative/{id}/projects', creative.creativeProjectInput],
+    ['post', '/programming/projects', programming.programmingCreateInput],
+    ['patch', '/programming/projects/{id}', programming.programmingUpdateInput],
+    ['post', '/programming/projects/{id}/versions', programming.programmingVersionInput],
+    ['post', '/programming/projects/{id}/restore', programming.programmingRestoreInput],
+    ['post', '/programming/projects/{id}/preview', programming.programmingPreviewInput],
+    ['post', '/programming/projects/{id}/ai-drafts', programming.programmingAiInput],
+    ['post', '/programming/projects/{id}/ai-drafts/{draftId}/apply', programming.programmingApplyInput],
     ['post', '/ai-authoring/drafts', authoringGenerateInput],
     ['post', '/ai-authoring/drafts/{id}/commit', authoringCommitInput],
     ['post', '/ai-study/reports', createAiReportInput],
@@ -251,6 +270,50 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
           },
         },
       ];
+  }
+  const programmingList = doc.paths['/api/programming/projects']?.get;
+  if (programmingList)
+    programmingList.parameters = [
+      ...(programmingList.parameters || []),
+      { in: 'query', name: 'page', schema: { type: 'integer', minimum: 1, maximum: 10000, default: 1 } },
+      { in: 'query', name: 'pageSize', schema: { type: 'integer', minimum: 1, maximum: 20, default: 12 } },
+    ];
+  const creativeList = doc.paths['/api/programming/creative']?.get;
+  if (creativeList)
+    creativeList.parameters = [
+      { in: 'query', name: 'q', schema: { type: 'string', maxLength: 100 } },
+      { in: 'query', name: 'category', schema: { type: 'string', maxLength: 64 } },
+      { in: 'query', name: 'collection', schema: { type: 'string', enum: ['all', 'saved'], default: 'all' } },
+      {
+        in: 'query',
+        name: 'edition',
+        schema: { type: 'string', enum: ['all', 'new', 'foundation'], default: 'all' },
+      },
+      { in: 'query', name: 'page', schema: { type: 'integer', minimum: 1, maximum: 10000, default: 1 } },
+      { in: 'query', name: 'pageSize', schema: { type: 'integer', minimum: 1, maximum: 24, default: 12 } },
+    ];
+  for (const [path, query] of [
+    ['/api/algorithm-forum/posts', forum.forumListQuery],
+    ['/api/algorithm-forum/posts/{id}/replies', forum.forumPageQuery],
+  ] as const) {
+    const operation = doc.paths[path]?.get;
+    if (!operation) continue;
+    const querySchema = schema(query);
+    operation.parameters = [
+      ...(operation.parameters || []).filter((parameter) => !('in' in parameter) || parameter.in !== 'query'),
+      ...Object.entries(querySchema.properties).map(([name, value]) => ({
+        in: 'query' as const,
+        name,
+        required: querySchema.required.includes(name),
+        schema: value as any,
+        ...(name === 'scope'
+          ? {
+              description:
+                'public 为全站已登录用户的公共社区；organization 仅当前学校 / 机构。个人空间不支持 organization。',
+            }
+          : {}),
+      })),
+    ];
   }
   const algorithmList = doc.paths['/api/algorithms/problems']?.get;
   if (algorithmList)

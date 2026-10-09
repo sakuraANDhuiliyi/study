@@ -27,6 +27,7 @@ import {
   BrainCircuit,
   Code2,
   GraduationCap,
+  Sparkles,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './auth';
@@ -52,6 +53,11 @@ const OrganizationAccess = lazy(() =>
 const Algorithms = lazy(() =>
   import('./pages/Algorithms').then((module) => ({ default: module.Algorithms })),
 );
+const Programming = lazy(() =>
+  import('./pages/Programming').then((module) => ({ default: module.Programming })),
+);
+const Creative = lazy(() => import('./pages/Creative').then((module) => ({ default: module.Creative })));
+const AlgorithmForum = lazy(() => import('./pages/AlgorithmForum'));
 const AlgorithmDetail = lazy(() =>
   import('./pages/Algorithms').then((module) => ({ default: module.AlgorithmDetail })),
 );
@@ -163,6 +169,10 @@ function Shell() {
         { path: '/assignments', title: isTeacher(user) ? '作业管理' : '我的作业', icon: ClipboardList },
         { path: '/practice', title: '练习中心', icon: PenLine },
         ...(user.role === 'STUDENT' ? [{ path: '/algorithms', title: '算法练习', icon: Code2 }] : []),
+        ...(user.role === 'STUDENT' ? [{ path: '/programming', title: '编程工作室', icon: Code2 }] : []),
+        ...(user.role === 'STUDENT'
+          ? [{ path: '/programming/creative', title: '创意广场', icon: Sparkles }]
+          : []),
         ...(user.role === 'STUDENT' ? [{ path: '/ai-study', title: 'AI 错题复盘', icon: BrainCircuit }] : []),
         ...(isTeacher(user) ? [{ path: '/questions', title: '题库管理', icon: LibraryBig }] : []),
         ...(user.role === 'TEACHER' ? [{ path: '/ai-authoring', title: 'AI 出题', icon: BrainCircuit }] : []),
@@ -173,6 +183,7 @@ function Shell() {
     {
       group: '协作与交流',
       items: [
+        { path: '/algorithms/forum', title: '算法论坛', icon: MessagesSquare },
         { path: '/communication', title: '交流中心', icon: MessagesSquare },
         { path: '/notifications', title: '消息通知', icon: Bell },
         { path: '/appeals', title: '成绩复核', icon: ClipboardCheck },
@@ -196,7 +207,17 @@ function Shell() {
       : []),
   ];
   if (user.accountMode === 'PERSONAL') {
-    const personalPaths = new Set(['/', '/planner', '/notes', '/academics', '/algorithms', '/ai-study']);
+    const personalPaths = new Set([
+      '/',
+      '/planner',
+      '/notes',
+      '/academics',
+      '/algorithms',
+      '/programming',
+      '/programming/creative',
+      '/algorithms/forum',
+      '/ai-study',
+    ]);
     for (const group of nav) group.items = group.items.filter((item) => personalPaths.has(item.path));
   }
   nav[0].items.push({
@@ -207,6 +228,8 @@ function Shell() {
   const navPermissions: Record<string, string[]> = {
     '/practice': ['learning.use'],
     '/algorithms': ['learning.use'],
+    '/programming': ['learning.use'],
+    '/programming/creative': ['learning.use'],
     '/academics': ['learning.use'],
     '/ai-study': ['learning.use'],
     '/ai-authoring': ['question.manage'],
@@ -234,7 +257,10 @@ function Shell() {
     : location.pathname;
   const active = nav
     .flatMap((g) => g.items)
-    .find((n) => (n.path === '/' ? activePath === '/' : activePath.startsWith(n.path)));
+    .filter(
+      (item) => activePath === item.path || (item.path !== '/' && activePath.startsWith(`${item.path}/`)),
+    )
+    .sort((a, b) => b.path.length - a.path.length)[0];
   async function switchRole(role: string) {
     try {
       await send('/auth/role', { role });
@@ -296,13 +322,14 @@ function Shell() {
                 <div className="nav-group-name">{group.group}</div>
                 {group.items.map((item) => (
                   <NavLink
-                    end={item.path === '/'}
+                    end={
+                      item.path === '/' ||
+                      (['/algorithms', '/programming'].includes(item.path) && active?.path !== item.path)
+                    }
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobile(false)}
-                    className={({ isActive }) =>
-                      `nav-item ${isActive || (item.path === '/exams' && activePath === '/exams') ? 'active' : ''}`
-                    }
+                    className={`nav-item ${active?.path === item.path ? 'active' : ''}`}
                   >
                     <item.icon size={18} />
                     <span>{item.title}</span>
@@ -391,7 +418,7 @@ function Shell() {
         </header>
         <main className="main-content" id="main-content" tabIndex={-1}>
           {user.accountMode === 'PERSONAL' &&
-          !/^\/(?:$|academics(?:\/|$)|planner$|notes$|algorithms(?:\/|$)|ai-study$|profile$|organization$|notifications$)/.test(
+          !/^\/(?:$|academics(?:\/|$)|planner$|notes$|algorithms(?:\/|$)|programming(?:\/|$)|ai-study$|profile$|organization$|notifications$)/.test(
             location.pathname,
           ) ? (
             <Result
@@ -482,6 +509,40 @@ export function Root() {
               element={
                 <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
                   <AlgorithmDetail />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="programming"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <Programming />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="programming/creative"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <Creative />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="programming/creative/:ideaId"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <Creative />
+                </RequirePermission>
+              }
+            />
+            <Route path="algorithms/forum" element={<AlgorithmForum />} />
+            <Route path="algorithms/forum/:postId" element={<AlgorithmForum />} />
+            <Route
+              path="programming/:id"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <Programming />
                 </RequirePermission>
               }
             />

@@ -1,0 +1,579 @@
+{
+  "verifiedAt": "2026-10-09T10:37:05.532Z",
+  "status": "passed",
+  "scope": "20 additional complete browser UI experiences researched from GitHub and video platforms, integrated into the existing programming creative gallery",
+  "catalog": {
+    "total": 40,
+    "added": 20,
+    "retained": 20,
+    "uniqueRepositories": 40,
+    "licenses": {
+      "MIT": 38,
+      "ISC": 2
+    },
+    "newLicenses": {
+      "MIT": 19,
+      "ISC": 1
+    },
+    "newestFirst": true,
+    "editionFilters": [
+      "all",
+      "new",
+      "foundation"
+    ],
+    "sourceDocument": "docs/creative-wave2-sources.md",
+    "newItems": [
+      {
+        "id": "orbital-route",
+        "title": "地球航线指挥台",
+        "repository": "https://github.com/shuding/cobe",
+        "commit": "7e94076fa8c38707f4c9cd114ff4f7c5c880971e",
+        "license": "MIT"
+      },
+      {
+        "id": "signal-workflow",
+        "title": "信号编排工作台",
+        "repository": "https://github.com/xyflow/xyflow",
+        "commit": "3d35b57317576b0916c0bfeaaedd573aaacc2839",
+        "license": "MIT"
+      },
+      {
+        "id": "nocturne-sequencer",
+        "title": "夜曲 · 分轨编曲台",
+        "repository": "https://github.com/Tonejs/Tone.js",
+        "commit": "de9df332ca7573b90a9aaca10c0729a3091dda0a",
+        "license": "MIT"
+      },
+      {
+        "id": "aurora-spectrum",
+        "title": "极光光谱演播室",
+        "repository": "https://github.com/patriciogonzalezvivo/glslCanvas",
+        "commit": "9ed588a7a2d079db1bcc3d8badb8e7de64b75249",
+        "license": "MIT"
+      },
+      {
+        "id": "storyboard-canvas",
+        "title": "产品叙事白板",
+        "repository": "https://github.com/excalidraw/excalidraw",
+        "commit": "4c00f31ddcc20086bac1020428819fe0b9a30bce",
+        "license": "MIT"
+      },
+      {
+        "id": "orbital-archive",
+        "title": "夜航档案 · 联动观测叙事",
+        "repository": "https://github.com/observablehq/plot",
+        "commit": "535723d5e433727720d9b673c31622821bb03210",
+        "license": "ISC"
+      },
+      {
+        "id": "contour-atlas",
+        "title": "等高线地形档案",
+        "repository": "https://github.com/ashima/webgl-noise",
+        "commit": "6abed1e77ed1e18b181627c35f688eb30c9fe75e",
+        "license": "MIT"
+      },
+      {
+        "id": "orbital-desktop",
+        "title": "轨道研究桌面",
+        "repository": "https://github.com/pmndrs/use-gesture",
+        "commit": "c779631aa05959638dee81b9a25fb1299a7467f6",
+        "license": "MIT"
+      },
+      {
+        "id": "circular-energy",
+        "title": "循环之城 · 能源河流推演",
+        "repository": "https://github.com/tomshanley/d3-sankey-circular",
+        "commit": "7d9a6e3fba7aafdc7f4664e6bcac5879ad46a5b2",
+        "license": "MIT"
+      },
+      {
+        "id": "curve-corridor",
+        "title": "曲线光廊驾驶舱",
+        "repository": "https://github.com/pmndrs/drei",
+        "commit": "bf6f4addf47467d3885de272d94ca5127f6ef68f",
+        "license": "MIT"
+      },
+      {
+        "id": "navigation-command",
+        "title": "航行指令中枢",
+        "repository": "https://github.com/dip/cmdk",
+        "commit": "dd2250ed608443e8f32bafc5fa2d1d07a3746aa3",
+        "license": "MIT"
+      },
+      {
+        "id": "isometric-city",
+        "title": "轻城 · 等距规划沙盘",
+        "repository": "https://github.com/pixijs/pixijs",
+        "commit": "2f01671aa654edefb8a6a8013d3b28c1a65c1813",
+        "license": "MIT"
+      },
+      {
+        "id": "chromatic-archive",
+        "title": "空间色谱档案馆",
+        "repository": "https://github.com/houmahani/codrops-depth-gallery",
+        "commit": "28190e0920df887f069524c3863db397af34c1c8",
+        "license": "MIT"
+      },
+      {
+        "id": "specimen-archive",
+        "title": "标本档案馆",
+        "repository": "https://github.com/jameskerr/react-arborist",
+        "commit": "d74c4ec696ba98c1a4e981075f6d60cdff3e290b",
+        "license": "MIT"
+      },
+      {
+        "id": "contour-sculpture",
+        "title": "褶地 · 矢量地形雕刻台",
+        "repository": "https://github.com/paperjs/paper.js",
+        "commit": "92775f5279c05fb7f0a743e9e7fa02cd40ec1e70",
+        "license": "MIT"
+      },
+      {
+        "id": "orbital-exhibition",
+        "title": "环轨未来展览",
+        "repository": "https://github.com/codrops/3DCarousel",
+        "commit": "f354a11d19777b4e573d47b016354951b1ecace3",
+        "license": "MIT"
+      },
+      {
+        "id": "sequence-director",
+        "title": "片段导演台",
+        "repository": "https://github.com/xzdarcy/react-timeline-editor",
+        "commit": "4148f4a837dd767ea66807560d05bc7b65c7e578",
+        "license": "MIT"
+      },
+      {
+        "id": "knowledge-canopy",
+        "title": "知枝 · 交互知识星图",
+        "repository": "https://github.com/markmap/markmap",
+        "commit": "122bf0500ee7aca4f023c2465f7e26bf023eec52",
+        "license": "MIT"
+      },
+      {
+        "id": "liquid-optics",
+        "title": "液态玻璃光学工坊",
+        "repository": "https://github.com/iyinchao/liquid-glass-studio",
+        "commit": "f7b28c36305a862f5cffed3ddd51511cf1204f56",
+        "license": "MIT"
+      },
+      {
+        "id": "screen-sculptor",
+        "title": "界面分镜造型台",
+        "repository": "https://github.com/lnkiai/m3e-canvas",
+        "commit": "0239ae1a8532f905388de4b46ff88a1c90641bb2",
+        "license": "MIT"
+      }
+    ]
+  },
+  "videos": {
+    "newLinks": [
+      {
+        "ideaId": "signal-workflow",
+        "platform": "YouTube",
+        "title": "What is React Flow? Explained in 60 Seconds（xyflow 官方）",
+        "url": "https://www.youtube.com/watch?v=aUBWE41a900",
+        "repository": "https://github.com/xyflow/xyflow",
+        "relation": "source"
+      },
+      {
+        "ideaId": "storyboard-canvas",
+        "platform": "Bilibili",
+        "title": "zotero-excalidraw 功能操作教程（封装作者白板参考，简介链接上游）",
+        "url": "https://www.bilibili.com/video/BV1wYi2YeEbK/",
+        "repository": "https://github.com/018/zotero-excalidraw",
+        "relation": "inspiration"
+      },
+      {
+        "ideaId": "liquid-optics",
+        "platform": "Bilibili",
+        "title": "在 HTML 中实现液态玻璃组件（视觉参考；原视频对应 rxing365，本作品未迁其源码）",
+        "url": "https://www.bilibili.com/video/BV1vwM3zFESr/",
+        "repository": "https://github.com/rxing365/html-liquid-glass-effect-webgl",
+        "relation": "inspiration"
+      },
+      {
+        "ideaId": "screen-sculptor",
+        "platform": "抖音",
+        "title": "M3E Canvas 界面设计工具展示（视频提及项目，官方仓库独立核实）",
+        "url": "https://www.douyin.com/video/7684299385588436258/",
+        "repository": "https://github.com/lnkiai/m3e-canvas",
+        "relation": "inspiration"
+      }
+    ],
+    "verifiedWith": "Official Bilibili metadata API, official xyflow blog and YouTube oEmbed, exact Douyin page search index and independent GitHub README",
+    "fullVideosWatched": false
+  },
+  "verification": {
+    "unitTests": {
+      "passed": 375,
+      "failed": 0,
+      "log": ".data/creative-wave2-unit-final.log"
+    },
+    "creativeHttpTests": {
+      "passed": 17,
+      "failed": 0,
+      "log": ".data/creative-wave2-http.log"
+    },
+    "browserFlows": {
+      "checks": [
+        "真实登录与机构学习空间",
+        "40作品/40仓库/40PNG、全部12/12/12/4分页、新增12/8分页与首批筛选",
+        "新增作品收藏持久化与筛选",
+        "取消第13个收藏后自动回到有效页，保留其余12件",
+        "新增作品标题搜索",
+        "真实API隔离预览：地球航线选目的地/记录航线",
+        "真实API隔离预览：分轨节拍预设/静音交互",
+        "真实API隔离预览：节点编排工作台可加载",
+        "B站视觉参考与实际MIT源码来源分别准确标注",
+        "新增来源/完整许可/多文件源码查看与ZIP下载",
+        "新增作品创建私有5文件项目/初始版本/NOTICE只读/代码可保存",
+        "390px创意批次筛选/列表/详情/真实预览无横向溢出",
+        "真实页面零未捕获异常"
+      ],
+      "errors": [],
+      "syntheticFixturesCleaned": true
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "buildWarning": "Existing large Monaco bundle warning remains",
+    "fixedBugs": [
+      "Saved list returns to a valid page after deleting the final favorite on a later page",
+      "Related video repository names participate in search"
+    ],
+    "contentBrowser": {
+      "items": 20,
+      "mobileWidth": 390,
+      "desktopChecked": true,
+      "opaqueSandbox": "allow-scripts",
+      "sameCspAsProduction": true,
+      "controlActions": {
+        "visual": 29,
+        "narrative": 31,
+        "product": 106
+      },
+      "additionalChecks": [
+        "Aurora Canvas fallback without WebGL",
+        "User-activated Web Audio start and stop",
+        "Pointer observation brush and reset",
+        "Pointer terrain sculpting",
+        "Pointer city picking"
+      ],
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "horizontalOverflow": 0
+    },
+    "covers": {
+      "count": 40,
+      "originalTwentyHashesPreserved": true,
+      "generatedFrom": "Actual browser DOM, Canvas, WebGL and SVG under the preview CSP",
+      "items": [
+        {
+          "id": "orbital-route",
+          "width": 640,
+          "height": 401,
+          "bytes": 96791,
+          "sha256": "18dafdfcc1d907302a4bd81b0874d4fcd6f7cdaf864fce1f2ae74c7a30fa1039"
+        },
+        {
+          "id": "signal-workflow",
+          "width": 1148,
+          "height": 596,
+          "bytes": 63567,
+          "sha256": "ced5bd4f4b2dc2441be6f98e2cd8fd8b38ac1b6506c7770de8aa70a18ea51912"
+        },
+        {
+          "id": "nocturne-sequencer",
+          "width": 640,
+          "height": 401,
+          "bytes": 30476,
+          "sha256": "6413c3f2098664691f06e3a1c624de7fb9872db308efa1a2419c74beca7b43d2"
+        },
+        {
+          "id": "aurora-spectrum",
+          "width": 640,
+          "height": 401,
+          "bytes": 112424,
+          "sha256": "85cacb6d65efdb1b2d1aed3a6768bfcd2e23a71733230d38e8ffd194533c3917"
+        },
+        {
+          "id": "storyboard-canvas",
+          "width": 1148,
+          "height": 598,
+          "bytes": 62295,
+          "sha256": "bddad74ff5711c99c2a428ff94f0fc050efef9592632803e0ff476e5fd3c2250"
+        },
+        {
+          "id": "orbital-archive",
+          "width": 640,
+          "height": 401,
+          "bytes": 81569,
+          "sha256": "77bc391191599fccee6061c07af7d26ed8d57acb0ac8f6df2054f5951b203862"
+        },
+        {
+          "id": "contour-atlas",
+          "width": 640,
+          "height": 401,
+          "bytes": 235411,
+          "sha256": "d040616755de4a8c7664216a67d896d8c457831842014701e6312ffcb08db0a2"
+        },
+        {
+          "id": "orbital-desktop",
+          "width": 1148,
+          "height": 590,
+          "bytes": 211702,
+          "sha256": "708667033fcd62615345f3351c4d16b442de105903d4a942950657042cef56c0"
+        },
+        {
+          "id": "circular-energy",
+          "width": 640,
+          "height": 401,
+          "bytes": 16688,
+          "sha256": "31fc3272720ab4571d4b4b217ae892afd5886a63d5c2bacdb48e8987bd7e0581"
+        },
+        {
+          "id": "curve-corridor",
+          "width": 640,
+          "height": 401,
+          "bytes": 121530,
+          "sha256": "e2df23c4af053619d52e11a2a8e95e4d72b7fa5d72e7cc8a2c865564abb26f90"
+        },
+        {
+          "id": "navigation-command",
+          "width": 1148,
+          "height": 550,
+          "bytes": 55006,
+          "sha256": "7f93f11994fd38575ede4c4d249527147de1167d8e795b4f8eb72f1ddc90b2a9"
+        },
+        {
+          "id": "isometric-city",
+          "width": 640,
+          "height": 401,
+          "bytes": 79214,
+          "sha256": "5447f0b46c1603b8270cb826eac0e23a5cfd6813955094b1e2889d900123cf0f"
+        },
+        {
+          "id": "chromatic-archive",
+          "width": 640,
+          "height": 401,
+          "bytes": 171362,
+          "sha256": "fe8f00c1e2a0f3aa4deb19b1bd2d45b98fed3a9326e760f14c2cef842c03c8f6"
+        },
+        {
+          "id": "specimen-archive",
+          "width": 1148,
+          "height": 717,
+          "bytes": 69228,
+          "sha256": "70daf8b948f892acf92e2d7ef8eb3df43c7a86eed6e21ebb790f93c497ed88f8"
+        },
+        {
+          "id": "contour-sculpture",
+          "width": 640,
+          "height": 481,
+          "bytes": 55073,
+          "sha256": "a26c348aba0b429bbc7bf4418e854a6960068dd5c6281a47593da2df89ca86ac"
+        },
+        {
+          "id": "orbital-exhibition",
+          "width": 640,
+          "height": 401,
+          "bytes": 144965,
+          "sha256": "94e33b02e8a384bfe57e7fd031534edd2c73d191167c77197c17ec329809d2a0"
+        },
+        {
+          "id": "sequence-director",
+          "width": 1148,
+          "height": 753,
+          "bytes": 62548,
+          "sha256": "932079fe40a39b214f22b8340a8326b60f32c0ff3a415bfa24eed6b0141a44e9"
+        },
+        {
+          "id": "knowledge-canopy",
+          "width": 640,
+          "height": 471,
+          "bytes": 127647,
+          "sha256": "a44d979ac07d3a62bb8f52f41b49e7e9317667cbed2da2214a54a76b05835f76"
+        },
+        {
+          "id": "liquid-optics",
+          "width": 640,
+          "height": 401,
+          "bytes": 170975,
+          "sha256": "e5d2cb175eba09678f39a6c379370d086953d81b6f1600103f1cbb8953595da9"
+        },
+        {
+          "id": "screen-sculptor",
+          "width": 1148,
+          "height": 692,
+          "bytes": 76359,
+          "sha256": "59510f89ad341729898aa6dc804a480bdbad82cf9354ca320cde93ab93914ef0"
+        },
+        {
+          "id": "foil-tilt",
+          "width": 640,
+          "height": 401,
+          "bytes": 180161,
+          "sha256": "d902073bdf4a6b104f855fe7b91e08f45fdd5e2ac3585a56b4db07339b9ae0e9"
+        },
+        {
+          "id": "shape-morph",
+          "width": 640,
+          "height": 401,
+          "bytes": 168967,
+          "sha256": "cea18181a17920e8dc2c426c948d0261129dc1c3b48e81631b3d215e856db104"
+        },
+        {
+          "id": "drag-playlist",
+          "width": 640,
+          "height": 401,
+          "bytes": 24038,
+          "sha256": "7583768c471c971d2d4c3ef3e0a4bd18ce07db823a95d63beb3702cd484ce606"
+        },
+        {
+          "id": "particle-network",
+          "width": 640,
+          "height": 401,
+          "bytes": 118714,
+          "sha256": "ff22ec3fcce1eebad441c713ac3dc7d8e6a0015343f7bea4419e70bda7382174"
+        },
+        {
+          "id": "confetti-launch",
+          "width": 640,
+          "height": 401,
+          "bytes": 23155,
+          "sha256": "82181c5b159b1e5923929907f7ebb90eb1d35800b092ed8c582d7aa94be06f4c"
+        },
+        {
+          "id": "rough-blueprint",
+          "width": 640,
+          "height": 401,
+          "bytes": 15800,
+          "sha256": "7dca93530eac56e20ee3f1961e96395af9e43e16e335c24c7661025ff9e0bfbf"
+        },
+        {
+          "id": "signature-studio",
+          "width": 640,
+          "height": 401,
+          "bytes": 27252,
+          "sha256": "8e5d393dcad95d57b9488c36527cff0a74fdd1a7f27e1a19b4c3b3eab4c34595"
+        },
+        {
+          "id": "line-reveal",
+          "width": 640,
+          "height": 401,
+          "bytes": 13806,
+          "sha256": "218627c7a02d32e86454a0e28ec578f518aa40469cf8c9daea5fe71e82c20697"
+        },
+        {
+          "id": "rolling-meter",
+          "width": 640,
+          "height": 401,
+          "bytes": 14336,
+          "sha256": "94b5230631ad74d07f1fb478864f8e80e71dffcd183f7c2cb1d003d1f8f2ee0f"
+        },
+        {
+          "id": "typing-terminal",
+          "width": 640,
+          "height": 401,
+          "bytes": 15712,
+          "sha256": "66120373bc5ae1263c25e1dbd83b7fa73fc1cf0b76f5199b2e61f6c9fd90bc82"
+        },
+        {
+          "id": "range-window",
+          "width": 640,
+          "height": 401,
+          "bytes": 8237,
+          "sha256": "e5ad1d72fdb730dc0e55785c916bbc1cb86a271aecd75f46b382f17f7b6d4136"
+        },
+        {
+          "id": "bezier-timing",
+          "width": 640,
+          "height": 401,
+          "bytes": 6219,
+          "sha256": "3f946134123dfd1cd0677dfdc79ecf1c5976c9ea2f0838651aed7070f86b43d0"
+        },
+        {
+          "id": "color-atlas",
+          "width": 640,
+          "height": 401,
+          "bytes": 17090,
+          "sha256": "a95e5327099b0f870bfa8e26aae407fdd3ae1be6e676ae181721c18e52a0affc"
+        },
+        {
+          "id": "poster-transform",
+          "width": 640,
+          "height": 401,
+          "bytes": 12658,
+          "sha256": "39b776ed9b37c65d3545c91842bb47697ddf270575d4c8dfbdf2e3a643ef7275"
+        },
+        {
+          "id": "snap-gallery",
+          "width": 640,
+          "height": 401,
+          "bytes": 21375,
+          "sha256": "ee3739c215c9b87681f42735132032197a168e26c72acd5c6a093016ceae0b57"
+        },
+        {
+          "id": "donut-observatory",
+          "width": 640,
+          "height": 401,
+          "bytes": 20278,
+          "sha256": "d8649ecc8da0324bbcf067e7eacb025313b5a24629917deb41122f0364995b88"
+        },
+        {
+          "id": "gravity-bowl",
+          "width": 640,
+          "height": 401,
+          "bytes": 14297,
+          "sha256": "17de731b58cd4d3e75419a3f171dae89171a04d7989c7e92516f3b90a72a0df4"
+        },
+        {
+          "id": "wireframe-orbit",
+          "width": 640,
+          "height": 401,
+          "bytes": 133535,
+          "sha256": "3dd76486a06602049fcbb59dbe7a2223bca84ac2edb5a6a19c63e3ac1601a92d"
+        },
+        {
+          "id": "depth-picker",
+          "width": 640,
+          "height": 401,
+          "bytes": 12527,
+          "sha256": "6bf7f1cc1a027c0bed1aa3b27256cec95175bb17c43ee95d50836f3ab384b16a"
+        },
+        {
+          "id": "liquid-page",
+          "width": 640,
+          "height": 401,
+          "bytes": 21365,
+          "sha256": "19d3de2137f0f816c7123c9d513b45b86fcd9762ec3e36ae48e892636a203fec"
+        }
+      ]
+    },
+    "demoSmoke": {
+      "checks": [
+        "demo24migrations、真实学生登录、119题",
+        "demo论坛两个范围",
+        "demo40创意作品/新增20件",
+        "demo独立4173预览",
+        "demo页面无未捕获异常"
+      ],
+      "sessionLoggedOut": true
+    }
+  },
+  "boundaries": {
+    "uiOnly": true,
+    "remoteBackendsImported": false,
+    "providerCalls": "Local test provider fixtures only; no live DeepSeek/Tavily calls",
+    "publicDeployment": false,
+    "privateProjectsAndFavorites": true,
+    "fullNoticeRetained": true
+  },
+  "screenshots": [
+    "docs/screenshots/creative-wave2-gallery-desktop.png",
+    "docs/screenshots/creative-wave2-gallery-mobile.png",
+    "docs/screenshots/creative-wave2-detail-desktop.png",
+    "docs/screenshots/creative-wave2-detail-mobile.png"
+  ],
+  "localUrl": "http://localhost:5173/programming/creative"
+}

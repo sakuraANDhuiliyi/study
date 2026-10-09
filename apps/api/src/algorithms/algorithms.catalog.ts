@@ -1,3 +1,4 @@
+import { bulkAlgorithmContents } from './algorithms.catalog-bulk';
 import { extraAlgorithmContents } from './algorithms.catalog-extra';
 import { graphAlgorithmContents } from './algorithms.catalog-graphs';
 
@@ -21,6 +22,7 @@ export interface AlgorithmProblem {
   testCases: { input: string; output: string; hidden: boolean }[];
   hints: string[];
   solution: string;
+  sourceReferences?: { title: string; url: string; concept: string }[];
 }
 const starterCode: Record<AlgorithmLanguage, string> = {
   cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    // 从标准输入读取数据，将答案输出到标准输出。\n    // 请根据左侧输入格式实现算法。\n    return 0;\n}\n',
@@ -411,6 +413,7 @@ export const algorithmProblems: AlgorithmProblem[] = [
   ...contents,
   ...extraAlgorithmContents,
   ...graphAlgorithmContents,
+  ...bulkAlgorithmContents,
 ].map(({ hiddenCases, ...problem }, index) => ({
   ...problem,
   number: index + 1,

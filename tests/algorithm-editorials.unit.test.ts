@@ -45,17 +45,21 @@ test('每道题都有完整教学内容、三级提示和与真实样例一致�
   }
 });
 
-test('所有题解提供完整四语言参考程序，代码不会混入运行外壳或未实现占位', () => {
+test('原19题保留完整四语言参考，新题仅展示已实现且验证的参考程序', () => {
   for (const item of algorithmEditorials) {
-    assert.deepEqual(Object.keys(item.referenceCode).sort(), ['cpp', 'java', 'javascript', 'python']);
+    const original = algorithmProblems.find((problem) => problem.id === item.problemId)!.number <= 19;
+    assert.deepEqual(
+      Object.keys(item.referenceCode).sort(),
+      original ? ['cpp', 'java', 'javascript', 'python'] : ['javascript'],
+    );
     for (const [language, program] of Object.entries(item.referenceCode)) {
       assert.ok(program.length > 40 && Buffer.byteLength(program) <= 48_000, `${item.problemId} ${language}`);
       assert.doesNotMatch(program, /```|TODO|YOUR_CODE|throw new Error\(['"]Not implemented/);
     }
-    assert.match(item.referenceCode.cpp, /int main\(/);
-    assert.match(item.referenceCode.python, /sys\.stdin/);
-    assert.match(item.referenceCode.javascript, /readFileSync\(0/);
-    assert.match(item.referenceCode.java, /public class Main/);
-    assert.match(item.referenceCode.java, /public static void main/);
+    if (item.referenceCode.cpp) assert.match(item.referenceCode.cpp, /int main\(/);
+    if (item.referenceCode.python) assert.match(item.referenceCode.python, /sys\.stdin/);
+    assert.match(item.referenceCode.javascript!, /readFileSync\(0/);
+    if (item.referenceCode.java) assert.match(item.referenceCode.java, /public class Main/);
+    if (item.referenceCode.java) assert.match(item.referenceCode.java, /public static void main/);
   }
 });

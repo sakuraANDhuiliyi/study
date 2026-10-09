@@ -1,0 +1,52 @@
+model ProgrammingProject {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  title          String
+  templateId     String
+  revision       Int @default(0)
+  files          Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId, userId, updatedAt, id], map: "ProgrammingProject_owner_history_idx")
+  @@index([userId])
+}
+
+model ProgrammingVersion {
+  id             String @id @default(cuid())
+  projectId      String
+  organizationId String
+  userId         String
+  number         Int
+  title          String
+  note           String
+  files          Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([projectId, number])
+  @@index([organizationId, userId, projectId, createdAt, id], map: "ProgrammingVersion_owner_project_idx")
+  @@index([userId])
+}
+
+model ProgrammingAiDraft {
+  id                     String @id @default(cuid())
+  projectId              String
+  organizationId         String
+  userId                 String
+  operationId            String @unique
+  baseRevision           Int
+  prompt                 String
+  status                 String @default("pending")
+  summary                String @default("")
+  plan                   Json @default("[]")
+  teaching               Json @default("[]")
+  files                  Json @default("[]")
+  model                  String
+  error                  String?
+  appliedVersionId       String?
+  appliedProjectSnapshot Json?
+  createdAt              DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId, userId, projectId, createdAt, id], map: "ProgrammingAiDraft_owner_project_idx")
+  @@index([userId, status])
+  @@index([appliedVersionId])
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { App, Button, Checkbox, Popconfirm, Select, Tabs, Tag } from 'antd';
+import { Alert, App, Button, Checkbox, Popconfirm, Select, Tabs, Tag } from 'antd';
 import { BookOpen, CheckCircle2, ChevronRight, Copy, Lightbulb, LockKeyhole, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useData } from '../../api';
@@ -24,6 +24,15 @@ export function Editorial({
   const [codeLanguage, setCodeLanguage] = useState(language);
   const { message } = App.useApp();
   const editorial = query.data?.editorial;
+  const availableLanguages = languageOptions.filter((option) =>
+    Boolean(editorial?.referenceCode[option.value]),
+  );
+  const selectedLanguage = editorial?.referenceCode[codeLanguage]
+    ? codeLanguage
+    : editorial?.referenceCode.javascript
+      ? 'javascript'
+      : availableLanguages[0]?.value;
+  const referenceCode = selectedLanguage ? editorial?.referenceCode[selectedLanguage] || '' : '';
   return (
     <div className="algo-editorial">
       <QueryState query={query}>
@@ -81,7 +90,7 @@ export function Editorial({
               <div className="algo-editorial-unlock">
                 <LockKeyhole size={26} />
                 <h3>准备好核对你的思路了吗？</h3>
-                <p>完整题解包含多种方法、正确性说明、复杂度推导和四种语言的参考程序。</p>
+                <p>完整题解包含解法、正确性说明、复杂度推导和已提供语言的参考程序。</p>
                 <Button type="primary" onClick={() => setRevealed(true)}>
                   显示完整题解与答案
                 </Button>
@@ -215,21 +224,26 @@ export function Editorial({
                     <Select
                       size="small"
                       aria-label="参考代码语言"
-                      value={codeLanguage}
+                      value={selectedLanguage}
                       onChange={setCodeLanguage}
-                      options={languageOptions}
+                      options={availableLanguages}
                     />
                   </div>
                   <p className="algo-muted">完整的标准输入 / 输出程序。先理解每一步，再尝试独立重写。</p>
-                  <pre className="algo-code-block algo-reference-code">
-                    {editorial.referenceCode[codeLanguage]}
-                  </pre>
+                  {!editorial.referenceCode[language] && (
+                    <Alert
+                      type="info"
+                      showIcon
+                      message="本题暂未提供当前作答语言的参考程序，已显示可用的参考语言。题目仍支持四种语言作答。"
+                    />
+                  )}
+                  <pre className="algo-code-block algo-reference-code">{referenceCode}</pre>
                   <div className="algo-reference-actions">
                     <Button
                       icon={<Copy size={14} />}
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(editorial.referenceCode[codeLanguage]);
+                          await navigator.clipboard.writeText(referenceCode);
                           message.success('参考代码已复制');
                         } catch {
                           message.error('浏览器不允许访问剪贴板，请在代码框中选择复制。');
@@ -244,7 +258,8 @@ export function Editorial({
                       okText="载入参考代码"
                       cancelText="取消"
                       onConfirm={() => {
-                        onLoadCode(editorial.referenceCode[codeLanguage], codeLanguage);
+                        if (!selectedLanguage || !referenceCode) return;
+                        onLoadCode(referenceCode, selectedLanguage);
                         message.success('参考代码已载入编辑器');
                       }}
                     >

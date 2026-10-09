@@ -11,6 +11,7 @@ import {
   Code2,
   Columns2,
   History,
+  MessageSquare,
   Play,
   RotateCcw,
   Save,
@@ -29,6 +30,7 @@ import { Editorial } from '../components/algorithms/Editorial';
 import { LearningBookmark, LearningNotes } from '../components/algorithms/LearningState';
 import { LearningOverview } from '../components/algorithms/LearningOverview';
 import { OutputDiff } from '../components/algorithms/OutputDiff';
+import { AlgorithmDiscussion } from '../components/algorithms/AlgorithmDiscussion';
 import { CodeComparison, type CodeComparisonSnapshot } from '../components/algorithms/CodeComparison';
 import '../algorithms.css';
 
@@ -63,6 +65,7 @@ type Problem = ProblemSummary & {
   inputFormat: string;
   outputFormat: string;
   constraints: string;
+  sourceReferences?: { title: string; url: string; concept: string }[];
   examples: { input: string; output: string; explanation?: string }[];
   timeLimitMs: number;
   memoryLimitMb: number;
@@ -247,9 +250,14 @@ export function Algorithms() {
         title="算法练习"
         description="把思路写成代码。从第一行程序，到每一个通过的测试。"
         extra={
-          <Link className="algo-back" to="/practice">
-            练习中心 <ArrowUpRight size={16} />
-          </Link>
+          <div className="algo-neighbor-links">
+            <Link className="algo-back" to="/algorithms/forum">
+              算法论坛 <MessageSquare size={16} />
+            </Link>
+            <Link className="algo-back" to="/practice">
+              练习中心 <ArrowUpRight size={16} />
+            </Link>
+          </div>
         }
       />
       <div className="algo-overview">
@@ -944,6 +952,21 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                           ))}
                           <h3>数据范围与约束</h3>
                           <p className="algo-prose">{problem.constraints}</p>
+                          {!!problem.sourceReferences?.length && (
+                            <>
+                              <h3>资料来源与延伸学习</h3>
+                              <ul>
+                                {problem.sourceReferences.map((source) => (
+                                  <li key={source.url}>
+                                    <a href={source.url} target="_blank" rel="noopener noreferrer">
+                                      {source.title}
+                                    </a>
+                                    <span className="algo-muted"> · {source.concept}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
                           <div className="algo-io-tip">
                             <Terminal size={16} />
                             <span>
@@ -972,6 +995,16 @@ function AlgorithmWorkspace({ id }: { id: string }) {
                         </span>
                       ),
                       children: <LearningNotes problemId={id} />,
+                    },
+                    {
+                      key: 'discussion',
+                      label: (
+                        <span className="algo-tab">
+                          <MessageSquare size={15} />
+                          讨论
+                        </span>
+                      ),
+                      children: <AlgorithmDiscussion problemId={id} />,
                     },
                     {
                       key: 'history',

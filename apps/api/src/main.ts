@@ -12,6 +12,7 @@ import express from 'express';
 import { AppModule } from './app.module';
 import { HttpErrorFilter } from './common/http.filter';
 import { enrichOpenAPI } from './common/openapi';
+import { readProgrammingPreviewConfiguration } from './programming/programming-preview.service';
 const root = resolve(__dirname, '../../..');
 config({ path: join(root, '.env') });
 async function bootstrap() {
@@ -40,7 +41,7 @@ async function bootstrap() {
           connectSrc: ["'self'"],
           mediaSrc: ["'self'", 'https:'],
           objectSrc: ["'none'"],
-          frameSrc: ["'self'"],
+          frameSrc: ["'self'", readProgrammingPreviewConfiguration().origin].filter(Boolean),
           upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
         },
       },

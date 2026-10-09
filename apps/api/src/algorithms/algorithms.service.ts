@@ -107,6 +107,7 @@ export function publicAlgorithmProblem(problem: AlgorithmProblem) {
     timeLimitMs: problem.timeLimitMs,
     memoryLimitMb: problem.memoryLimitMb,
     starterCode: problem.starterCode,
+    sourceReferences: problem.sourceReferences || [],
   };
 }
 

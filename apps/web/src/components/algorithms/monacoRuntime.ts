@@ -38,15 +38,29 @@ import 'monaco-editor/languages/definitions/cpp/register.js';
 import 'monaco-editor/languages/definitions/python/register.js';
 import 'monaco-editor/languages/definitions/java/register.js';
 import 'monaco-editor/languages/definitions/javascript/register.js';
+import 'monaco-editor/languages/definitions/html/register.js';
+import 'monaco-editor/languages/definitions/css/register.js';
+import 'monaco-editor/languages/definitions/markdown/register.js';
 import 'monaco-editor/languages/features/typescript/register.js';
+import 'monaco-editor/languages/features/html/register.js';
+import 'monaco-editor/languages/features/css/register.js';
+import 'monaco-editor/languages/features/json/register.js';
 import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker';
 import TypescriptWorker from 'monaco-editor/languages/features/typescript/ts.worker.js?worker';
+import HtmlWorker from 'monaco-editor/languages/features/html/html.worker.js?worker';
+import CssWorker from 'monaco-editor/languages/features/css/css.worker.js?worker';
+import JsonWorker from 'monaco-editor/languages/features/json/json.worker.js?worker';
 
 // Both lazy editor surfaces initialize the same bundled runtime. In particular,
 // opening a diff from the mobile textarea never depends on the main editor mount.
 self.MonacoEnvironment = {
-  getWorker: (_id: string, label: string) =>
-    label === 'javascript' || label === 'typescript' ? new TypescriptWorker() : new EditorWorker(),
+  getWorker: (_id: string, label: string) => {
+    if (label === 'javascript' || label === 'typescript') return new TypescriptWorker();
+    if (label === 'html' || label === 'handlebars' || label === 'razor') return new HtmlWorker();
+    if (label === 'css' || label === 'scss' || label === 'less') return new CssWorker();
+    if (label === 'json') return new JsonWorker();
+    return new EditorWorker();
+  },
 };
 loader.config({ monaco });
 export { monaco };

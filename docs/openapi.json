@@ -13804,6 +13804,2171 @@
           }
         }
       }
+    },
+    "/api/programming/status": {
+      "get": {
+        "operationId": "ProgrammingController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/templates": {
+      "get": {
+        "operationId": "ProgrammingController_templates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/projects": {
+      "get": {
+        "operationId": "ProgrammingController_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      },
+      "post": {
+        "operationId": "ProgrammingController_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "templateId": {
+                    "type": "string",
+                    "enum": [
+                      "starter",
+                      "counter",
+                      "todo"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "templateId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/projects/{id}": {
+      "get": {
+        "operationId": "ProgrammingController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      },
+      "patch": {
+        "operationId": "ProgrammingController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "path": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160,
+                          "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]*\\/)*[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|css|js|json|md|txt|svg)$"
+                        },
+                        "content": {
+                          "type": "string",
+                          "maxLength": 65536
+                        }
+                      },
+                      "required": [
+                        "path",
+                        "content"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 24
+                  }
+                },
+                "required": [
+                  "revision",
+                  "title",
+                  "files"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "ProgrammingController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/projects/{id}/versions": {
+      "get": {
+        "operationId": "ProgrammingController_versions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      },
+      "post": {
+        "operationId": "ProgrammingController_saveVersion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "default": "保存快照"
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/projects/{id}/versions/{versionId}": {
+      "get": {
+        "operationId": "ProgrammingController_version",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/projects/{id}/restore": {
+      "post": {
+        "operationId": "ProgrammingController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "revision",
+                  "versionId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/projects/{id}/export": {
+      "get": {
+        "operationId": "ProgrammingController_export",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/projects/{id}/preview": {
+      "post": {
+        "operationId": "ProgrammingController_preview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "path": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160,
+                          "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]*\\/)*[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|css|js|json|md|txt|svg)$"
+                        },
+                        "content": {
+                          "type": "string",
+                          "maxLength": 65536
+                        }
+                      },
+                      "required": [
+                        "path",
+                        "content"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 24
+                  }
+                },
+                "required": [
+                  "revision",
+                  "files"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/projects/{id}/ai-drafts": {
+      "post": {
+        "operationId": "ProgrammingController_generate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 3000
+                  }
+                },
+                "required": [
+                  "revision",
+                  "prompt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "ProgrammingController_drafts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/projects/{id}/ai-drafts/{draftId}": {
+      "get": {
+        "operationId": "ProgrammingController_draft",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "draftId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ]
+      }
+    },
+    "/api/programming/projects/{id}/ai-drafts/{draftId}/apply": {
+      "post": {
+        "operationId": "ProgrammingController_apply",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "draftId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程学习工作室"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/creative": {
+      "get": {
+        "operationId": "CreativeController_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "in": "query",
+            "name": "collection",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "saved"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "in": "query",
+            "name": "edition",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "new",
+                "foundation"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 24,
+              "default": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程创意广场"
+        ]
+      }
+    },
+    "/api/programming/creative/{id}": {
+      "get": {
+        "operationId": "CreativeController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程创意广场"
+        ]
+      }
+    },
+    "/api/programming/creative/{id}/favorite": {
+      "put": {
+        "operationId": "CreativeController_favorite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程创意广场"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "saved": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "saved"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/creative/{id}/preview": {
+      "post": {
+        "operationId": "CreativeController_preview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程创意广场"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/creative/{id}/projects": {
+      "post": {
+        "operationId": "CreativeController_create",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程创意广场"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "revision",
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/programming/creative/{id}/export": {
+      "get": {
+        "operationId": "CreativeController_export",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "编程创意广场"
+        ]
+      }
+    },
+    "/api/algorithm-forum/status": {
+      "get": {
+        "operationId": "AlgorithmForumController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ]
+      }
+    },
+    "/api/algorithm-forum/posts": {
+      "get": {
+        "operationId": "AlgorithmForumController_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "organization"
+              ],
+              "default": "public"
+            },
+            "description": "public 为全站已登录用户的公共社区；organization 仅当前学校 / 机构。个人空间不支持 organization。"
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "question",
+                "solution",
+                "discussion"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "problemId",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[a-zA-Z0-9_-]+$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "solved",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ]
+      },
+      "post": {
+        "operationId": "AlgorithmForumController_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "organization"
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "question",
+                      "solution",
+                      "discussion"
+                    ]
+                  },
+                  "problemId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "pattern": "^[a-zA-Z0-9_-]+$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 15000
+                  }
+                },
+                "required": [
+                  "scope",
+                  "kind",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithm-forum/posts/{id}": {
+      "get": {
+        "operationId": "AlgorithmForumController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ]
+      },
+      "patch": {
+        "operationId": "AlgorithmForumController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 15000
+                  }
+                },
+                "required": [
+                  "revision",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "AlgorithmForumController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithm-forum/posts/{id}/moderation": {
+      "patch": {
+        "operationId": "AlgorithmForumController_moderate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "closed": {
+                    "type": "boolean"
+                  },
+                  "solved": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithm-forum/posts/{id}/replies": {
+      "get": {
+        "operationId": "AlgorithmForumController_replies",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ]
+      },
+      "post": {
+        "operationId": "AlgorithmForumController_reply",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "postRevision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 15000
+                  }
+                },
+                "required": [
+                  "postRevision",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/algorithm-forum/posts/{postId}/replies/{id}": {
+      "delete": {
+        "operationId": "AlgorithmForumController_removeReply",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-csrf-token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "字段验证失败"
+          },
+          "401": {
+            "description": "未登录或会话已失效"
+          },
+          "403": {
+            "description": "功能、机构、角色上下文或资源范围无权限"
+          },
+          "404": {
+            "description": "资源不存在"
+          },
+          "409": {
+            "description": "版本冲突或重复约束"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "算法论坛"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483646
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
     }
   },
   "info": {

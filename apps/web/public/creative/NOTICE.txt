@@ -1,0 +1,1267 @@
+CREATIVE CATALOG COVER IMAGES
+
+These PNG files are unedited screenshots of the checked-in, UI-only learning templates.
+They contain no third-party photographs, downloaded video frames, external fonts or images.
+Captured by scripts/creative-covers.mjs using an opaque browser iframe.
+Each template records the exact extracted / independently reimplemented scope below.
+
+=== orbital-route.png — 地球航线指挥台 ===
+
+# 地球航线指挥台 (orbital-route)
+Source: https://github.com/shuding/cobe
+Pinned commit: 7e94076fa8c38707f4c9cd114ff4f7c5c880971e
+License: MIT
+Scope: 将 src/index.js 的球面坐标映射与 arc.glslx 的二次贝塞尔升空航线公式改写为 Canvas 2D 正交投影；航线背面以深度裁剪。
+Local changes: 不迁入纹理、WebGL 库或地理IP能力。程序化示意陆块、任务仪表、目的地选择、夜航模式、可拖拽视角为本地新增；地图是示意，不用于导航。
+src/index.js: https://github.com/shuding/cobe/blob/7e94076fa8c38707f4c9cd114ff4f7c5c880971e/src/index.js
+src/arc.glslx: https://github.com/shuding/cobe/blob/7e94076fa8c38707f4c9cd114ff4f7c5c880971e/src/arc.glslx
+LICENSE: https://github.com/shuding/cobe/blob/7e94076fa8c38707f4c9cd114ff4f7c5c880971e/LICENSE
+
+MIT License
+
+Copyright (c) 2021 Shu Ding
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== signal-workflow.png — 信号编排工作台 ===
+
+# 信号编排工作台 (signal-workflow)
+Source: https://github.com/xyflow/xyflow
+Pinned commit: 3d35b57317576b0916c0bfeaaedd573aaacc2839
+License: MIT
+Scope: 参考开源 Basic 示例的节点/边数据结构、选中和连接交互，独立实现本地数值流程界面；不复制 React Flow Pro 示例。
+Local changes: 将 React 状态与组件重写为原生 DOM、Pointer Events 和 SVG；原创深色信号工作台、参数面板和纯函数数值执行器；无 React Flow 依赖、后台、AI 或云执行。
+examples/react/src/examples/Basic/index.tsx: https://github.com/xyflow/xyflow/blob/3d35b57317576b0916c0bfeaaedd573aaacc2839/examples/react/src/examples/Basic/index.tsx
+项目 README 与功能说明: https://github.com/xyflow/xyflow/blob/3d35b57317576b0916c0bfeaaedd573aaacc2839/README.md
+完整 MIT 许可: https://github.com/xyflow/xyflow/blob/3d35b57317576b0916c0bfeaaedd573aaacc2839/LICENSE
+
+MIT License
+
+Copyright (c) 2019-2025 webkid GmbH
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== nocturne-sequencer.png — 夜曲 · 分轨编曲台 ===
+
+# 夜曲 · 分轨编曲台 (nocturne-sequencer)
+Source: https://github.com/Tonejs/Tone.js
+Pinned commit: de9df332ca7573b90a9aaca10c0729a3091dda0a
+License: MIT
+Scope: 参考上游 Step Sequencer 的分轨触发、步进时钟和节奏控制交互；以原生 DOM / Web Audio 独立重写界面，不迁移 Tone.js 引擎或音频样本。
+Local changes: 新增夜间录音棚布局、16 步编排、预设切换、轨道静音、可选本地合成音、摆动和 60 秒自动停止；无远程音源、字体、服务器。
+上游 examples/stepSequencer.html: https://github.com/Tonejs/Tone.js/blob/de9df332ca7573b90a9aaca10c0729a3091dda0a/examples/stepSequencer.html
+上游 Tone/event/Sequence.ts: https://github.com/Tonejs/Tone.js/blob/de9df332ca7573b90a9aaca10c0729a3091dda0a/Tone/event/Sequence.ts
+上游 LICENSE.md: https://github.com/Tonejs/Tone.js/blob/de9df332ca7573b90a9aaca10c0729a3091dda0a/LICENSE.md
+
+MIT License
+
+Copyright (c) 2014-2025 Yotam Mann
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== aurora-spectrum.png — 极光光谱演播室 ===
+
+# 极光光谱演播室 (aurora-spectrum)
+Source: https://github.com/patriciogonzalezvivo/glslCanvas
+Pinned commit: 9ed588a7a2d079db1bcc3d8badb8e7de64b75249
+License: MIT
+Scope: 改写 src/gl/gl.js 的 createShader/createProgram 编译状态检查与 GlslCanvas.js 的时间、分辨率 uniform 更新流程；极光 GLSL 为独立编写。
+Local changes: 把网络着色器加载与通用纹理解析替换为内置 GLSL；增加 CPU Canvas 极光后备、暂停快门、光谱预设、指针磁场扰动和手机控制台。不会调用上游网络纹理或编辑器服务。
+src/gl/gl.js: https://github.com/patriciogonzalezvivo/glslCanvas/blob/9ed588a7a2d079db1bcc3d8badb8e7de64b75249/src/gl/gl.js
+src/GlslCanvas.js: https://github.com/patriciogonzalezvivo/glslCanvas/blob/9ed588a7a2d079db1bcc3d8badb8e7de64b75249/src/GlslCanvas.js
+LICENSE: https://github.com/patriciogonzalezvivo/glslCanvas/blob/9ed588a7a2d079db1bcc3d8badb8e7de64b75249/LICENSE
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Patricio Gonzalez Vivo ( http://www.patriciogonzalezvivo.com )
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== storyboard-canvas.png — 产品叙事白板 ===
+
+# 产品叙事白板 (storyboard-canvas)
+Source: https://github.com/excalidraw/excalidraw
+Pinned commit: 4c00f31ddcc20086bac1020428819fe0b9a30bce
+License: MIT
+Scope: 参考 Excalidraw 的工具选择、场景图元素和选中属性编辑交互；以原创故事画布独立重实现，不迁入上游渲染器或协作协议。
+Local changes: 原生 SVG 替换 React/Canvas 与 roughjs，新增叙事卡片演示数据、场景属性面板与限量内存撤销栈；没有实时协作、远程房间、文件导入和持久化。
+packages/excalidraw/actions/actionProperties.tsx: https://github.com/excalidraw/excalidraw/blob/4c00f31ddcc20086bac1020428819fe0b9a30bce/packages/excalidraw/actions/actionProperties.tsx
+项目 README 与功能说明: https://github.com/excalidraw/excalidraw/blob/4c00f31ddcc20086bac1020428819fe0b9a30bce/README.md
+完整 MIT 许可: https://github.com/excalidraw/excalidraw/blob/4c00f31ddcc20086bac1020428819fe0b9a30bce/LICENSE
+
+MIT License
+
+Copyright (c) 2020 Excalidraw
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== orbital-archive.png — 夜航档案 · 联动观测叙事 ===
+
+# 夜航档案 · 联动观测叙事 (orbital-archive)
+Source: https://github.com/observablehq/plot
+Pinned commit: 535723d5e433727720d9b673c31622821bb03210
+License: ISC
+Scope: 参考上游 Dot mark 的数据到散点映射，以及 Pointer interaction 的焦点信息交互；独立实现散点、拖动刷选与联动直方图，不内置 Plot 或宣称天文实测。
+Local changes: 新增原创虚构观测数据、三章故事、族群与时间筛选、拖动刷选、键盘样本访问、联动分布和档案详情；无网络数据加载。
+上游 src/marks/dot.js: https://github.com/observablehq/plot/blob/535723d5e433727720d9b673c31622821bb03210/src/marks/dot.js
+上游 src/interactions/pointer.js: https://github.com/observablehq/plot/blob/535723d5e433727720d9b673c31622821bb03210/src/interactions/pointer.js
+上游 LICENSE: https://github.com/observablehq/plot/blob/535723d5e433727720d9b673c31622821bb03210/LICENSE
+
+Copyright 2020-2025 Observable, Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+
+=== contour-atlas.png — 等高线地形档案 ===
+
+# 等高线地形档案 (contour-atlas)
+Source: https://github.com/ashima/webgl-noise
+Pinned commit: 6abed1e77ed1e18b181627c35f688eb30c9fe75e
+License: MIT
+Scope: 将 noise2D.glsl 的无纹理 simplex 噪声、mod289/permute 和梯度归一化算法改写为 JavaScript；用多尺度采样生成可重复地形。
+Local changes: 等高线绘制、海平面分层、坐标探针与蓝图视图是本地原创。不使用外部高度图，不把结果当作真实地理数据。
+src/noise2D.glsl: https://github.com/ashima/webgl-noise/blob/6abed1e77ed1e18b181627c35f688eb30c9fe75e/src/noise2D.glsl
+LICENSE: https://github.com/ashima/webgl-noise/blob/6abed1e77ed1e18b181627c35f688eb30c9fe75e/LICENSE
+
+Copyright (C) 2011 by Ashima Arts (Simplex noise)
+Copyright (C) 2011-2016 by Stefan Gustavson (Classic noise and others)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+=== orbital-desktop.png — 轨道研究桌面 ===
+
+# 轨道研究桌面 (orbital-desktop)
+Source: https://github.com/pmndrs/use-gesture
+Pinned commit: c779631aa05959638dee81b9a25fb1299a7467f6
+License: MIT
+Scope: 研究 use-gesture 的 active/movement 手势状态和 Pointer Capture 边界处理，独立重实现多窗口桌面交互。
+Local changes: 用原生 Pointer Events 和受限百分比坐标替换手势库与 spring 动画；原创星云桌面、多工具窗口、窗口层叠、专注模式和内存便笺；没有操作系统进程或持久存储。
+packages/core/src/engines/DragEngine.ts: https://github.com/pmndrs/use-gesture/blob/c779631aa05959638dee81b9a25fb1299a7467f6/packages/core/src/engines/DragEngine.ts
+项目 README 与功能说明: https://github.com/pmndrs/use-gesture/blob/c779631aa05959638dee81b9a25fb1299a7467f6/README.md
+完整 MIT 许可: https://github.com/pmndrs/use-gesture/blob/c779631aa05959638dee81b9a25fb1299a7467f6/LICENSE
+
+Copyright (c) 2018-present Paul Henschel <drcmda@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+=== circular-energy.png — 循环之城 · 能源河流推演 ===
+
+# 循环之城 · 能源河流推演 (circular-energy)
+Source: https://github.com/tomshanley/d3-sankey-circular
+Pinned commit: 7d9a6e3fba7aafdc7f4664e6bcac5879ad46a5b2
+License: MIT
+Scope: 参考上游 circular links 的回流路径、node / link 交互与宽度映射思想；用原生 SVG 独立重绘固定教学网络，不内置 d3 或其循环布局引擎。
+Local changes: 新增原创演示城市、三种供能方案、需求与回收控制、回流高亮、流量检查器、排放代理指标和非循环主干守恒检查；无外部数据。
+上游 src/sankeyCircular.js: https://github.com/tomshanley/d3-sankey-circular/blob/7d9a6e3fba7aafdc7f4664e6bcac5879ad46a5b2/src/sankeyCircular.js
+上游 README.md: https://github.com/tomshanley/d3-sankey-circular/blob/7d9a6e3fba7aafdc7f4664e6bcac5879ad46a5b2/README.md
+上游 LICENSE: https://github.com/tomshanley/d3-sankey-circular/blob/7d9a6e3fba7aafdc7f4664e6bcac5879ad46a5b2/LICENSE
+
+MIT License
+
+Copyright (c) 2017 Tom Shanley
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== curve-corridor.png — 曲线光廊驾驶舱 ===
+
+# 曲线光廊驾驶舱 (curve-corridor)
+Source: https://github.com/pmndrs/drei
+Pinned commit: bf6f4addf47467d3885de272d94ca5127f6ef68f
+License: MIT
+Scope: 借鉴 CatmullRomLine.tsx 的分段曲线与沿线颜色插值概念；本作品独立实现透视环截面与程序化曲线路径，不复制 drei/Three.js 程序。
+Local changes: 以原生 Canvas 2D 构造管道透视、航路参数、指针转向、速度与驾驶仪表；不移入三维引擎、设备陀螺仪或网络纹理。
+src/core/CatmullRomLine.tsx: https://github.com/pmndrs/drei/blob/bf6f4addf47467d3885de272d94ca5127f6ef68f/src/core/CatmullRomLine.tsx
+LICENSE: https://github.com/pmndrs/drei/blob/bf6f4addf47467d3885de272d94ca5127f6ef68f/LICENSE
+
+MIT License
+
+Copyright (c) 2020 react-spring
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== navigation-command.png — 航行指令中枢 ===
+
+# 航行指令中枢 (navigation-command)
+Source: https://github.com/dip/cmdk
+Pinned commit: dd2250ed608443e8f32bafc5fa2d1d07a3746aa3
+License: MIT
+Scope: 参考 cmdk 的过滤列表、selected value、箭头键循环与命令菜单交互；独立实现航行主题的可访问指令面板。
+Local changes: 用原生 DOM、combobox/listbox 属性和本地命令分发替换 React/Radix；原创星域地图、遥测面板和会话日志；不引入 cmdk 包，也不发送网络请求。
+cmdk/src/index.tsx: https://github.com/dip/cmdk/blob/dd2250ed608443e8f32bafc5fa2d1d07a3746aa3/cmdk/src/index.tsx
+项目 README 与功能说明: https://github.com/dip/cmdk/blob/dd2250ed608443e8f32bafc5fa2d1d07a3746aa3/README.md
+完整 MIT 许可: https://github.com/dip/cmdk/blob/dd2250ed608443e8f32bafc5fa2d1d07a3746aa3/LICENSE.md
+
+MIT License
+
+Copyright (c) 2022 Paco Coursey
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== isometric-city.png — 轻城 · 等距规划沙盘 ===
+
+# 轻城 · 等距规划沙盘 (isometric-city)
+Source: https://github.com/pixijs/pixijs
+Pinned commit: 2f01671aa654edefb8a6a8013d3b28c1a65c1813
+License: MIT
+Scope: 研究上游 Container 的子节点层次与 Graphics 的几何绘制方式；以原生 Canvas 独立重建等距投影、场景排序和地块交互，不内置 PixiJS、地图或真实规划逻辑。
+Local changes: 新增原创纸感等距城市、49 个可选地块、四类土地用途、高度调节、夜景、绿化指标叠层、变更撤销及街区统计；所有建筑程序化绘制。
+上游 src/scene/container/Container.ts: https://github.com/pixijs/pixijs/blob/2f01671aa654edefb8a6a8013d3b28c1a65c1813/src/scene/container/Container.ts
+上游 src/scene/graphics/shared/Graphics.ts: https://github.com/pixijs/pixijs/blob/2f01671aa654edefb8a6a8013d3b28c1a65c1813/src/scene/graphics/shared/Graphics.ts
+上游 LICENSE: https://github.com/pixijs/pixijs/blob/2f01671aa654edefb8a6a8013d3b28c1a65c1813/LICENSE
+
+The MIT License
+
+Copyright (c) 2013-2023 Mathew Groves, Chad Engler
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+=== chromatic-archive.png — 空间色谱档案馆 ===
+
+# 空间色谱档案馆 (chromatic-archive)
+Source: https://github.com/houmahani/codrops-depth-gallery
+Pinned commit: 28190e0920df887f069524c3863db397af34c1c8
+License: MIT
+Scope: 改写 Gallery.js 的景深进度归一化、基于深度的缩放与视差概念；以 Canvas 程序化海报替代上游 Three.js 图像平面。
+Local changes: 不迁入 Lummi.ai 图像、背景媒体或 Three.js。原创色谱海报、档案文字、移动景深、情绪配色、解读面板与触控视差组成离线展览。
+src/Experience/Gallery.js: https://github.com/houmahani/codrops-depth-gallery/blob/28190e0920df887f069524c3863db397af34c1c8/src/Experience/Gallery.js
+src/Experience/Background/shaders/fragment.glsl: https://github.com/houmahani/codrops-depth-gallery/blob/28190e0920df887f069524c3863db397af34c1c8/src/Experience/Background/shaders/fragment.glsl
+LICENSE: https://github.com/houmahani/codrops-depth-gallery/blob/28190e0920df887f069524c3863db397af34c1c8/LICENSE
+
+MIT License
+
+Copyright (c) 2009 - 2025 [Codrops](https://codrops.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== specimen-archive.png — 标本档案馆 ===
+
+# 标本档案馆 (specimen-archive)
+Source: https://github.com/jameskerr/react-arborist
+Pinned commit: d74c4ec696ba98c1a4e981075f6d60cdff3e290b
+License: MIT
+Scope: 参考 react-arborist 的树节点、祖先保留过滤、展开/选中和重命名/移动 API 模型，独立实现小型标本档案产品。
+Local changes: 以原生 DOM 树行替换 React 和虚拟滚动；原创标本 SVG、馆藏字段和温暖档案馆视觉；目录移动通过明确按钮完成，没有上传、网络、存储或文件系统访问。
+modules/react-arborist/src/data/simple-tree.ts: https://github.com/jameskerr/react-arborist/blob/d74c4ec696ba98c1a4e981075f6d60cdff3e290b/modules/react-arborist/src/data/simple-tree.ts
+项目 README 与功能说明: https://github.com/jameskerr/react-arborist/blob/d74c4ec696ba98c1a4e981075f6d60cdff3e290b/README.md
+完整 MIT 许可: https://github.com/jameskerr/react-arborist/blob/d74c4ec696ba98c1a4e981075f6d60cdff3e290b/LICENSE
+
+MIT License
+
+Copyright (c) 2022 Brim Data
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== contour-sculpture.png — 褶地 · 矢量地形雕刻台 ===
+
+# 褶地 · 矢量地形雕刻台 (contour-sculpture)
+Source: https://github.com/paperjs/paper.js
+Pinned commit: 92775f5279c05fb7f0a743e9e7fa02cd40ec1e70
+License: MIT
+Scope: 研究上游 Path 的采样、平滑及路径编辑接口；用原生 SVG 独立实现径向轮廓、Catmull–Rom 平滑与蒙版开窗，不内置 Paper.js 或宣称通用布尔几何引擎。
+Local changes: 新增原创矢量地形、三个可拖拽且可键盘选择的控制点、起伏强度、扭曲、轮廓层级、两套墨色、开窗构图与控制点显示；无图像素材。
+上游 src/path/Path.js: https://github.com/paperjs/paper.js/blob/92775f5279c05fb7f0a743e9e7fa02cd40ec1e70/src/path/Path.js
+上游 LICENSE.txt: https://github.com/paperjs/paper.js/blob/92775f5279c05fb7f0a743e9e7fa02cd40ec1e70/LICENSE.txt
+
+Copyright (c) 2011 - 2020, Jürg Lehni & Jonathan Puckey
+http://juerglehni.com/ & https://puckey.studio/
+All rights reserved.
+
+The MIT License (MIT)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+=== orbital-exhibition.png — 环轨未来展览 ===
+
+# 环轨未来展览 (orbital-exhibition)
+Source: https://github.com/codrops/3DCarousel
+Pinned commit: f354a11d19777b4e573d47b016354951b1ecace3
+License: MIT
+Scope: 保留 js/index.js 中 getCarouselCellTransforms 的等角 rotateY + translateZ 布局公式，改为无需 GSAP 的显式展览角度与聚焦状态。
+Local changes: 原始摄影图与 GSAP 插件不迁入。原创 Canvas 海报、八件展品、聚焦模式、环半径和展台俯仰控制由本地实现；均为真实3D DOM平面。
+js/index.js: https://github.com/codrops/3DCarousel/blob/f354a11d19777b4e573d47b016354951b1ecace3/js/index.js
+LICENSE: https://github.com/codrops/3DCarousel/blob/f354a11d19777b4e573d47b016354951b1ecace3/LICENSE
+
+MIT License
+
+Copyright (c) 2009 - 2024 [Codrops](https://tympanus.net/codrops)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== sequence-director.png — 片段导演台 ===
+
+# 片段导演台 (sequence-director)
+Source: https://github.com/xzdarcy/react-timeline-editor
+Pinned commit: 4148f4a837dd767ea66807560d05bc7b65c7e578
+License: MIT
+Scope: 参考 react-timeline-editor 的 TimelineRow/actions/start/end、播放头与缩放交互，独立实现三轨视觉片段工作台。
+Local changes: 原生 DOM 和 SVG 替换 React 时间线组件；原创无外部媒体的轨道片段、纯图形预览帧、拖动、修剪与拆分；不迁入音视频解码、上游依赖或服务器。
+packages/timeline/src/components/timeline.tsx: https://github.com/xzdarcy/react-timeline-editor/blob/4148f4a837dd767ea66807560d05bc7b65c7e578/packages/timeline/src/components/timeline.tsx
+项目 README 与功能说明: https://github.com/xzdarcy/react-timeline-editor/blob/4148f4a837dd767ea66807560d05bc7b65c7e578/README.md
+完整 MIT 许可: https://github.com/xzdarcy/react-timeline-editor/blob/4148f4a837dd767ea66807560d05bc7b65c7e578/LICENSE
+
+MIT License
+
+Copyright (c) 2021 zdarcy
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== knowledge-canopy.png — 知枝 · 交互知识星图 ===
+
+# 知枝 · 交互知识星图 (knowledge-canopy)
+Source: https://github.com/markmap/markmap
+Pinned commit: 122bf0500ee7aca4f023c2465f7e26bf023eec52
+License: MIT
+Scope: 参考 Markmap 的分支折叠、活动节点高亮、层次连线与自动适配思路；使用原生 SVG 独立实现固定知识树，不迁移 Markdown 解析器、AI 或 Markmap 引擎。
+Local changes: 新增原创三套主题知识树、两种布局、搜索与祖先路径高亮、分支折叠、聚焦阅读、子节点键盘访问和可见节点计数；不生成 AI 内容或伪装协作。
+上游 packages/markmap-view/src/view.ts: https://github.com/markmap/markmap/blob/122bf0500ee7aca4f023c2465f7e26bf023eec52/packages/markmap-view/src/view.ts
+上游 README.md: https://github.com/markmap/markmap/blob/122bf0500ee7aca4f023c2465f7e26bf023eec52/README.md
+上游 LICENSE: https://github.com/markmap/markmap/blob/122bf0500ee7aca4f023c2465f7e26bf023eec52/LICENSE
+
+MIT License
+
+Copyright (c) 2020 Gerald
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== liquid-optics.png — 液态玻璃光学工坊 ===
+
+# 液态玻璃光学工坊 (liquid-optics)
+Source: https://github.com/iyinchao/liquid-glass-studio
+Pinned commit: f7b28c36305a862f5cffed3ddd51511cf1204f56
+License: MIT
+Scope: 将 sdf.glsl 的 superellipseCornerSDF 范数和 fragment-main.glsl 的 SDF 法线、Snell 边缘折射、分通道色散思想改写为 Canvas 2D CPU 光学采样。上游注明 SDF 思路来自 Inigo Quilez。
+Local changes: 不迁入 React、WebGPU、图片、视频或多通道GPU引擎。使用原创程序化背景、可拖拽透镜、三种轮廓、折射/色散与前后对照；CPU近似便于在禁外网预览中学习，并非上游完整效果移植。
+src/shaders/lib/sdf.glsl: https://github.com/iyinchao/liquid-glass-studio/blob/f7b28c36305a862f5cffed3ddd51511cf1204f56/src/shaders/lib/sdf.glsl
+src/shaders/fragment-main.glsl: https://github.com/iyinchao/liquid-glass-studio/blob/f7b28c36305a862f5cffed3ddd51511cf1204f56/src/shaders/fragment-main.glsl
+LICENSE: https://github.com/iyinchao/liquid-glass-studio/blob/f7b28c36305a862f5cffed3ddd51511cf1204f56/LICENSE
+
+MIT License
+
+Copyright (c) 2024 Charles Yin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== screen-sculptor.png — 界面分镜造型台 ===
+
+# 界面分镜造型台 (screen-sculptor)
+Source: https://github.com/lnkiai/m3e-canvas
+Pinned commit: 0239ae1a8532f905388de4b46ff88a1c90641bb2
+License: MIT
+Scope: 研究 m3e-canvas 的屏幕、组件属性、target screen 交互与本地 prompt 描述模式，独立重实现界面分镜工具；不迁入 loading 形状算法、shapes.ts 或第三方 Material 图标/字体。
+Local changes: 原生 DOM 和原创配色/几何替换 Next.js/React，保留组件编辑与两屏导航的学习体验；说明由设计数据确定性生成，无 AI/密钥、分享链接、外网或持久化；MIT 来源和上游第三方 NOTICE 分别链接。
+components/PartInspector.tsx: https://github.com/lnkiai/m3e-canvas/blob/0239ae1a8532f905388de4b46ff88a1c90641bb2/components/PartInspector.tsx
+项目 README 与功能说明: https://github.com/lnkiai/m3e-canvas/blob/0239ae1a8532f905388de4b46ff88a1c90641bb2/README.md
+完整 MIT 许可: https://github.com/lnkiai/m3e-canvas/blob/0239ae1a8532f905388de4b46ff88a1c90641bb2/LICENSE
+上游第三方 NOTICE（未迁入 loading 模块）: https://github.com/lnkiai/m3e-canvas/blob/0239ae1a8532f905388de4b46ff88a1c90641bb2/NOTICE
+
+MIT License
+
+Copyright (c) 2026 lnkiai
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== foil-tilt.png — 折光身份卡 ===
+
+来源: https://github.com/micku7zu/vanilla-tilt.js
+固定版本: 48f4ee931d4d91dcdd2f91803db67a9f3a16587e
+迁入范围: 迁入并改写 src/vanilla-tilt.js 的 getValues 坐标归一化、clamp、倾角与 atan2 反光方向公式。
+修改说明: 以 Pointer Events 和原创 CSS 身份卡替换库的初始化、陀螺仪、全页监听与 DOM glare 构建；不引入上游整库。原库源自 Gijs Rogé 的 Tilt.js。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2017 Șandor Sergiu
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== shape-morph.png — 形态铸造台 ===
+
+来源: https://github.com/veltman/flubber
+固定版本: 0cadadf3eb15cd5b2ec7c45c70601ff88b76a6c3
+迁入范围: 迁入 src/math.js 的 pointAlong 函数；参考 interpolatePoint 的等点数线性插值接口。
+修改说明: 原创生成 80 个均匀极角顶点、三个目标轮廓和静态 SVG 工作台；不迁入 flubber 的路径解析、轮廓重采样、D3 依赖或多形状匹配。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2017 Noah Veltman
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== drag-playlist.png — 可拖拽灵感清单 ===
+
+来源: https://github.com/SortableJS/Sortable
+固定版本: 48b626bbc61afbb0f179730c1dd3cca3dcc8b788
+迁入范围: 参考 SortableJS README 的 drag handle、重排与触摸交互模式；本模板排序与 Pointer Capture 代码为独立实现，没有复制 SortableJS 库。
+修改说明: 只保留四项单列表视觉交互；去除多列表、插件、自动滚动、持久化与外部依赖，新增明确的上下按钮替代拖拽。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2019 All contributors to Sortable
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== particle-network.png — 星点连接场 ===
+
+来源: https://github.com/VincentGarreau/particles.js
+固定版本: d01286d6dcd61f497d07cc62bd48e692f6508ad5
+迁入范围: 迁入并简化 particles.js 中 linkParticles 的 dx/dy 欧氏距离与距离衰减透明度计算。
+修改说明: 原创固定 48 个粒子及控制面板；不迁入图片加载、配置解析、插件与整库。将持续动画限制为约 40 帧/秒，并在页面不可见时暂停。
+
+完整上游许可:
+The MIT License (MIT)
+
+Copyright (c) 2015, Vincent Garreau
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+=== confetti-launch.png — 纸屑发射台 ===
+
+来源: https://github.com/catdad/canvas-confetti
+固定版本: 20eebad51dde793070c373d594099a7ed8d96e22
+迁入范围: 迁入并改写 src/confetti.js 的 randomPhysics 角度扩散和 updateFetti 速度分解、decay 更新公式。
+修改说明: 原创成就卡与 80 个矩形纸屑；去除 worker、Path2D 图形解析、文字/图片栅格化与包导出，仅点击后执行一轮有限动画。
+
+完整上游许可:
+ISC License
+
+Copyright (c) 2020, Kiril Vatev
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+=== rough-blueprint.png — 手绘蓝图工坊 ===
+
+来源: https://github.com/rough-stuff/rough
+固定版本: 56a2762171b1294d643501e8d14f120db6b27bd7
+迁入范围: 迁入并改写 RoughJS src/renderer.ts 的 _offset 有界随机扰动公式，参考 _doubleLine 双次描边结构。
+修改说明: 原创小屋/飞行器顶点与 Bézier 控制点；只绘制两幅有限图形，不迁入 RoughJS 的 SVG 解析、填充算法或随机数实现。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2019 Preet Shihn
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== signature-studio.png — 笔迹速度实验 ===
+
+来源: https://github.com/szimek/signature_pad
+固定版本: 0a33fd6791e0df151c4e9421193cfc03f18732a7
+迁入范围: 迁入 src/point.ts 的 distanceTo 与 velocityFrom 方法，改写为两个纯函数。
+修改说明: 原创速度平滑、线宽映射和界面；不迁入签名序列化、SVG 导出、完整 Bézier 笔迹生成或上传逻辑。笔迹仅保留在当前页面内存。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2018 Szymon Nowak
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== line-reveal.png — 线描航行图 ===
+
+来源: https://github.com/maxwellito/vivus
+固定版本: 06b7adb5d543b6b1d0d93fa83dea137b1f8644a5
+迁入范围: 迁入并改写 src/vivus.js 的 trace 进度 clamp 以及 length * (1 - progress) 计算；参考路径长度映射。
+修改说明: 原创船帆/水波 SVG；不迁入外部 SVG 请求、PathFormer、viewport 监听或全局库，保留滑杆与一次性播放。
+
+完整上游许可:
+The MIT License (MIT)
+
+Copyright (c) maxwellito
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== rolling-meter.png — 滚动数字仪表 ===
+
+来源: https://github.com/HubSpot/odometer
+固定版本: 0bc5470eeb822f828d6ac8cca8b87a02413f6260
+迁入范围: 参考 odometer.coffee 的 digit/ribbon 分位滚动结构；DOM 创建、状态更新与 CSS 胶片为独立实现，没有复制 Odometer 整库。
+修改说明: 只保留五位非负整数仪表；去除格式/小数解析、MutationObserver、全局补丁与自动更新，新增输入和按钮。
+
+完整上游许可:
+Copyright (c) 2013 HubSpot, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+=== typing-terminal.png — 逐字探索终端 ===
+
+来源: https://github.com/mattboldt/typed.js
+固定版本: 337109d9ac6558475eea301693e64071dafc9961
+迁入范围: 迁入 v2.0.12 src/typed.js 中 humanizer 的有界随机延迟公式；参考 typewrite 的逐步位置状态。
+修改说明: 仅使用明确 MIT 的历史版本 v2.0.12；原创中文终端、Unicode 字符遍历和取消逻辑。移除 HTML 解析、循环删除、动态资源及整库，不据此宣称当前版本许可相同。
+
+完整上游许可:
+The MIT License (MIT)
+
+Copyright (c) 2018 Matt Boldt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+=== range-window.png — 时间窗口筛选器 ===
+
+来源: https://github.com/leongersen/noUiSlider
+固定版本: 57033672d07e8bac527d7147721a4a2e07e0d699
+迁入范围: 迁入 src/nouislider.ts 的 limit（0～100 百分比 clamp）函数；参考双 handle 的范围约束模式。
+修改说明: 以两个原生 range 与原创柱状图替换库的非线性 Spectrum、插件与拖动实现；无表单提交或持久化。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2019 Léon Gersen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== bezier-timing.png — 缓动曲线试验场 ===
+
+来源: https://github.com/gre/bezier-easing
+固定版本: d3021221b2e50efad768ab88e76ccbf9d4c72498
+迁入范围: 迁入 src/index.js 的 Y 三次多项式求值函数；参考 bezier(x1,y1,x2,y2) 的缓动接口。
+修改说明: 原创 SVG 控制点和 20 次二分反解，未迁入上游代数求根器；所有控制点限定在 0～1，以有限播放替代持续动画。上游注明代数求解贡献来自 Dmitry Baranovskiy，本模板未复制该部分。
+
+完整上游许可:
+Copyright (c) 2014 Gaëtan Renaudeau
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== color-atlas.png — HSV 配色观测室 ===
+
+来源: https://github.com/bgrins/TinyColor
+固定版本: b49018c9f2dbca313d80d7a4dad25e26143cfe01
+迁入范围: 迁入并改写 tinycolor.js 的 hsvToRgb 六区间转换公式。上游注明该转换参考 Michael Jackson 的颜色模型转换文章。
+修改说明: 以原生 range 输入和原创五色阶/界面卡代替 TinyColor 字符串解析、全局对象及扩展颜色名称表；仅接受界面提供的数值范围。
+
+完整上游许可:
+Copyright (c), Brian Grinstead, http://briangrinstead.com
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+=== poster-transform.png — 可编辑海报画板 ===
+
+来源: https://github.com/taye/interact.js
+固定版本: a993eb8cd5cbc65f3a19e45ee24b7fedc026174f
+迁入范围: 迁入 packages/@interactjs/utils/rect.ts 的 toFullRect 函数，参考 Interact.js 的拖动/约束交互模式。
+修改说明: 原创海报、Pointer Capture、键盘移动与尺寸滑杆；不迁入手势框架、插件、惯性、resize 调度或网络资源。
+
+完整上游许可:
+Copyright (c) 2012-present Taye Adeyemi <dev@taye.me>
+
+Permission is hereby granted, free of charge, to any person 
+obtaining a copy of this software and associated 
+documentation files (the "Software"), to deal in the Software 
+without restriction, including without limitation the rights 
+to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to 
+whom the Software is furnished to do so, subject to the 
+following conditions:
+
+The above copyright notice and this permission notice shall 
+be included in all copies or substantial portions of the 
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== snap-gallery.png — 横向故事展廊 ===
+
+来源: https://github.com/nolimits4web/swiper
+固定版本: fbf9ddb555edd2e0332e813dd69972ab9ee4b8b4
+迁入范围: 参考 Swiper README 的触摸分页/导航模式及 updateActiveIndex.ts 的活动索引概念；本模板用原生 CSS scroll-snap 与独立滚动代码实现，没有复制 Swiper 库。
+修改说明: 仅保留三张原创 CSS 几何海报；移除图片、自动播放、框架包装器、模块加载、虚拟页、URL 历史及任何外网请求。
+
+完整上游许可:
+The MIT License (MIT)
+
+Copyright (c) 2019 Vladimir Kharlampidi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== donut-observatory.png — 环形数据观测站 ===
+
+来源: https://github.com/chartjs/Chart.js
+固定版本: 7169e65147a47f3720957a6f156a33c838ab9f57
+迁入范围: 迁入并改写 src/controllers/controller.doughnut.js 的 calculateCircumference 份额到弧度公式，参考 calculateTotal 的可见值求和。
+修改说明: 原创 Canvas 环形图、数据样本与图例；不迁入 Chart.js 的控制器、坐标系统、插件或任何真实学习数据。
+
+完整上游许可:
+The MIT License (MIT)
+
+Copyright (c) 2014-2024 Chart.js Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+=== gravity-bowl.png — 重力小球试验箱 ===
+
+来源: https://github.com/liabru/matter-js
+固定版本: b8ee71cd7f9b49f53639ddaedd6254f1929bcbe5
+迁入范围: 迁入并简化 src/body/Body.js 中 Body.update 的位置差推导速度与 frictionAir 衰减/Verlet 积分结构。
+修改说明: 仅实现最多 15 个圆形的重力和容器边界碰撞；没有迁入 Matter.js 的刚体求解器、物体间碰撞、约束或完整引擎。每次操作最多模拟 600 帧，不持续后台运行。
+
+完整上游许可:
+The MIT License (MIT)
+
+Copyright (c) Liam Brummitt and contributors.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+=== wireframe-orbit.png — 线框空间观察器 ===
+
+来源: https://github.com/mrdoob/three.js
+固定版本: d4f1373ea73704daae13281ff7e8c48761e777b3
+迁入范围: 迁入并改写 src/math/Vector3.js 的 applyMatrix4 齐次坐标变换和透视除法计算。
+修改说明: 原创八个立方体顶点、十二条边、旋转与 Canvas 渲染；不迁入 Three.js WebGL 渲染器、着色器、模型加载器或场景系统，不要求 GPU 或外部模型。
+
+完整上游许可:
+The MIT License
+
+Copyright © 2010-2026 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+=== depth-picker.png — 景深选择卷轴 ===
+
+来源: https://github.com/wcandillon/can-it-be-done-in-react-native
+固定版本: 72678212d4041f124e1585cdf6360f36737daa5f
+迁入范围: 迁入并改写 the-10-min/src/Picker/Picker.tsx 的相对偏移 clamp、asin 旋转和 radius*cos(angle)-radius 景深公式；参考 AnimationHelpers 的吸附到离散条目思想。
+修改说明: 以 CSS 透视、原生按钮/键盘/触摸替换 React Native Reanimated、MaskedView 与外部字体；不复制完整原生组件或第三方 redash 的 snapPoint。仓库 README 明确关联原作者 YouTube 系列，但未独立核实具体单集链接，故不填单集视频地址。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2019 William Candillon
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+=== liquid-page.png — 流体翻页海报 ===
+
+来源: https://github.com/ashutosh1919/react-liquidswipe
+固定版本: 678cb1fc21d5f0523f189e90347ba9ce483a7cb4
+迁入范围: 参考 src/components/liquidswipe.js 的 getPath 中 anchorDistance、curviness、C/S 三次曲线和 SVG clipPath 边缘裁切结构；路径坐标与驱动代码独立重写。
+修改说明: 原创两张纯 SVG 海报，以滑杆和一次性 requestAnimationFrame 替换 Gatsby、React Spring、use-gesture、图片与付费设计素材；不迁入应用逻辑或上游整组件。
+
+完整上游许可:
+MIT License
+
+Copyright (c) 2021 Ashutosh Hathidara
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+

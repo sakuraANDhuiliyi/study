@@ -41,6 +41,13 @@ import { AcademicGoalsController } from './academics/goals.controller';
 import { AcademicGoalsService } from './academics/goals.service';
 import { AcademicRecordExportController } from './academics/records-export.controller';
 import { AcademicRecordExportService } from './academics/records-export.service';
+import { ProgrammingController } from './programming/programming.controller';
+import { CreativeController } from './programming/creative.controller';
+import { AlgorithmForumController } from './algorithm-forum/algorithm-forum.controller';
+import { AlgorithmForumService } from './algorithm-forum/algorithm-forum.service';
+import { ProgrammingService } from './programming/programming.service';
+import { ProgrammingGateway } from './programming/programming.gateway';
+import { ProgrammingPreviewService } from './programming/programming-preview.service';
 @Controller('health')
 class HealthController {
   constructor(private db: PrismaService) {}
@@ -122,6 +129,9 @@ class CatalogController {
     AcademicsController,
     AcademicGoalsController,
     AcademicRecordExportController,
+    ProgrammingController,
+    CreativeController,
+    AlgorithmForumController,
   ],
   providers: [
     PrismaService,
@@ -147,6 +157,10 @@ class CatalogController {
     AcademicsService,
     AcademicGoalsService,
     AcademicRecordExportService,
+    ProgrammingService,
+    ProgrammingGateway,
+    ProgrammingPreviewService,
+    AlgorithmForumService,
   ],
 })
 export class AppModule {}

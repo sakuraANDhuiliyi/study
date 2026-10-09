@@ -27,5 +27,5 @@ export interface AlgorithmEditorial {
   mistakes: { mistake: string; fix: string }[];
   followUp: string[];
   relatedProblemIds: string[];
-  referenceCode: Record<AlgorithmEditorialLanguage, string>;
+  referenceCode: Partial<Record<AlgorithmEditorialLanguage, string>>;
 }

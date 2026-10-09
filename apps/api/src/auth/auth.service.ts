@@ -17,10 +17,12 @@ export class AuthService {
     const flags = setting?.value as { practice?: boolean; communication?: boolean } | undefined;
     if (
       (flags?.practice === false &&
-        (/^\/api\/(practice|mistakes|favorites|ai-study|algorithms)(\/|$)/i.test(path) ||
+        (/^\/api\/(practice|mistakes|favorites|ai-study|algorithms|algorithm-forum|programming)(\/|$)/i.test(
+          path,
+        ) ||
           /^\/api\/questions\/[^/]+\/favorite\/?$/i.test(path))) ||
       (flags?.communication === false &&
-        /^\/api\/(discussions|conversations|communication)(\/|$)/i.test(path))
+        /^\/api\/(discussions|conversations|communication|algorithm-forum)(\/|$)/i.test(path))
     )
       throw new ForbiddenException('机构已关闭此功能');
   }

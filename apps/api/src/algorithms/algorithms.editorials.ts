@@ -1,3 +1,4 @@
+import { bulkAlgorithmEditorials } from './algorithms.editorials-bulk';
 import { coreAlgorithmEditorials } from './algorithms.editorials-core';
 import { extraAlgorithmEditorials } from './algorithms.editorials-extra';
 import { graphAlgorithmEditorials } from './algorithms.editorials-graphs';
@@ -12,6 +13,7 @@ export const algorithmEditorials = [
   ...coreAlgorithmEditorials,
   ...extraAlgorithmEditorials,
   ...graphAlgorithmEditorials,
+  ...bulkAlgorithmEditorials,
 ];
 
 export function getAlgorithmEditorial(problemId: string) {

@@ -21,12 +21,16 @@ const languages = ['python', 'javascript', 'cpp', 'java'];
 const ids = new Set(algorithmProblems.map((problem) => problem.id));
 let selectedLanguages = languages;
 let selectedProblems = algorithmProblems;
+let explicitLanguages = false,
+  explicitProblems = false;
 for (const argument of process.argv.slice(2)) {
   if (argument.startsWith('--languages=')) {
+    explicitLanguages = true;
     selectedLanguages = argument.slice('--languages='.length).split(',');
     if (!selectedLanguages.length || selectedLanguages.some((language) => !languages.includes(language)))
       throw new Error('Only the fixed python,javascript,cpp,java languages can be selected');
   } else if (argument.startsWith('--problems=')) {
+    explicitProblems = true;
     const selected = argument.slice('--problems='.length).split(',');
     if (!selected.length || selected.some((id) => !ids.has(id)))
       throw new Error('Only existing repository catalog problem IDs can be selected');
@@ -78,15 +82,26 @@ const execute = (command, args, cwd, input = '', timeout = 15_000) => {
 };
 const directory = mkdtempSync(join(tmpdir(), 'zhixue-trusted-algorithm-references-'));
 const failures = [];
+const skipped = [];
 let programsPassed = 0,
   casesPassed = 0;
 try {
   for (const language of selectedLanguages) {
+    const available = selectedProblems.filter(
+      (problem) => typeof getAlgorithmEditorial(problem.id)?.referenceCode[language] === 'string',
+    );
+    for (const problem of selectedProblems.filter((problem) => !available.includes(problem))) {
+      const message = `${language} ${problem.id}: this catalog entry does not provide a fixed reference in this language`;
+      if (explicitLanguages && explicitProblems) failures.push(message);
+      else skipped.push(message);
+      console.log(`${explicitLanguages && explicitProblems ? 'FAIL' : 'SKIP'} ${message}`);
+    }
+    if (!available.length) continue;
     if (!runtimes[language] || (language === 'java' && !runtimes.javac)) {
       failures.push(`${language}: required runtime/compiler is unavailable`);
       continue;
     }
-    for (const problem of selectedProblems) {
+    for (const problem of available) {
       try {
         const source = getAlgorithmEditorial(problem.id)?.referenceCode[language];
         if (typeof source !== 'string' || !source.trim()) throw new Error('Missing fixed reference source');
@@ -143,5 +158,18 @@ try {
   // Only this script's newly created temporary directory is removed.
   rmSync(directory, { recursive: true, force: true });
 }
-console.log(JSON.stringify({ programsPassed, casesPassed, languages: selectedLanguages, failures }, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      programsPassed,
+      casesPassed,
+      languages: selectedLanguages,
+      missingReferencesSkipped: skipped.length,
+      skipped,
+      failures,
+    },
+    null,
+    2,
+  ),
+);
 if (failures.length) process.exitCode = 1;

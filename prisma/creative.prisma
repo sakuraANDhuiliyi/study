@@ -1,0 +1,11 @@
+model ProgrammingCreativeFavorite {
+  id             String @id @default(cuid())
+  organizationId String
+  userId         String
+  creativeId     String
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([organizationId, userId, creativeId], map: "ProgrammingCreativeFavorite_owner_item_key")
+  @@index([organizationId, userId, updatedAt, id], map: "ProgrammingCreativeFavorite_owner_history_idx")
+  @@index([userId])
+}

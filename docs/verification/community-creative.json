@@ -1,0 +1,310 @@
+{
+  "verifiedAt": "2026-10-09T09:46:14.453Z",
+  "status": "passed",
+  "scope": "100 additional algorithm problems, scoped algorithm forum, 20 curated UI recipes integrated into the student programming workspace",
+  "catalog": {
+    "original": 19,
+    "added": 100,
+    "total": 119,
+    "learningPlans": 10,
+    "baseNewFixtures": 600,
+    "constructedScaleFixtures": 68,
+    "totalCases": 821,
+    "newStarters": ["cpp", "python", "javascript", "java"],
+    "newFullReferences": ["javascript"],
+    "originalFullReferences": ["cpp", "python", "javascript", "java"],
+    "sourceDocument": "docs/algorithm-catalog.md"
+  },
+  "visibility": {
+    "public": "All authenticated platform roles",
+    "organization": "Only the current school/organization",
+    "personal": "Public posting only",
+    "existingCourseDiscussionsPublished": false,
+    "authorPersonalNamesExposed": false
+  },
+  "creative": {
+    "items": 20,
+    "sourceRepositories": 20,
+    "licenses": {
+      "MIT": 19,
+      "ISC": 1
+    },
+    "confirmedUpstreamVideoLinks": 2,
+    "uiOnly": true,
+    "sourceBackendsIntegrated": false,
+    "privateFavorites": true,
+    "privateClonedProjects": true,
+    "sourceRevisionChecked": true,
+    "noticePreservedOnEditAndAiApply": true,
+    "publicDeployment": false,
+    "sourceDocument": "docs/creative-sources.md",
+    "covers": {
+      "count": 20,
+      "totalBytes": 869522,
+      "width": 640,
+      "height": 401,
+      "items": [
+        {
+          "id": "foil-tilt",
+          "sha256": "d902073bdf4a6b104f855fe7b91e08f45fdd5e2ac3585a56b4db07339b9ae0e9"
+        },
+        {
+          "id": "shape-morph",
+          "sha256": "cea18181a17920e8dc2c426c948d0261129dc1c3b48e81631b3d215e856db104"
+        },
+        {
+          "id": "drag-playlist",
+          "sha256": "7583768c471c971d2d4c3ef3e0a4bd18ce07db823a95d63beb3702cd484ce606"
+        },
+        {
+          "id": "particle-network",
+          "sha256": "ff22ec3fcce1eebad441c713ac3dc7d8e6a0015343f7bea4419e70bda7382174"
+        },
+        {
+          "id": "confetti-launch",
+          "sha256": "82181c5b159b1e5923929907f7ebb90eb1d35800b092ed8c582d7aa94be06f4c"
+        },
+        {
+          "id": "rough-blueprint",
+          "sha256": "7dca93530eac56e20ee3f1961e96395af9e43e16e335c24c7661025ff9e0bfbf"
+        },
+        {
+          "id": "signature-studio",
+          "sha256": "8e5d393dcad95d57b9488c36527cff0a74fdd1a7f27e1a19b4c3b3eab4c34595"
+        },
+        {
+          "id": "line-reveal",
+          "sha256": "218627c7a02d32e86454a0e28ec578f518aa40469cf8c9daea5fe71e82c20697"
+        },
+        {
+          "id": "rolling-meter",
+          "sha256": "94b5230631ad74d07f1fb478864f8e80e71dffcd183f7c2cb1d003d1f8f2ee0f"
+        },
+        {
+          "id": "typing-terminal",
+          "sha256": "66120373bc5ae1263c25e1dbd83b7fa73fc1cf0b76f5199b2e61f6c9fd90bc82"
+        },
+        {
+          "id": "range-window",
+          "sha256": "e5ad1d72fdb730dc0e55785c916bbc1cb86a271aecd75f46b382f17f7b6d4136"
+        },
+        {
+          "id": "bezier-timing",
+          "sha256": "3f946134123dfd1cd0677dfdc79ecf1c5976c9ea2f0838651aed7070f86b43d0"
+        },
+        {
+          "id": "color-atlas",
+          "sha256": "a95e5327099b0f870bfa8e26aae407fdd3ae1be6e676ae181721c18e52a0affc"
+        },
+        {
+          "id": "poster-transform",
+          "sha256": "39b776ed9b37c65d3545c91842bb47697ddf270575d4c8dfbdf2e3a643ef7275"
+        },
+        {
+          "id": "snap-gallery",
+          "sha256": "ee3739c215c9b87681f42735132032197a168e26c72acd5c6a093016ceae0b57"
+        },
+        {
+          "id": "donut-observatory",
+          "sha256": "d8649ecc8da0324bbcf067e7eacb025313b5a24629917deb41122f0364995b88"
+        },
+        {
+          "id": "gravity-bowl",
+          "sha256": "17de731b58cd4d3e75419a3f171dae89171a04d7989c7e92516f3b90a72a0df4"
+        },
+        {
+          "id": "wireframe-orbit",
+          "sha256": "3dd76486a06602049fcbb59dbe7a2223bca84ac2edb5a6a19c63e3ac1601a92d"
+        },
+        {
+          "id": "depth-picker",
+          "sha256": "6bf7f1cc1a027c0bed1aa3b27256cec95175bb17c43ee95d50836f3ab384b16a"
+        },
+        {
+          "id": "liquid-page",
+          "sha256": "19d3de2137f0f816c7123c9d513b45b86fcd9762ec3e36ae48e892636a203fec"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "unit": {
+      "command": "npm test",
+      "passed": 375,
+      "failed": 0,
+      "log": ".data/community-creative-unit-final.log",
+      "note": "The runner now uses test-concurrency=1. Initial parallel execution timed out one 2-second safe-download fixture under concurrent compiler/browser/stress load; its isolated 30-case suite and the complete sequential suite passed without changing production timeout behavior."
+    },
+    "javascriptReferences": {
+      "command": "npm run test:algorithm-references -- --languages=javascript",
+      "programs": 119,
+      "cases": 821,
+      "failed": 0,
+      "log": ".data/community-algorithm-js-references.log",
+      "trustedRepositoryProgramsOnly": true
+    },
+    "originalOtherLanguageReferences": {
+      "languages": ["python", "cpp", "java"],
+      "programs": 57,
+      "cases": 459,
+      "failed": 0,
+      "log": ".data/community-original-multilanguage-references.log",
+      "note": "Selected the original 19 stable problem IDs; no absent implementations claimed as verified."
+    },
+    "forumHttp": {
+      "command": "DOTENV_CONFIG_PATH=.data/review.env npm run test:algorithm-forum",
+      "passed": 13,
+      "failed": 0,
+      "log": ".data/forum-integration.log",
+      "localReviewDatabase": true
+    },
+    "creativeHttp": {
+      "command": "DOTENV_CONFIG_PATH=.data/review.env npm run test:creative",
+      "passed": 17,
+      "failed": 0,
+      "log": ".data/creative-integration.log",
+      "localReviewDatabase": true,
+      "model": "Local DeepSeek-compatible fixture; no paid provider request"
+    },
+    "programmingRegression": {
+      "command": "DOTENV_CONFIG_PATH=.data/review.env npm run test:programming",
+      "passed": 16,
+      "failed": 0,
+      "log": ".data/community-programming-regression.log"
+    },
+    "algorithmsRegression": {
+      "command": "DOTENV_CONFIG_PATH=.data/review.env npm run test:algorithms",
+      "passed": 14,
+      "failed": 0,
+      "log": ".data/community-algorithms-regression.log"
+    },
+    "forumBrowserContracts": {
+      "passed": 8,
+      "failed": 0,
+      "log": ".data/forum-browser-final.log",
+      "mockApi": true,
+      "note": "Includes filtered-topic automatic association and reduced-motion mouse dropdown selection; mocked contracts do not substitute for actual HTTP or actual UI/database verification."
+    },
+    "actualCommunityAndCreativeBrowser": {
+      "checks": [
+        "真实登录与机构学习空间",
+        "20作品、12/8分页、20张PNG可加载",
+        "收藏持久化与筛选",
+        "创意标题搜索",
+        "真实隔离预览与指针/重置交互",
+        "来源/完整许可/源码查看和ZIP下载",
+        "创建真实私有项目、初始版本、NOTICE只读、其他文件可保存",
+        "公共发帖、题目关联、代码纯文本回复、标记解决",
+        "跨机构公开可读、机构私帖404",
+        "算法题内公共/机构讨论入口",
+        "390px移动端论坛、创意列表、真实预览无横向溢出",
+        "实际页面无未捕获异常"
+      ],
+      "errors": [],
+      "syntheticFixturesCleaned": true,
+      "log": ".data/community-creative-live.log",
+      "mockApi": false,
+      "note": "Real Chrome, isolated review database, real application API and preview listener; public/organization cross-user reads, related-topic discussion tabs, favorites, project creation, NOTICE read-only, source persistence, ZIP download, and 390px layout."
+    },
+    "recipeContentBrowser": {
+      "passed": 20,
+      "failed": 0,
+      "log": ".data/creative-content-smoke.log",
+      "note": "Separate trusted static content renderer, opaque iframe and production preview CSP; actual key controls, no page errors/external requests, 390px layout. This is content verification, not a replacement for application integration."
+    },
+    "coverCapture": {
+      "passed": 20,
+      "failed": 0,
+      "log": ".data/creative-covers-manifest.json",
+      "note": "Real DOM screenshots, all images visually inspected; no third-party videos or screenshots copied."
+    },
+    "demoSmoke": {
+      "checks": [
+        "demo24migrations、真实学生登录、119题",
+        "demo论坛两个范围",
+        "demo20创意作品",
+        "demo独立4173预览",
+        "demo页面无未捕获异常"
+      ],
+      "sessionLoggedOut": true,
+      "log": ".data/community-demo-smoke.log",
+      "note": "Existing demo student read-only UI with a new logged-out test session; no project/favorite/post writes"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "log": ".data/community-creative-typecheck-final.log"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "log": ".data/community-creative-lint-final.log"
+    },
+    "productionBuild": {
+      "command": "npm run build",
+      "status": "passed",
+      "log": ".data/community-creative-build.log",
+      "warnings": [
+        "Existing optional Monaco chunk approximately 3.55 MB raw / 923 KB gzip; loaded when editor is needed"
+      ],
+      "finalWeb": {
+        "command": "npm run build -w apps/web",
+        "status": "passed",
+        "log": ".data/community-creative-web-build-final.log"
+      }
+    },
+    "expandedCatalogActualBrowser": {
+      "checks": [
+        "真实API与页面119题、10计划",
+        "新题四语言starter、来源、Python作答时JS参考回退提示且非空",
+        "原题四语言参考菜单兼容",
+        "无页面未捕获异常"
+      ],
+      "syntheticFixturesCleaned": true,
+      "log": ".data/expanded-catalog-live-final.log",
+      "mockApi": false,
+      "note": "Mouse selection in reduced-motion mode, 119 actual catalog entries, 10 plans, four language starters, source links, JS reference fallback for Python and original four-language reference menus."
+    },
+    "reducedMotionDiagnosis": {
+      "status": "passed",
+      "record": ".data/catalog-popup-zero-duration.json",
+      "note": "Confirmed both reduced-motion and normal-motion mouse selection without editing stored student drafts."
+    }
+  },
+  "database": {
+    "migrations": 24,
+    "newMigrations": ["202610090023_algorithm_forum", "202610090024_creative"],
+    "reviewAndDemoApplied": true,
+    "destructiveReset": false,
+    "backup": ".data/backups/community-creative-20261009",
+    "backupChecksums": "2 of 2 passed",
+    "backupTiming": "Captured the demo database after the additive forum/creative migrations",
+    "migrationLoaderFix": "db:migrate now explicitly preloads dotenv/config so DOTENV_CONFIG_PATH chooses the intended database; reviewed isolated database received both migrations successfully."
+  },
+  "local": {
+    "web": "http://localhost:5173",
+    "api": "http://127.0.0.1:3001/api",
+    "preview": "http://127.0.0.1:4173",
+    "newProviderCalls": 0
+  },
+  "screenshots": [
+    "docs/screenshots/creative-gallery-desktop.png",
+    "docs/screenshots/creative-detail-desktop.png",
+    "docs/screenshots/creative-gallery-mobile.png",
+    "docs/screenshots/algorithm-forum-desktop.png",
+    "docs/screenshots/algorithm-forum-mobile.png",
+    "docs/screenshots/algorithm-expanded-reference-desktop.png"
+  ],
+  "limits": [
+    "New 100 problems provide full JavaScript reference answers only; all four submission languages retain starter code and use Judge0 when configured.",
+    "Actual student compilation still requires a configured isolated Judge0 service. Offline reference checks never run student code.",
+    "Creative recipes provide browser UI/interaction studies, not full upstream products or backends.",
+    "No remote deployment or Git push was performed for this iteration.",
+    "Iframe isolation is not a server CPU quota or process sandbox."
+  ],
+  "fixes": [
+    "Posts published from a filtered forum retain the chosen problem association.",
+    "Reduced-motion styles no longer introduce geometry transitions that break popup placement.",
+    "Prisma migration commands honor DOTENV_CONFIG_PATH through an explicit dotenv preload."
+  ]
+}

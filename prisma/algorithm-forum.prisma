@@ -1,0 +1,35 @@
+model AlgorithmForumPost {
+  id String @id @default(cuid())
+  organizationId String
+  authorId String
+  scope String @default("public")
+  kind String @default("question")
+  problemId String?
+  title String
+  body String
+  revision Int @default(0)
+  pinned Boolean @default(false)
+  closed Boolean @default(false)
+  solved Boolean @default(false)
+  deletedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([scope,deletedAt,pinned,createdAt,id],map:"AlgorithmForumPost_public_idx")
+  @@index([organizationId,scope,deletedAt,createdAt,id],map:"AlgorithmForumPost_org_idx")
+  @@index([problemId,scope,deletedAt,createdAt,id],map:"AlgorithmForumPost_problem_idx")
+  @@index([authorId,createdAt])
+}
+
+model AlgorithmForumReply {
+  id String @id @default(cuid())
+  postId String
+  organizationId String
+  authorId String
+  body String
+  revision Int @default(0)
+  deletedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([postId,deletedAt,createdAt,id],map:"AlgorithmForumReply_post_idx")
+  @@index([authorId,createdAt])
+}

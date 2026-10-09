@@ -41,7 +41,7 @@ export type Editorial = {
   mistakes: { mistake: string; fix: string }[];
   followUp: string[];
   relatedProblemIds: string[];
-  referenceCode: Record<Language, string>;
+  referenceCode: Partial<Record<Language, string>>;
 };
 export const languageOptions = [
   { value: 'cpp' as const, label: 'C++ 17' },

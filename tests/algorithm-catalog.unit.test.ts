@@ -346,7 +346,7 @@ const solve: Record<string, (input: string) => string> = {
 };
 
 test('algorithm catalog has complete public statements, starter programs and independent answer checks', () => {
-  assert.equal(algorithmProblems.length, 19);
+  assert.ok(algorithmProblems.length >= 19);
   assert.equal(new Set(algorithmProblems.map((p) => p.id)).size, algorithmProblems.length);
   assert.equal(getAlgorithmProblem('does-not-exist'), undefined);
   for (const p of algorithmProblems) {
@@ -360,13 +360,17 @@ test('algorithm catalog has complete public statements, starter programs and ind
       p.testCases.filter((c) => !c.hidden).map(({ input, output }) => ({ input, output })),
       p.examples.map(({ input, output }) => ({ input, output })),
     );
+    // The original 19 solvers remain unchanged; the new bulk suite checks every added reference independently.
     for (const c of p.testCases) {
       assert.ok(Buffer.byteLength(c.input) <= 4 * 1048576 && Buffer.byteLength(c.output) <= 1048576);
-      assert.equal(
-        solve[p.id](c.input),
-        c.output.trimEnd(),
-        `${p.id}: ${JSON.stringify(c.input.slice(0, 100))}`,
-      );
+      if (solve[p.id])
+        assert.equal(
+          solve[p.id](c.input),
+          c.output.trimEnd(),
+          `${p.id}: ${JSON.stringify(c.input.slice(0, 100))}`,
+        );
+      else
+        assert.ok(p.number > 19, 'New references are independently checked by algorithm-bulk.unit.test.ts');
     }
   }
 });

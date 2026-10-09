@@ -1,0 +1,223 @@
+{
+  "verifiedAt": "2026-10-09T08:06:25.927Z",
+  "implementationVerification": "passed",
+  "scope": "Student-owned static HTML/CSS/JavaScript workspaces, reviewed DeepSeek candidates, source versions, ZIP export and local preview",
+  "automaticCodeExecutionOnServer": false,
+  "publicDeployment": {
+    "implemented": false,
+    "reason": "User chose local workspace and preview without domain or deployment infrastructure"
+  },
+  "checks": {
+    "unit": {
+      "command": "npm test",
+      "passed": 350,
+      "failed": 0,
+      "note": "Includes 14 programming safety tests and 2 ZIP interoperability tests; remaining cases cover existing modules"
+    },
+    "httpIntegration": {
+      "command": "DOTENV_CONFIG_PATH=.data/review.env npm run test:programming",
+      "passed": 16,
+      "failed": 0,
+      "note": "15 subtests plus parent test; isolated review database, local provider fixture, real HTTP/API and preview listener"
+    },
+    "browserContracts": {
+      "command": "DOTENV_CONFIG_PATH=.data/review.env WEB_BASE_URL=http://localhost:5174 npx playwright test tests/browser/programming.spec.ts",
+      "passed": 7,
+      "failed": 0,
+      "durationSeconds": 26.8,
+      "modelRequests": 0,
+      "note": "Mock API contracts including local Monaco, two-version restore selection, CSRF, explicit AI apply, conflicts, logs and mobile permissions"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "note": "Full workspace check and final targeted API/Web checks after final edits"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "productionBuild": {
+      "commands": [
+        "npm run build",
+        "npm run build -w apps/api",
+        "npm run build -w apps/web"
+      ],
+      "status": "passed",
+      "note": "Combined build passed, then final API and Web builds after limit consolidation and stable version row keys",
+      "warnings": [
+        "Optional lazy Monaco runtime chunk approximately 3.55 MB raw / 923 KB gzip; Vite size warning remains"
+      ]
+    },
+    "liveReviewBrowser": {
+      "status": "passed",
+      "checks": [
+        "real API project creation and local Monaco editor",
+        "real isolated static preview and parent console",
+        "preview forbids parent DOM, cookies, storage and API fetch; parent CSP permits dedicated origin",
+        "editing and authenticated draft persistence",
+        "version snapshot, restore and previous saved source preservation",
+        "browser source ZIP download and standard unzip interoperability",
+        "390px mobile editor, no horizontal overflow and real preview"
+      ],
+      "sandboxChecks": {
+        "parentDom": true,
+        "cookie": true,
+        "storage": true,
+        "apiFetch": true
+      },
+      "pageErrors": [],
+      "temporaryProjectDeleted": true,
+      "providerCalls": 0
+    },
+    "originalAlgorithmEditor": {
+      "checkedAt": "2026-10-09T07:50:15.816Z",
+      "baseURL": "http://localhost:5174",
+      "route": "/algorithms/maximum-subarray",
+      "realApi": true,
+      "algorithmDraftEdited": false,
+      "actualAiCalled": false,
+      "pageErrors": [],
+      "unexpectedWrites": [],
+      "monacoMounted": true,
+      "codeVisible": true,
+      "draftUnchanged": true,
+      "passed": true
+    },
+    "previewPointerTiming": {
+      "passed": true,
+      "actualClicks": 43,
+      "note": "First driver click while auto-scrolling an offscreen cross-origin iframe could emit no pointer event. Explicit scrolling and parent/child render settling fixed the test. No application change was needed.",
+      "cleanup": true
+    },
+    "localDemo": {
+      "checkedAt": "2026-10-09T08:05:11.498Z",
+      "web": "http://localhost:5173",
+      "api": "http://127.0.0.1:3001",
+      "preview": "http://127.0.0.1:4173",
+      "realAiRequests": 0,
+      "pageErrors": [],
+      "previewAvailable": true,
+      "modelConfigured": true,
+      "realCounterInteraction": true,
+      "zipDownload": true,
+      "mobilePreviewAndNoOverflow": true,
+      "mobileScreenshot": "docs/screenshots/programming-live-mobile-preview.png",
+      "passed": true,
+      "temporaryProjectDeleted": true
+    }
+  },
+  "realDeepSeek": {
+    "requests": 2,
+    "model": "deepseek-flash",
+    "readyCandidates": 2,
+    "explicitApplications": 2,
+    "originalSourceUnchangedBeforeApply": true,
+    "automaticBehavioralValidation": false,
+    "modelGeneratedCodeQuality": "Requires source review and interaction checks",
+    "observations": [
+      "First response completed generation and explicit application, but the interaction smoke was interrupted by the browser-driver click timing issue before code behavior was fully verified.",
+      "Second response completed generation and explicit application. Source review found an unintended top-level defineChange(1) that changed the initial counter from 0 to 1."
+    ],
+    "manualReviewAndCorrection": {
+      "checkedAt": "2026-10-09T08:02:00.764Z",
+      "model": "deepseek-flash",
+      "additionalModelRequests": 0,
+      "source": "Second real DeepSeek response, reused from private captured artifact",
+      "pageErrors": [],
+      "observedModelSemanticIssue": "Unexpected top-level defineChange(1) changes initial count from 0 to 1",
+      "manualCorrection": "Removed the single unintended initialization call in the editor and saved source",
+      "correctedCounterSequence": [
+        0,
+        1,
+        2,
+        4,
+        0
+      ],
+      "screenshot": "docs/screenshots/programming-live-reviewed-code.png",
+      "passed": true,
+      "temporaryProjectDeleted": true,
+      "note": "Exact captured second response was reopened in a fresh temporary review project without another model request. One unintended initialization call was removed through the UI, source was saved, and the actual browser interaction sequence was verified."
+    },
+    "additionalProviderRequestsForCorrection": 0,
+    "reviewFixturesRemoved": true,
+    "quotaLedgerRetained": true
+  },
+  "database": {
+    "appliedMigrations": 22,
+    "newMigration": "202610090022_programming",
+    "reviewMigration": "passed",
+    "demoMigration": "passed",
+    "preMigrationBackup": ".data/backups/before-programming-20261009",
+    "backupChecksumsVerified": true,
+    "existingDemoDatabaseReset": false
+  },
+  "localRuntime": {
+    "web": "http://localhost:5173",
+    "entry": "http://localhost:5173/programming",
+    "api": "http://127.0.0.1:3001",
+    "preview": "http://127.0.0.1:4173",
+    "postgresPort": 55432,
+    "reviewServersStopped": true
+  },
+  "documentation": {
+    "guide": "docs/programming.md",
+    "openapi": "docs/openapi.json",
+    "programmingOpenApiPaths": 12
+  },
+  "screenshots": [
+    {
+      "path": "docs/screenshots/programming-contract-workspace-desktop.png",
+      "source": "Mocked API contract; real local Monaco"
+    },
+    {
+      "path": "docs/screenshots/programming-contract-candidate-desktop.png",
+      "source": "Mocked AI candidate review interface"
+    },
+    {
+      "path": "docs/screenshots/programming-contract-workspace-mobile.png",
+      "source": "Mocked mobile workspace"
+    },
+    {
+      "path": "docs/screenshots/programming-live-reviewed-code.png",
+      "source": "Actual second DeepSeek response manually corrected in a new review project; real preview showing 4"
+    },
+    {
+      "path": "docs/screenshots/programming-live-mobile-preview.png",
+      "source": "Real local demo API, 390px mobile counter preview"
+    }
+  ],
+  "research": {
+    "androidAgent": {
+      "repository": "https://github.com/sakuraANDhuiliyi/Android-Agent",
+      "reviewedCommit": "15d461d1f5bc86132ce2850233cc6e34c8381520",
+      "usedIdeas": [
+        "serialized writes and task leases",
+        "reviewable candidate files",
+        "before/after source checkpoints",
+        "revision checks before restore"
+      ],
+      "codeCopied": false,
+      "androidRuntimeConnected": false
+    },
+    "primarySources": [
+      "https://sandpack.codesandbox.io/docs/advanced-usage/client",
+      "https://sandpack.codesandbox.io/docs/guides/hosting-the-bundler",
+      "https://github.com/OpenHands/software-agent-sdk",
+      "https://docs.openhands.dev/sdk/guides/agent-server/docker-sandbox",
+      "https://www.daytona.io/docs/en/preview/",
+      "https://vercel.com/docs/domains/working-with-domains/add-a-domain",
+      "https://developers.cloudflare.com/pages/configuration/custom-domains/",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe",
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/sandbox"
+    ]
+  },
+  "limits": {
+    "staticBrowserProjectsOnly": true,
+    "backendAndDependencyInstallation": false,
+    "sandboxCpuOrMemoryQuota": false,
+    "completeNetworkIsolation": false,
+    "previewLinksAreExpiringBearerCapabilities": true,
+    "secretsCommitted": false
+  }
+}
