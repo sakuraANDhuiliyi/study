@@ -94,9 +94,37 @@ export class AndroidAgentService implements OnModuleInit, OnModuleDestroy {
   }
   async status(actor: Actor) {
     await this.access(actor);
+    let health: { status?: unknown; user_id?: unknown; api_key_configured?: unknown } | undefined;
+    if (this.available) {
+      try {
+        const output = await this.request(actor, 'api/health', 'GET', '', undefined, 2000);
+        if (output.status === 200) health = JSON.parse(output.body.toString('utf8'));
+      } catch (error) {
+        if (!(
+          error instanceof ServiceUnavailableException ||
+          error instanceof SyntaxError ||
+          (error instanceof DOMException && ['AbortError', 'TimeoutError'].includes(error.name))
+        ))
+          throw error;
+      }
+    }
+    await this.access(actor);
+    const ready = this.available && health?.status === 'ok' && health.user_id === androidOwner(actor);
     return {
-      available: this.available,
-      reason: this.available ? '' : 'Android 构建服务尚未启动',
+      available: ready,
+      reason: ready
+        ? ''
+        : this.available
+          ? 'Android 工作室暂时无法连接，请稍后重试'
+          : 'Android 构建服务尚未启动',
+      ...(ready
+        ? {
+            ai: {
+              available: health?.api_key_configured === true,
+              reason: health?.api_key_configured === true ? '' : 'AI 生成尚未配置，仍可编辑、构建和下载项目',
+            },
+          }
+        : {}),
       capabilities: ['projects', 'agent', 'files', 'history', 'feedback', 'apk'],
     };
   }
@@ -110,7 +138,14 @@ export class AndroidAgentService implements OnModuleInit, OnModuleDestroy {
       type: name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html',
     };
   }
-  async request(actor: Actor, path: string, method: string, query: string, input: unknown) {
+  async request(
+    actor: Actor,
+    path: string,
+    method: string,
+    query: string,
+    input: unknown,
+    timeoutMs?: number,
+  ) {
     await this.access(actor);
     if (!this.available) throw new ServiceUnavailableException('Android 构建服务尚未启动');
     if (!['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].includes(method))
@@ -136,7 +171,7 @@ export class AndroidAgentService implements OnModuleInit, OnModuleDestroy {
           'x-lms-signature': signature,
         },
         ...(body ? { body } : {}),
-        signal: AbortSignal.timeout(path.endsWith('/build') ? 900000 : 60000),
+        signal: AbortSignal.timeout(timeoutMs ?? (path.endsWith('/build') ? 900000 : 60000)),
         redirect: 'error',
       });
     } catch {

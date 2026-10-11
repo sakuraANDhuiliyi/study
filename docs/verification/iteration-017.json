@@ -876,9 +876,13 @@
     "Native APK/OS sandbox validation ran on this macOS host. CI covers the complete application suite and portable Python protocol tests; Linux native builds require Android SDK/JDK and bubblewrap."
   ],
   "remote": {
-    "commit": null,
-    "ciStatus": "pending",
-    "ciRun": null
+    "commit": "402f808ea7cb837f9c261849af06124eccce69f3",
+    "pushed": true,
+    "remoteHead": "402f808ea7cb837f9c261849af06124eccce69f3",
+    "ciStatus": "success",
+    "ciRun": 38129984625,
+    "ciUrl": "https://github.com/sakuraANDhuiliyi/study/actions/runs/38129984625",
+    "verifiedAt": "2026-10-11T10:16:58.975Z"
   },
   "acceptedForPush": true
 }

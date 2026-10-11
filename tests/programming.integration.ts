@@ -246,6 +246,11 @@ test(
           assert.equal(status.deployment.available, false);
           assert.equal(status.preview.origin, 'http://127.0.0.1:4175');
           assert.equal(status.limits.maxFiles, 24);
+          const android = await owner.call('/programming/android/status');
+          assert.equal(android.available, false);
+          assert.equal('ai' in android, false);
+          assert.equal(android.reason, 'Android 构建服务尚未启动');
+          await teacher.call('/programming/android/status', 'GET', undefined, 403);
           const templates = await owner.call('/programming/templates');
           assert.deepEqual(
             templates.items.map((item: any) => item.id),

@@ -1,38 +1,78 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Spin } from 'antd';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth';
-import { api, send, useData, getCsrf } from '../api';
+import { api, send, ApiError, getCsrf, type User } from '../api';
 import { PageTitle, QueryState } from '../components/shared';
 
 export function AndroidProgramming() {
   const { user } = useAuth();
-  const status = useData<{ available: boolean; reason: string }>('/programming/android/status');
+  const client = useQueryClient();
+  const identity = JSON.stringify([user, getCsrf()]);
+  const status = useQuery<{
+    available: boolean;
+    reason: string;
+    ai?: { available: boolean; reason: string };
+  }>({
+    queryKey: ['/programming/android/status', identity],
+    enabled: !!user,
+    retry: (count, error) =>
+      !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 1,
+    queryFn: async ({ signal }) => {
+      const current = () =>
+        !signal.aborted &&
+        identity === JSON.stringify([client.getQueryData<{ user: User }>(['auth'])?.user, getCsrf()]);
+      const check = () => {
+        if (!current()) throw new DOMException('工作室身份已变化', 'AbortError');
+      };
+      check();
+      const response = await fetch('/api/programming/android/status', { credentials: 'include', signal });
+      check();
+      const body = await response.json();
+      check();
+      if (!response.ok) {
+        if (response.status === 401) window.dispatchEvent(new Event('auth-expired'));
+        throw new ApiError(response.status, body.message || '工作室状态读取失败');
+      }
+      return body;
+    },
+  });
   return (
     <div className="programming-page">
       <PageTitle
         title="Android App 工作室"
         description="创建 Android 项目，通过 Agent 修改源码、查看任务和构建日志，下载真实构建产物。"
         extra={
-          <Link to="/programming">
-            <Button>返回网站工作室</Button>
-          </Link>
+          <>
+            <Button loading={status.isFetching} onClick={() => void status.refetch()}>
+              刷新状态
+            </Button>
+            <Link to="/programming">
+              <Button>返回网站工作室</Button>
+            </Link>
+          </>
         }
       />
       <QueryState query={status}>
         {status.data?.available ? (
-          <iframe
-            key={JSON.stringify([user, getCsrf()])}
-            src="/api/programming/android/workbench/index.html"
-            title="Android Agent 工作台"
-            style={{ width: '100%', height: '80vh', border: 0, borderRadius: 12 }}
-          />
+          <>
+            {status.data.ai?.available === false && (
+              <Alert showIcon type="info" message={status.data.ai.reason} style={{ marginBottom: 16 }} />
+            )}
+            <iframe
+              key={JSON.stringify([user, getCsrf()])}
+              src="/api/programming/android/workbench/index.html"
+              title="Android Agent 工作台"
+              style={{ width: '100%', height: '80vh', border: 0, borderRadius: 12 }}
+            />
+          </>
         ) : (
           <Alert
             showIcon
             type="info"
             message={status.data?.reason || 'Android 构建服务正在启动'}
-            description="请启动本地 Android Agent 服务，随后刷新此页。"
+            description="服务恢复后点击刷新状态即可重新进入工作室。"
           />
         )}
       </QueryState>

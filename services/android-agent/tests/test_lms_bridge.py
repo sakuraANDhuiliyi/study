@@ -45,6 +45,10 @@ class BridgeProtocol(unittest.TestCase):
         nonce=os.urandom(16).hex()
         self.assertEqual(self.signed('GET','/api/projects',nonce=nonce).status_code,200)
         self.assertEqual(self.signed('GET','/api/projects',nonce=nonce).status_code,401)
+        health=self.signed('GET','/api/health')
+        self.assertEqual(health.status_code,200)
+        self.assertEqual(health.json()['user_id'],'lms_'+'a'*48)
+        self.assertEqual(health.json()['api_key_configured'],False)
 
     def test_real_project_template_and_other_owner_isolation(self):
         result=self.signed('POST','/api/projects',{'name':'协议验证','package':'com.zhixue.protocol'})
