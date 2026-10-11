@@ -3616,8 +3616,11 @@ def create_app(
         except WebSocketDisconnect:
             return
 
-    from agent.creative.api import install_creative_routes
-    install_creative_routes(app, settings, current_admin, current_identity)
+    # Optional standalone catalog must not initialize its database or imports
+    # when the integrating platform already owns the creative module.
+    if settings.creative_catalog_enabled:
+        from agent.creative.api import install_creative_routes
+        install_creative_routes(app, settings, current_admin, current_identity)
 
     web_dir = Path(__file__).resolve().parent / "web"
     admin_dir = Path(__file__).resolve().parent / "admin"

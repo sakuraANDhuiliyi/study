@@ -15,7 +15,8 @@ if len(secret) < 32:
     raise RuntimeError('LMS bridge secret is required')
 settings = replace(load_settings(), server_host='127.0.0.1', registration_enabled=False,
                    guest_sessions_enabled=False, admin_ui_enabled=False, debug_web_ui_enabled=False,
-                   terminal_enabled=False, creative_submissions_enabled=False)
+                   terminal_enabled=False, creative_catalog_enabled=False,
+                   creative_bootstrap_builtins=False, creative_submissions_enabled=False)
 app = create_app(settings)
 seen = {}
 

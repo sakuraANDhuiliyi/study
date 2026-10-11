@@ -2,5 +2,9 @@
   "source": "Local Android Agent",
   "commit": "837c1bc188542ecbc5e04e7755868d899e24e496",
   "files": 146,
-  "adaptation": "LMS signed user/organization bridge and integrated web workbench. Runtime configuration, credentials and user data are excluded."
+  "adaptation": "LMS signed user/organization bridge and integrated web workbench. Runtime configuration, credentials and user data are excluded.",
+  "integrationPruning": {
+    "removed": "Five original admin UI files (647 physical lines); platform administration uses the LMS UI.",
+    "optionalCreativeCatalog": "Retained source for standalone compatibility, but LMS mode neither imports nor initializes the original creative catalog or its database."
+  }
 }

@@ -86,9 +86,12 @@
     "No paid AI or Judge requests."
   ],
   "remote": {
-    "commit": null,
-    "ciRun": null,
-    "ciStatus": "pending"
+    "commit": "e80ee3e0db790532cf65307b9be5bb26361f4065",
+    "pushed": true,
+    "ciRun": 38133115233,
+    "ciStatus": "success",
+    "ciUrl": "https://github.com/sakuraANDhuiliyi/study/actions/runs/38133115233",
+    "verifiedAt": "2026-10-11T12:56:29.316Z"
   },
   "acceptedForPush": true,
   "local": {

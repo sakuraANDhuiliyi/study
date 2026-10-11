@@ -6,6 +6,7 @@ import os
 import tempfile
 import time
 import unittest
+import sqlite3
 from pathlib import Path
 
 _runtime = tempfile.TemporaryDirectory(prefix='zhixue-android-protocol-')
@@ -14,7 +15,7 @@ secret = 'test-bridge-secret-' + 'a' * 40
 os.environ.update(LMS_ANDROID_BRIDGE_SECRET=secret, AGENT_DATA_DIR=str(root/'data'),
                   AGENT_WORKSPACES_DIR=str(root/'workspaces'), AGENT_BUILDS_DIR=str(root/'builds'),
                   AGENT_CONFIG_PATH=str(root/'disabled.yaml'))
-(root/'disabled.yaml').write_text('provider: deepseek\napi_key: ""\nterminal_enabled: false\n')
+(root/'disabled.yaml').write_text('provider: deepseek\napi_key: ""\nterminal_enabled: false\ncreative_catalog_enabled: true\ncreative_bootstrap_builtins: true\n')
 from fastapi.testclient import TestClient
 from lms_bridge import app
 
@@ -103,6 +104,59 @@ class BridgeProtocol(unittest.TestCase):
     def test_client_cannot_supply_identity_in_project_body(self):
         result=self.signed('POST','/api/projects',{'name':'拒绝身份覆盖','user_id':'other'})
         self.assertEqual(result.status_code,422)
+
+    def test_lms_does_not_install_unreachable_creative_catalog(self):
+        import lms_bridge
+        self.assertFalse(lms_bridge.settings.creative_catalog_enabled)
+        self.assertFalse(lms_bridge.settings.creative_bootstrap_builtins)
+        self.assertFalse(lms_bridge.settings.admin_ui_enabled)
+        self.assertFalse(hasattr(app.state,'creative_store'))
+        self.assertFalse(any(getattr(route,'path','').startswith('/api/creative') for route in app.routes))
+        self.assertFalse(any(getattr(route,'path','').startswith('/admin') for route in app.routes))
+        self.assertEqual(self.signed('GET','/api/creative/items').status_code,404)
+        self.assertEqual(self.signed('GET','/admin/').status_code,404)
+        with sqlite3.connect(app.state.task_store.db_path) as db:
+            tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        self.assertFalse(any(name.startswith('creative') for name in tables))
+
+    def test_disabled_catalog_never_imports_modules_and_preserves_old_rows(self):
+        import builtins
+        from dataclasses import replace
+        from unittest.mock import patch
+        from agent.api import create_app
+        from lms_bridge import settings
+        with sqlite3.connect(app.state.task_store.db_path) as db:
+            db.execute('CREATE TABLE IF NOT EXISTS creative_legacy_sentinel(id TEXT PRIMARY KEY)')
+            db.execute("INSERT OR REPLACE INTO creative_legacy_sentinel VALUES ('preserve-me')")
+        original_import=builtins.__import__
+        def guarded_import(name,*args,**kwargs):
+            if name.startswith('agent.creative'):
+                raise AssertionError('Disabled catalog imported optional subsystem')
+            return original_import(name,*args,**kwargs)
+        try:
+            with patch('builtins.__import__',guarded_import):
+                created=create_app(replace(settings,creative_catalog_enabled=False))
+            self.assertFalse(hasattr(created.state,'creative_store'))
+            with sqlite3.connect(app.state.task_store.db_path) as db:
+                self.assertEqual(db.execute('SELECT id FROM creative_legacy_sentinel').fetchall(),[('preserve-me',)])
+        finally:
+            with sqlite3.connect(app.state.task_store.db_path) as db:
+                db.execute('DROP TABLE creative_legacy_sentinel')
+
+    def test_standalone_enabled_catalog_still_initializes_and_registers(self):
+        from dataclasses import replace
+        from agent.api import create_app
+        from agent.database import TaskStore
+        from lms_bridge import settings
+        separate=TaskStore(db_path=root/'standalone.sqlite')
+        try:
+            created=create_app(replace(settings,creative_catalog_enabled=True,creative_bootstrap_builtins=False),task_store=separate)
+            self.assertTrue(hasattr(created.state,'creative_store'))
+            with TestClient(created) as client:
+                self.assertEqual(client.get('/api/creative/items').status_code,200)
+        finally:
+            from agent.jobs import configure_task_store
+            configure_task_store(app.state.task_store,settings)
 
 if __name__=='__main__':
     unittest.main()

@@ -25,6 +25,7 @@ test('Android workspace identity separates user and organization and never expos
 test('Android bridge rejects authority endpoints, traversal, remote URLs and host command configuration', () => {
   for (const p of [
     'api/admin/accounts',
+    'api/creative/items',
     'api/auth/login',
     'api/projects/x/terminals',
     'api/projects/x/mcp',
