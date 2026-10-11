@@ -77,25 +77,33 @@ const CourseDetail = lazy(() =>
 const Analytics = lazy(() => import('./pages/Analytics').then((module) => ({ default: module.Analytics })));
 const Profile = lazy(() => import('./pages/Analytics').then((module) => ({ default: module.Profile })));
 const Assignments = lazy(() =>
-  import('./pages/Assessments').then((module) => ({ default: module.Assignments })),
+  import('./pages/assessments/Assignments').then((module) => ({ default: module.Assignments })),
 );
 const AssignmentDetail = lazy(() =>
-  import('./pages/Assessments').then((module) => ({ default: module.AssignmentDetail })),
+  import('./pages/assessments/AssignmentDetail').then((module) => ({ default: module.AssignmentDetail })),
 );
-const Questions = lazy(() => import('./pages/Assessments').then((module) => ({ default: module.Questions })));
-const Practice = lazy(() => import('./pages/Assessments').then((module) => ({ default: module.Practice })));
+const Questions = lazy(() =>
+  import('./pages/assessments/Questions').then((module) => ({ default: module.Questions })),
+);
+const Practice = lazy(() =>
+  import('./pages/assessments/Practice').then((module) => ({ default: module.Practice })),
+);
 const PracticeSession = lazy(() =>
-  import('./pages/Assessments').then((module) => ({ default: module.PracticeSession })),
+  import('./pages/assessments/PracticeSession').then((module) => ({ default: module.PracticeSession })),
 );
-const Exams = lazy(() => import('./pages/Assessments').then((module) => ({ default: module.Exams })));
+const Exams = lazy(() => import('./pages/assessments/Exams').then((module) => ({ default: module.Exams })));
 const ExamDetail = lazy(() =>
-  import('./pages/Assessments').then((module) => ({ default: module.ExamDetail })),
+  import('./pages/assessments/ExamDetail').then((module) => ({ default: module.ExamDetail })),
 );
 const ExamAttempt = lazy(() =>
-  import('./pages/Assessments').then((module) => ({ default: module.ExamAttempt })),
+  import('./pages/assessments/ExamAttempt').then((module) => ({ default: module.ExamAttempt })),
 );
-const Grading = lazy(() => import('./pages/Assessments').then((module) => ({ default: module.Grading })));
-const Appeals = lazy(() => import('./pages/Assessments').then((module) => ({ default: module.Appeals })));
+const Grading = lazy(() =>
+  import('./pages/assessments/Grading').then((module) => ({ default: module.Grading })),
+);
+const Appeals = lazy(() =>
+  import('./pages/assessments/Appeals').then((module) => ({ default: module.Appeals })),
+);
 const Communication = lazy(() =>
   import('./pages/Communication').then((module) => ({ default: module.Communication })),
 );

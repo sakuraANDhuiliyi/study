@@ -1,0 +1,1001 @@
+{
+  "iteration": 20,
+  "feature": "Split assessment frontend into ten independently loaded pages and three shared modules",
+  "date": "2026-10-11",
+  "sourceParent": "9e1b2d307ca21b6bfc495ec6f888335a128949c5",
+  "sourceFingerprint": {
+    "before": {
+      "fileCount": 653,
+      "sha256": "6f7240e57ba9248e56339fb05404bbf9d21abc4164adeb9d8adc7df0ee11fe88"
+    },
+    "after": {
+      "fileCount": 653,
+      "sha256": "6f7240e57ba9248e56339fb05404bbf9d21abc4164adeb9d8adc7df0ee11fe88"
+    },
+    "stable": true
+  },
+  "changes": {
+    "oldFileLines": 4279,
+    "moduleCount": 13,
+    "largestNewFileLines": 760,
+    "modules": [
+      {
+        "file": "Appeals.tsx",
+        "lines": 120
+      },
+      {
+        "file": "AssessmentCreator.tsx",
+        "lines": 281
+      },
+      {
+        "file": "AssessmentEditor.tsx",
+        "lines": 172
+      },
+      {
+        "file": "AssignmentDetail.tsx",
+        "lines": 662
+      },
+      {
+        "file": "Assignments.tsx",
+        "lines": 118
+      },
+      {
+        "file": "ExamAttempt.tsx",
+        "lines": 593
+      },
+      {
+        "file": "ExamDetail.tsx",
+        "lines": 581
+      },
+      {
+        "file": "Exams.tsx",
+        "lines": 120
+      },
+      {
+        "file": "Grading.tsx",
+        "lines": 190
+      },
+      {
+        "file": "Practice.tsx",
+        "lines": 274
+      },
+      {
+        "file": "PracticeSession.tsx",
+        "lines": 296
+      },
+      {
+        "file": "Questions.tsx",
+        "lines": 760
+      },
+      {
+        "file": "shared.tsx",
+        "lines": 240
+      }
+    ],
+    "businessLogicChanged": false,
+    "permissionAndRouteGuardsChanged": false
+  },
+  "targeted": {
+    "semanticParity": {
+      "declarations": 31,
+      "unchanged": true,
+      "duplicateDeclarations": 0,
+      "rootUnchangedExceptLazyModulePaths": true,
+      "normalization": "Exports, redundant parentheses, trivia and multiline indentation-only JSX whitespace; let/const and substantive JSX text preserved"
+    },
+    "developmentBrowser": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "report": ".data/iteration20-browser.log"
+    },
+    "productionBrowser": {
+      "cases": [
+        {
+          "path": "questions",
+          "module": "Questions",
+          "loaded": ["Questions"],
+          "errors": 0
+        },
+        {
+          "path": "assignments",
+          "module": "Assignments",
+          "loaded": ["Assignments"],
+          "errors": 0
+        },
+        {
+          "path": "practice",
+          "module": "Practice",
+          "loaded": ["Practice"],
+          "errors": 0
+        },
+        {
+          "path": "exams",
+          "module": "Exams",
+          "loaded": ["Exams"],
+          "errors": 0
+        },
+        {
+          "path": "appeals",
+          "module": "Appeals",
+          "loaded": ["Appeals"],
+          "errors": 0
+        }
+      ],
+      "moduleSizes": [
+        {
+          "file": "Appeals-D7cozZze.js",
+          "bytes": 3281,
+          "gzipBytes": 1797
+        },
+        {
+          "file": "AssignmentDetail-CB5B4pEC.js",
+          "bytes": 14192,
+          "gzipBytes": 5489
+        },
+        {
+          "file": "Assignments-BvBmxsx0.js",
+          "bytes": 2988,
+          "gzipBytes": 1626
+        },
+        {
+          "file": "ExamAttempt-RNKehZPh.js",
+          "bytes": 12885,
+          "gzipBytes": 5317
+        },
+        {
+          "file": "ExamDetail-OFYWGrTW.js",
+          "bytes": 16813,
+          "gzipBytes": 6681
+        },
+        {
+          "file": "Exams-__aKAgI6.js",
+          "bytes": 2843,
+          "gzipBytes": 1550
+        },
+        {
+          "file": "Grading-rzC1fKUY.js",
+          "bytes": 4484,
+          "gzipBytes": 2153
+        },
+        {
+          "file": "Practice-DL_G7vT-.js",
+          "bytes": 6249,
+          "gzipBytes": 2838
+        },
+        {
+          "file": "PracticeSession-CuVEMgFv.js",
+          "bytes": 6299,
+          "gzipBytes": 2831
+        },
+        {
+          "file": "Questions-fd96vC-A.js",
+          "bytes": 16357,
+          "gzipBytes": 6295
+        }
+      ],
+      "mockedApi": true,
+      "paidCalls": 0
+    },
+    "previousSharedPageChunk": {
+      "bytes": 93943,
+      "gzipBytes": 27564,
+      "note": "Measured old full assessment page chunk at the preceding commit. New route chunks still share required library/editor/common dependencies; this is not a total transfer or latency comparison."
+    },
+    "paidCalls": 0,
+    "pythonDependencyAudit": {
+      "passed": true,
+      "vulnerabilities": 0,
+      "report": ".data/iteration20-python-audit.json"
+    },
+    "productionSpec": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "report": ".data/iteration20-production-spec.log"
+    },
+    "cleanupConcurrency": {
+      "ownedParentLockWaitedForInflightWriter": true,
+      "childCleanupSucceededAfterWriterCommit": true,
+      "cleanupRolledBack": true,
+      "paidCalls": 0
+    },
+    "cleanupGap": {
+      "reports": [
+        {
+          "mode": "old",
+          "result": "Foreign key RESTRICT failure reproduced after late child insert"
+        },
+        {
+          "mode": "new",
+          "result": "late insert blocked; cleanup succeeded and rolled back"
+        }
+      ],
+      "ownedReviewFixtureOnly": true,
+      "paidCalls": 0
+    },
+    "cleanupRecovery": {
+      "ownedReviewOrganizationsRecovered": 2,
+      "users": 5,
+      "courses": 2,
+      "remainingOwnedOrganizations": 0,
+      "otherScopesUntouched": true
+    },
+    "realOverviewBrowser": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "report": ".data/iteration20-overview-targeted.log"
+    }
+  },
+  "priorAttempts": [
+    {
+      "scope": "mock browser page titles",
+      "accepted": false,
+      "reason": "Fixtures expected generic assignment/exam titles instead of actual teacher page titles.",
+      "fix": "Use unchanged real titles 作业管理 and 考试管理; all6 cases passed."
+    },
+    {
+      "scope": "structural comparison",
+      "accepted": false,
+      "reason": "Printer string comparison treated formatting parentheses as a logic difference.",
+      "fix": "Compare AST structure, ignoring only export visibility, parentheses wrappers, trivia and indentation-only JSX text. All31 declarations match."
+    },
+    {
+      "scope": "first default full verification",
+      "report": ".data/iteration-Q8wWU1/report.json",
+      "accepted": false,
+      "reason": "Five new browser assertions recognized only Vite development TSX module requests, while the full gate uses production JS assets. All392 other browser cases passed.",
+      "fix": "Recognize both development and production module assets while retaining isolation assertions. Six cases pass in each environment; repeat the entire default full profile."
+    },
+    {
+      "scope": "second default full verification",
+      "report": ".data/iteration-gY09GO/report.json",
+      "accepted": false,
+      "reason": "396 browser cases passed; one existing overview fixture failed during database cleanup. The old generic error omitted its original database code.",
+      "fix": "Rollback replay confirmed no permanent missing dependency. Controlled post-scan insertion reproduced a physical FK RESTRICT failure (SQLSTATE23001) with the old cleanup; owned parent row locks blocked that gap and allowed cleanup. Added safe Prisma/SQLSTATE diagnostics, recovered only the exact failed review fixture, and reran both real overview browser cases successfully."
+    }
+  ],
+  "research": [
+    {
+      "title": "React official lazy loading and top-level component declaration",
+      "url": "https://react.dev/reference/react/lazy"
+    }
+  ],
+  "limitations": [
+    "This round splits frontend assessment pages; backend service decomposition is a separate round.",
+    "Physical source line count increases slightly from explicit imports. The benefit is isolated modules and route loading, not an artificial line-count reduction.",
+    "Production browser cases use controlled API fixtures; real HTTP/database workflows are verified by the full suite."
+  ],
+  "remote": {
+    "commit": null,
+    "ciRun": null,
+    "ciStatus": "pending"
+  },
+  "acceptedForPush": true,
+  "local": {
+    "version": 1,
+    "profile": "full",
+    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "fullReferenceCoverage": true,
+    "startedAt": "2026-10-11T15:29:20.880Z",
+    "finishedAt": "2026-10-11T15:41:51.456Z",
+    "passed": true,
+    "apiPort": 3002,
+    "previewPort": 3003,
+    "stages": [
+      {
+        "id": "generate",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:20.886Z",
+        "durationMs": 591,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "migrate",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:21.477Z",
+        "durationMs": 326,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "seed",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:21.804Z",
+        "durationMs": 1216,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "typecheck",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:23.020Z",
+        "durationMs": 4845,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "lint",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:27.865Z",
+        "durationMs": 2666,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "unit",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:30.531Z",
+        "durationMs": 16352,
+        "exitCode": 0,
+        "summary": {
+          "tests": 507,
+          "pass": 507,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "build",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:29:46.883Z",
+        "durationMs": 23941,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "audit",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:30:10.824Z",
+        "durationMs": 3825,
+        "exitCode": 0,
+        "summary": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        }
+      },
+      {
+        "id": "integration:android-protocol",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:30:14.650Z",
+        "durationMs": 704,
+        "exitCode": 0,
+        "summary": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "trusted-references",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:30:15.355Z",
+        "durationMs": 47905,
+        "exitCode": 0,
+        "summary": {
+          "programsPassed": 176,
+          "casesPassed": 1280,
+          "languages": ["python", "javascript", "cpp", "java"],
+          "failures": 0
+        }
+      },
+      {
+        "id": "creative-expression-browser",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:03.261Z",
+        "durationMs": 9041,
+        "exitCode": 0,
+        "summary": {
+          "checksPassed": 10,
+          "expressionsPassed": 32,
+          "externalRequests": 0,
+          "pageErrors": 0
+        }
+      },
+      {
+        "id": "servers",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:12.302Z",
+        "durationMs": 1243,
+        "exitCode": 0
+      },
+      {
+        "id": "e2e",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:13.545Z",
+        "durationMs": 9406,
+        "exitCode": 0,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academic-goals.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:22.952Z",
+        "durationMs": 4971,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academic-records-export.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:27.924Z",
+        "durationMs": 7290,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academics-admission.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:35.215Z",
+        "durationMs": 572,
+        "exitCode": 0,
+        "summary": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academics.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:35.787Z",
+        "durationMs": 5320,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:accounts.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:41.107Z",
+        "durationMs": 4668,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:admin-audit.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:45.775Z",
+        "durationMs": 5885,
+        "exitCode": 0,
+        "summary": {
+          "tests": 16,
+          "pass": 16,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:admin-jobs.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:51.661Z",
+        "durationMs": 5064,
+        "exitCode": 0,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:ai-authoring.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:31:56.726Z",
+        "durationMs": 4267,
+        "exitCode": 0,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:ai-study.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:00.994Z",
+        "durationMs": 4211,
+        "exitCode": 0,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-forum.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:05.206Z",
+        "durationMs": 1313,
+        "exitCode": 0,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-history-filters.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:06.519Z",
+        "durationMs": 5201,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-training-plans.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:11.721Z",
+        "durationMs": 4854,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithms.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:16.576Z",
+        "durationMs": 4618,
+        "exitCode": 0,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:analytics.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:21.195Z",
+        "durationMs": 348,
+        "exitCode": 0,
+        "summary": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:assessment.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:21.544Z",
+        "durationMs": 1790,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:assessment.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:23.334Z",
+        "durationMs": 1168,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:auth-fixes.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:24.503Z",
+        "durationMs": 942,
+        "exitCode": 0,
+        "summary": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:auth.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:25.445Z",
+        "durationMs": 894,
+        "exitCode": 0,
+        "summary": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:communication.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:26.339Z",
+        "durationMs": 15784,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:communication.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:42.124Z",
+        "durationMs": 684,
+        "exitCode": 0,
+        "summary": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:confusion-matrix.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:42.809Z",
+        "durationMs": 6094,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:creative.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:48.903Z",
+        "durationMs": 6845,
+        "exitCode": 0,
+        "summary": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:digital-logic.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:32:55.749Z",
+        "durationMs": 4688,
+        "exitCode": 0,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:exam-insights.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:00.438Z",
+        "durationMs": 607,
+        "exitCode": 0,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-action-filters.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:01.045Z",
+        "durationMs": 5651,
+        "exitCode": 0,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-actions.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:06.697Z",
+        "durationMs": 4773,
+        "exitCode": 0,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-overview.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:11.470Z",
+        "durationMs": 6018,
+        "exitCode": 0,
+        "summary": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:minimum-spanning-tree.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:17.488Z",
+        "durationMs": 5088,
+        "exitCode": 0,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:notes.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:22.576Z",
+        "durationMs": 471,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:planner.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:23.047Z",
+        "durationMs": 359,
+        "exitCode": 0,
+        "summary": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:population-genetics.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:23.406Z",
+        "durationMs": 5479,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:programming.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:28.885Z",
+        "durationMs": 6683,
+        "exitCode": 0,
+        "summary": {
+          "tests": 18,
+          "pass": 18,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:simpson-paradox.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:35.569Z",
+        "durationMs": 6439,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:upload-security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:42.008Z",
+        "durationMs": 4801,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:worker-policy.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:33:46.810Z",
+        "durationMs": 21088,
+        "exitCode": 0,
+        "summary": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "clean-start",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:34:07.899Z",
+        "durationMs": 7335,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "performance",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:34:15.235Z",
+        "durationMs": 195,
+        "exitCode": 0,
+        "summary": {
+          "requests": 100,
+          "errors": 0,
+          "concurrency": 10,
+          "latencyMs": {
+            "p50": 9,
+            "p95": 23,
+            "max": 25
+          }
+        }
+      },
+      {
+        "id": "browser",
+        "status": "passed",
+        "startedAt": "2026-10-11T15:34:15.431Z",
+        "durationMs": 456012,
+        "exitCode": 0,
+        "summary": {
+          "total": 397,
+          "passed": 397,
+          "skipped": 0,
+          "failedOrIncomplete": []
+        }
+      }
+    ],
+    "fullPassed": true,
+    "testCounts": {
+      "total": 1283,
+      "passed": 1283,
+      "failedOrIncomplete": 0,
+      "skipped": 0
+    },
+    "report": ".data/iteration-VbzCoF/report.json"
+  }
+}

@@ -356,6 +356,15 @@ class OwnedFixtures {
       // delete is bounded to random owned organizations/courses/users, in child order.
       await this.db.$transaction(
         async (tx) => {
+          // Closing HTTP clients does not wait for already-started server writes.
+          // Lock only this fixture's parents before scanning/deleting children;
+          // FK inserts must finish first or wait until this transaction ends.
+          for (const id of [...this.users].sort())
+            await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
+          for (const id of [...this.courses].sort())
+            await tx.$queryRaw`SELECT "id" FROM "Course" WHERE "id" = ${id} FOR UPDATE`;
+          for (const id of [...this.organizations].sort())
+            await tx.$queryRaw`SELECT "id" FROM "Organization" WHERE "id" = ${id} FOR UPDATE`;
           const assignments = await tx.assignment.findMany({
             where: { courseId: { in: this.courses }, organizationId: { in: this.organizations } },
             select: { id: true },
@@ -440,8 +449,19 @@ class OwnedFixtures {
         },
         { timeout: 20_000 },
       );
-    } catch {
-      failures.push('Owned overview database fixture cleanup failed');
+    } catch (error) {
+      const code =
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        typeof error.code === 'string' &&
+        /^P\d{4}$/.test(error.code)
+          ? error.code
+          : 'unknown';
+      const sqlState = error instanceof Error ? /code: "([0-9A-Z]{5})"/.exec(error.message)?.[1] : undefined;
+      failures.push(
+        `Owned overview database fixture cleanup failed (${code}${sqlState ? `, SQLSTATE ${sqlState}` : ''})`,
+      );
     } finally {
       try {
         await this.db.$disconnect();

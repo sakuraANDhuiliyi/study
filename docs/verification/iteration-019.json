@@ -92,9 +92,12 @@
     }
   ],
   "remote": {
-    "commit": null,
-    "ciRun": null,
-    "ciStatus": "pending"
+    "commit": "9e1b2d307ca21b6bfc495ec6f888335a128949c5",
+    "pushed": true,
+    "ciStatus": "success",
+    "ciRun": 38145777160,
+    "ciUrl": "https://github.com/sakuraANDhuiliyi/study/actions/runs/38145777160",
+    "verifiedAt": "2026-10-11T14:30:50.927Z"
   },
   "acceptedForPush": true,
   "local": {
