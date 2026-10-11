@@ -53,6 +53,12 @@ const OrganizationAccess = lazy(() =>
 const Algorithms = lazy(() =>
   import('./pages/Algorithms').then((module) => ({ default: module.Algorithms })),
 );
+const AndroidProgramming = lazy(() =>
+  import('./pages/ProgrammingPlatforms').then((m) => ({ default: m.AndroidProgramming })),
+);
+const ProgrammingSite = lazy(() =>
+  import('./pages/ProgrammingPlatforms').then((m) => ({ default: m.ProgrammingSite })),
+);
 const Programming = lazy(() =>
   import('./pages/Programming').then((module) => ({ default: module.Programming })),
 );
@@ -538,6 +544,22 @@ export function Root() {
             />
             <Route path="algorithms/forum" element={<AlgorithmForum />} />
             <Route path="algorithms/forum/:postId" element={<AlgorithmForum />} />
+            <Route
+              path="programming/android"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <AndroidProgramming />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="programming/sites/:id"
+              element={
+                <RequirePermission anyOf={['learning.use']} roles={['STUDENT']}>
+                  <ProgrammingSite />
+                </RequirePermission>
+              }
+            />
             <Route
               path="programming/:id"
               element={

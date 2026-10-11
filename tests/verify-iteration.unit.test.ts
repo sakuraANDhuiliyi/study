@@ -113,6 +113,7 @@ test('iteration discovers every current/future integration and keeps all mandato
     'unit',
     'build',
     'audit',
+    'integration:android-protocol',
     'trusted-references',
     'creative-expression-browser',
     'servers',
@@ -125,7 +126,12 @@ test('iteration discovers every current/future integration and keeps all mandato
       full.some((stage: any) => stage.id === id),
       id,
     );
-  assert.equal(full.filter((stage: any) => stage.id.startsWith('integration:')).length, 3);
+  assert.deepEqual(
+    full
+      .filter((stage: any) => stage.id.startsWith('integration:') && stage.id.endsWith('.integration.ts'))
+      .map((stage: any) => stage.id),
+    tests.integrations.map((name) => 'integration:' + name),
+  );
   assert.ok(
     full
       .find((stage: any) => stage.id === 'trusted-references')

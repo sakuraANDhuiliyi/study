@@ -322,3 +322,11 @@ F1 使用直接计数公式，未定义精确率不连带抹掉合法的零 F1�
 调研参考 [NestJS 官方生命周期文档](https://docs.nestjs.com/fundamentals/lifecycle-events)对初始化与销毁阶段的描述、[Moodle 官方 Scheduled tasks 指南](https://docs.moodle.org/503/en/Scheduled_tasks)对已关闭/运行中任务的状态区分，以及 [Canvas SIS 官方指南及视频文字稿 03:20–04:05](https://community.instructure.com/en/kb/articles/661610-how-do-i-import-and-view-sis-data-in-a-canvas-account)对处理结果和刷新后最近记录的呈现。仅借鉴准确的只读状态和刷新表述；不推断本项目的集群能力，也未下载或播放视频。
 
 定向 worker 单元测试 **14/14**、真实 HTTP／随机数据库测试 **18/18**、新状态面板浏览器 **30/30**，后台任务／审计／主工作流兼容浏览器 **76/76**。完整门禁 **50 个阶段、1,255 项测试全通过，零失败、零跳过**；其中完整浏览器 385 项，四语言可信参考程序 176 个、1,280 个用例。空库迁移与启动、依赖审计、构建通过；100 次请求、10 并发零错误，p95 22ms。487 个源码／配置／资源文件在验收前后指纹一致，精确报告见 [第十六轮结构化记录](verification/iteration-016.json)。对应提交的远程 CI 在推送后核验。
+
+## 第十七轮：网站与 Android App 编程工作室
+
+编程入口分为网站和 Android App。网站保存后可打开本人当前学习空间的 `/programming/sites/<项目ID>`，在本站子目录加载当前保存版本并使用既有隔离预览服务执行。Android 迁入本地 Android Agent 的完整 Python 服务模块、模板与工具工作台；支持项目、Agent 任务、源码操作、构建日志，以及真实 APK 和源码 ZIP 下载。操作与启动说明见 [编程平台说明](programming-platforms.md)。
+
+学生请求经过平台会话、CSRF、学习权限和空间复查，内部请求使用短期签名和唯一请求标识。Android 身份由机构与账号组合确定；下载返回前重新验证权限。私有工作区、源码 ZIP、实际构建、并发拒绝和本人取消均有专项验证。修复原 macOS Gradle IPC 和文件描述符限制问题；执行仍使用系统沙箱，阻止外部网络及平台配置文件读取。
+
+默认完整验收通过 **51 阶段、1,266 项测试，零失败、零跳过**，包含新增 Node、Python 协议和浏览器测试、四语言参考、全部接口与数据库集成、构建、审计、空库及性能检查。645 个源码／配置／资源文件在验收前后指纹一致。实际浏览器验证了网站计数器交互、Android 工作台与 APK 下载；真实离线 APK 约 5.7 MB，Android 工具确认包名 `com.zhixue.starter`。实际并发构建返回429，取消后的构建收据为 canceled。精确报告与失败修复记录见 [第十七轮记录](verification/iteration-017.json)。没有调用收费 AI 或判题服务，远程 CI 在推送后核验。

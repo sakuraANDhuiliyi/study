@@ -753,9 +753,10 @@
     "stable": true
   },
   "remote": {
-    "commit": null,
-    "ciStatus": "pending",
-    "ciRun": null
+    "commit": "0e772bc0c25f5500cd5febe7b3b3821c1b4850a2",
+    "ciStatus": "success",
+    "ciRun": 38002403663,
+    "ciUrl": "https://github.com/sakuraANDhuiliyi/study/actions/runs/38002403663"
   },
   "acceptedForPush": true
 }

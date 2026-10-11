@@ -52,6 +52,8 @@ import { ProgrammingController } from './programming/programming.controller';
 import { CreativeController } from './programming/creative.controller';
 import { AlgorithmForumController } from './algorithm-forum/algorithm-forum.controller';
 import { AlgorithmForumService } from './algorithm-forum/algorithm-forum.service';
+import { AndroidAgentController } from './programming/android-agent.controller';
+import { AndroidAgentService } from './programming/android-agent.service';
 import { ProgrammingService } from './programming/programming.service';
 import { ProgrammingGateway } from './programming/programming.gateway';
 import { ProgrammingPreviewService } from './programming/programming-preview.service';
@@ -139,6 +141,7 @@ class CatalogController {
     AcademicGoalsController,
     AcademicRecordExportController,
     ProgrammingController,
+    AndroidAgentController,
     CreativeController,
     AlgorithmForumController,
   ],
@@ -172,6 +175,7 @@ class CatalogController {
     AcademicGoalsService,
     AcademicRecordExportService,
     ProgrammingService,
+    AndroidAgentService,
     ProgrammingGateway,
     ProgrammingPreviewService,
     AlgorithmForumService,

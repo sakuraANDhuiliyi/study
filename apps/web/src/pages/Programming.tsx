@@ -319,9 +319,12 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
       <PageTitle
         eyebrow="BUILD & LEARN"
         title="编程工作室"
-        description="从网页模板开始，把想法写成可运行的 HTML、CSS 和 JavaScript 项目。"
+        description="网站工作室：编辑和生成网站，在本站子目录运行；Android App 工作室支持原生项目与 APK 下载。"
         extra={
           <Space wrap>
+            <Link to="/programming/android">
+              <Button>Android App 工作室</Button>
+            </Link>
             <Link to="/programming/creative">
               <Button icon={<Sparkles size={16} />}>探索创意广场</Button>
             </Link>
@@ -362,8 +365,8 @@ function ProgrammingProjects({ status }: { status: ProgrammingStatus }) {
         className="programming-local-notice"
         type="info"
         showIcon
-        message="项目仅在你的学习空间保存；预览尚未公开到互联网。"
-        description={status.deployment.reason || '当前提供本地预览，后续可在配置域名和部署环境后扩展发布。'}
+        message="网站可在本站子目录运行，项目保存在你的学习空间。"
+        description="打开项目后点击在本站运行，即可在 /programming/sites/项目ID 查看当前保存版本。"
       />
       <QueryState query={projects}>
         {projects.data?.items.length ? (
@@ -915,6 +918,9 @@ function ProgrammingWorkspace({ id, status }: { id: string; status: ProgrammingS
               </Tag>
             </div>
             <Space wrap>
+              <Link to={`/programming/sites/${id}`}>
+                <Button disabled={dirty || !!busy}>在本站运行</Button>
+              </Link>
               <Button
                 icon={<Save size={15} />}
                 type="primary"

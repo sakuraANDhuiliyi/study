@@ -1,0 +1,360 @@
+from __future__ import annotations
+
+import json
+import re
+import shutil
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Literal
+
+import agent.paths as paths
+from agent.paths import validate_id
+from agent.safe_paths import resolve_workspace_path
+from agent.redaction import REDACTED, redact_sensitive_value
+
+
+TransportKind = Literal["stdio"]
+ConfigScope = Literal["user", "project"]
+
+_ENV_REF_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)")
+_SERVER_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
+
+
+@dataclass
+class McpServerConfig:
+    name: str
+    transport: TransportKind = "stdio"
+    command: str | None = None
+    args: list[str] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
+    cwd: str | None = None
+    url: str | None = None
+    enabled: bool = True
+    timeout_seconds: float = 30.0
+    scope: ConfigScope = "user"
+    # Raw env before secret resolution — never expose resolved secrets.
+    env_refs: dict[str, str] = field(default_factory=dict)
+    credential_user_id: str | None = None
+
+    def public_dict(self) -> dict[str, Any]:
+        """Safe representation for API / events (no secrets)."""
+        return {
+            "name": self.name,
+            "transport": self.transport,
+            "command": self.command,
+            "args": list(self.args),
+            "cwd": self.cwd,
+            "url": self.url,
+            "enabled": self.enabled,
+            "timeout_seconds": self.timeout_seconds,
+            "scope": self.scope,
+            "env_keys": sorted(self.env_refs.keys()),
+            "has_env": bool(self.env_refs),
+        }
+
+
+def user_mcp_config_path(user_id: str) -> Path:
+    return paths.DATA_DIR / "users" / validate_id(user_id, kind="user_id") / "mcp.json"
+
+
+def project_mcp_config_path(workspace: Path) -> Path:
+    return resolve_workspace_path(workspace, ".android-agent/mcp.json")
+
+
+def project_mcp_trust_path(user_id: str, project_id: str) -> Path:
+    return (
+        paths.DATA_DIR
+        / "users"
+        / validate_id(user_id, kind="user_id")
+        / "mcp_trust"
+        / f"{validate_id(project_id, kind='project_id')}.json"
+    )
+
+
+def user_hooks_config_path(user_id: str) -> Path:
+    return paths.DATA_DIR / "users" / validate_id(user_id, kind="user_id") / "hooks.json"
+
+
+def project_hooks_config_path(workspace: Path) -> Path:
+    return workspace / ".android-agent" / "hooks.json"
+
+
+def _validate_server_name(name: str) -> str:
+    cleaned = (name or "").strip()
+    if not _SERVER_NAME_RE.fullmatch(cleaned):
+        raise ValueError(f"无效的 MCP server 名称: {name!r}")
+    return cleaned
+
+
+def _parse_servers(raw: Any, *, scope: ConfigScope) -> list[McpServerConfig]:
+    if raw is None:
+        return []
+    if isinstance(raw, dict) and "mcpServers" in raw:
+        raw = raw["mcpServers"]
+    if isinstance(raw, dict):
+        items = []
+        for name, cfg in raw.items():
+            if not isinstance(cfg, dict):
+                continue
+            entry = dict(cfg)
+            entry.setdefault("name", name)
+            items.append(entry)
+        raw = items
+    if not isinstance(raw, list):
+        return []
+
+    results: list[McpServerConfig] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        try:
+            name = _validate_server_name(str(item.get("name") or ""))
+        except ValueError:
+            continue
+        transport = str(item.get("transport") or item.get("type") or "stdio").strip()
+        if transport != "stdio":
+            continue
+        command = item.get("command")
+        args = item.get("args") or []
+        if isinstance(args, str):
+            args = [args]
+        env_raw = item.get("env") or {}
+        if not isinstance(env_raw, dict):
+            env_raw = {}
+        env_refs = {str(k): str(v) for k, v in env_raw.items()}
+        results.append(
+            McpServerConfig(
+                name=name,
+                transport=transport,  # type: ignore[arg-type]
+                command=str(command) if command else None,
+                args=[str(a) for a in args],
+                env={},
+                cwd=str(item["cwd"]) if item.get("cwd") else None,
+                url=str(item["url"]) if item.get("url") else None,
+                enabled=bool(item.get("enabled", True)),
+                timeout_seconds=float(item.get("timeout_seconds") or item.get("timeout") or 30),
+                scope=scope,
+                env_refs=env_refs,
+            )
+        )
+    return results
+
+
+def load_mcp_json(path: Path, *, scope: ConfigScope) -> list[McpServerConfig]:
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    return _parse_servers(data, scope=scope)
+
+
+def load_user_mcp_config(user_id: str) -> list[McpServerConfig]:
+    return load_mcp_json(user_mcp_config_path(user_id), scope="user")
+
+
+def load_project_mcp_config(workspace: Path) -> list[McpServerConfig]:
+    return load_mcp_json(project_mcp_config_path(workspace), scope="project")
+
+
+def _is_env_reference(value: str) -> bool:
+    return bool(_ENV_REF_RE.fullmatch(value.strip()))
+
+
+def sanitize_mcp_config_for_edit(data: Any) -> Any:
+    """Deep-copy config for the editing API: literal env values are redacted,
+    ${VAR} references are preserved so the config round-trips."""
+    if isinstance(data, dict):
+        result: dict[str, Any] = {}
+        for key, value in data.items():
+            if key == "env" and isinstance(value, dict):
+                result[key] = {
+                    str(env_key): (
+                        env_value
+                        if isinstance(env_value, str) and _is_env_reference(env_value)
+                        else REDACTED
+                    )
+                    for env_key, env_value in value.items()
+                }
+            else:
+                result[key] = sanitize_mcp_config_for_edit(value)
+        return result
+    if isinstance(data, list):
+        return [sanitize_mcp_config_for_edit(item) for item in data]
+    return data
+
+
+def validate_mcp_config_payload(data: Any) -> dict[str, Any]:
+    """Validate a project mcp.json payload. Returns the normalized document."""
+    if not isinstance(data, dict):
+        raise ValueError("config 必须是 JSON 对象")
+    servers = data.get("mcpServers")
+    if not isinstance(servers, dict):
+        raise ValueError("缺少 mcpServers 对象")
+    for name, cfg in servers.items():
+        if not isinstance(name, str) or not _SERVER_NAME_RE.fullmatch(name):
+            raise ValueError(f"无效的服务器名称: {name!r}")
+        if not isinstance(cfg, dict):
+            raise ValueError(f"服务器 {name} 配置必须是对象")
+        transport = str(cfg.get("transport") or cfg.get("type") or "stdio")
+        if transport != "stdio":
+            raise ValueError(f"服务器 {name}: 仅支持 stdio transport")
+        command = cfg.get("command")
+        if not isinstance(command, str) or not command.strip():
+            raise ValueError(f"服务器 {name}: 缺少 command")
+        args = cfg.get("args", [])
+        if not isinstance(args, list) or any(not isinstance(a, str) for a in args):
+            raise ValueError(f"服务器 {name}: args 必须是字符串数组")
+        env = cfg.get("env", {})
+        if not isinstance(env, dict):
+            raise ValueError(f"服务器 {name}: env 必须是对象")
+        for env_key, env_value in env.items():
+            if not isinstance(env_key, str) or not isinstance(env_value, str):
+                raise ValueError(f"服务器 {name}: env 键值必须是字符串")
+            if env_value and not _is_env_reference(env_value):
+                raise ValueError(
+                    f"服务器 {name}: env 值必须是环境变量引用（如 ${{GITHUB_TOKEN}}），"
+                    "请勿在配置中写入明文密钥"
+                )
+    normalized = dict(data)
+    normalized["mcpServers"] = servers
+    return normalized
+
+
+def save_project_mcp_config(workspace: Path, data: dict[str, Any]) -> Path:
+    path = project_mcp_config_path(workspace)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    tmp.replace(path)
+    return path
+
+
+def resolve_env_secrets(env_refs: dict[str, str], *, user_id: str | None = None,
+                        server_name: str | None = None) -> dict[str, str]:
+    """Resolve only operator-provisioned credentials for this user AND server.
+
+    data/users/{user}/mcp-secrets.json is outside the workspace, is never
+    exposed by config APIs, and has shape {"servers": {"server": {"REF": "value"}}}.
+    The service environment is deliberately never consulted.
+    """
+    if not any(_ENV_REF_RE.search(value) for value in env_refs.values()):
+        return dict(env_refs)
+    if not user_id or not server_name:
+        raise PermissionError("MCP 凭据缺少用户和服务器授权")
+    path = resolve_workspace_path(paths.DATA_DIR, f"users/{validate_id(user_id)}/mcp-secrets.json")
+    try:
+        granted = json.loads(path.read_text())["servers"][_validate_server_name(server_name)]
+    except (OSError, ValueError, KeyError, TypeError):
+        raise PermissionError("尚未为此用户和 MCP 服务器配置凭据") from None
+    if not isinstance(granted, dict):
+        raise PermissionError("MCP 凭据授权格式无效")
+    def substitute(match: re.Match) -> str:
+        ref = match.group(1) or match.group(2)
+        if not isinstance(granted.get(ref), str):
+            raise PermissionError("MCP 凭据引用未获得授权")
+        return granted[ref]
+    return {key: _ENV_REF_RE.sub(substitute, value) for key, value in env_refs.items()}
+
+
+def public_env_preview(env_refs: dict[str, str]) -> dict[str, str]:
+    """Return env keys with redacted values for diagnostics."""
+    preview = {k: _ENV_REF_RE.sub(REDACTED, v) for k, v in env_refs.items()}
+    return redact_sensitive_value(preview)
+
+
+def project_config_fingerprint(workspace: Path) -> str:
+    path = project_mcp_config_path(workspace)
+    if not path.is_file():
+        return ""
+    import hashlib
+
+    digest = hashlib.sha256()
+    digest.update(path.read_bytes())
+    for config in load_project_mcp_config(workspace):
+        candidates: list[Path] = []
+        if config.command:
+            command_path = Path(config.command)
+            if command_path.is_absolute():
+                candidates.append(command_path)
+            else:
+                local_command = workspace / command_path
+                resolved_command = shutil.which(config.command)
+                if local_command.is_file():
+                    candidates.append(local_command)
+                elif resolved_command:
+                    candidates.append(Path(resolved_command))
+        base = Path(config.cwd) if config.cwd else workspace
+        if not base.is_absolute():
+            base = workspace / base
+        for arg in config.args:
+            arg_path = Path(arg)
+            candidate = arg_path if arg_path.is_absolute() else base / arg_path
+            if candidate.is_file():
+                candidate.resolve().relative_to(workspace.resolve())
+                candidates.append(candidate)
+        for executable in sorted({item.resolve() for item in candidates}, key=str):
+            digest.update(b"\0file\0")
+            digest.update(str(executable).encode("utf-8", errors="surrogateescape"))
+            try:
+                with executable.open("rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        digest.update(chunk)
+            except OSError:
+                digest.update(b"<unreadable>")
+    return digest.hexdigest()
+
+
+def is_project_mcp_trusted(user_id: str, project_id: str, workspace: Path) -> bool:
+    trust_path = project_mcp_trust_path(user_id, project_id)
+    if not trust_path.is_file():
+        return False
+    try:
+        data = json.loads(trust_path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    return data.get("fingerprint") == project_config_fingerprint(workspace)
+
+
+def trust_project_mcp(user_id: str, project_id: str, workspace: Path) -> dict[str, Any]:
+    fingerprint = project_config_fingerprint(workspace)
+    trust_path = project_mcp_trust_path(user_id, project_id)
+    trust_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "project_id": project_id,
+        "fingerprint": fingerprint,
+        "trusted": True,
+    }
+    trust_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
+
+
+def revoke_project_mcp_trust(user_id: str, project_id: str) -> None:
+    path = project_mcp_trust_path(user_id, project_id)
+    if path.is_file():
+        path.unlink()
+
+
+def merge_mcp_configs(
+    user_servers: list[McpServerConfig],
+    project_servers: list[McpServerConfig],
+    *,
+    project_trusted: bool,
+) -> list[McpServerConfig]:
+    """Merge configs. Untrusted project servers are kept but marked via scope.
+
+    Same name: project overrides user only when trusted; otherwise user wins
+    and the project entry is still returned with a distinct name collision
+    resolved by keeping both only when names differ.
+    """
+    by_name: dict[str, McpServerConfig] = {s.name: s for s in user_servers}
+    for server in project_servers:
+        if project_trusted:
+            by_name[server.name] = server
+        elif server.name not in by_name:
+            # Visible but not startable until trusted.
+            by_name[server.name] = server
+    return list(by_name.values())

@@ -55,7 +55,10 @@
     "verify:iteration": "node scripts/verify-iteration.mjs",
     "test:algorithm-references": "node scripts/verify-algorithm-references.mjs",
     "test:admin-jobs": "node --import tsx --test tests/admin-jobs.integration.ts",
-    "test:admin-audit": "node --import tsx --test tests/admin-audit.integration.ts"
+    "test:admin-audit": "node --import tsx --test tests/admin-audit.integration.ts",
+    "dev:programming": "node scripts/dev-programming.mjs",
+    "android:setup": "node scripts/setup-android-agent.mjs",
+    "test:android-protocol": "node scripts/verify-android-protocol.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

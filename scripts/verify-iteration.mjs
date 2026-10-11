@@ -234,6 +234,7 @@ export function buildStages(options, tests) {
     ),
     npmStep('build', ['run', 'build'], ['generate']),
     npmStep('audit', ['audit', '--audit-level=high', '--json']),
+    nodeStep('integration:android-protocol', ['scripts/verify-android-protocol.mjs']),
     nodeStep(
       'trusted-references',
       [
@@ -579,6 +580,7 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
       BIND_HOST: '127.0.0.1',
       COOKIE_SECURE: 'false',
       DISABLE_JOBS: 'true',
+      ANDROID_AGENT_ENABLED: 'false',
       AI_CONFIG_PATH: configPath,
       // Individual programming fixtures own their preview services. Main verification
       // servers must not try to bind the user's existing development preview port.

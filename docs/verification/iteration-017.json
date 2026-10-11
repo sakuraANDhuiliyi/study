@@ -1,0 +1,884 @@
+{
+  "iteration": 17,
+  "feature": "Website and Android App programming workspaces with private site routes and genuine APK/source download",
+  "date": "2026-10-11",
+  "sourceParent": "0e772bc0c25f5500cd5febe7b3b3821c1b4850a2",
+  "upstream": {
+    "project": "Local Android Agent",
+    "baseCommit": "837c1bc188542ecbc5e04e7755868d899e24e496",
+    "copiedTrackedWorkingFiles": 146,
+    "sourceState": "Tracked working files from the local project; preserves any local source updates. Configuration, runtime data, credentials and built APKs were not copied.",
+    "adaptations": [
+      "Signed LMS user/organization bridge and integrated workbench paths.",
+      "Manual offline build, bounded source archive, build overlap and owner-bound cancellation.",
+      "macOS loopback-only IPC and trusted JVM IPv4 selection; Gradle workers bounded to2, heap2GiB and descriptor allowance2048."
+    ]
+  },
+  "sourceFingerprint": {
+    "before": {
+      "fileCount": 645,
+      "sha256": "7e1778a43ef02801beef071dbda75b5bf5f8084b9f30beb8506bb41a4b7567e6"
+    },
+    "after": {
+      "fileCount": 645,
+      "sha256": "7e1778a43ef02801beef071dbda75b5bf5f8084b9f30beb8506bb41a4b7567e6"
+    },
+    "stable": true
+  },
+  "local": {
+    "version": 1,
+    "profile": "full",
+    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "fullReferenceCoverage": true,
+    "startedAt": "2026-10-11T09:36:31.735Z",
+    "finishedAt": "2026-10-11T09:52:18.555Z",
+    "passed": true,
+    "apiPort": 3002,
+    "previewPort": 3003,
+    "stages": [
+      {
+        "id": "generate",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:36:31.743Z",
+        "durationMs": 872,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "migrate",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:36:32.616Z",
+        "durationMs": 499,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "seed",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:36:33.115Z",
+        "durationMs": 1073,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "typecheck",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:36:34.189Z",
+        "durationMs": 7694,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "lint",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:36:41.884Z",
+        "durationMs": 3793,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "unit",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:36:45.678Z",
+        "durationMs": 21124,
+        "exitCode": 0,
+        "summary": {
+          "tests": 502,
+          "pass": 502,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "build",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:37:06.803Z",
+        "durationMs": 45725,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "audit",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:37:52.529Z",
+        "durationMs": 1332,
+        "exitCode": 0,
+        "summary": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        }
+      },
+      {
+        "id": "integration:android-protocol",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:37:53.862Z",
+        "durationMs": 602,
+        "exitCode": 0,
+        "summary": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "trusted-references",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:37:54.464Z",
+        "durationMs": 63409,
+        "exitCode": 0,
+        "summary": {
+          "programsPassed": 176,
+          "casesPassed": 1280,
+          "languages": ["python", "javascript", "cpp", "java"],
+          "failures": 0
+        }
+      },
+      {
+        "id": "creative-expression-browser",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:38:57.873Z",
+        "durationMs": 9595,
+        "exitCode": 0,
+        "summary": {
+          "checksPassed": 10,
+          "expressionsPassed": 32,
+          "externalRequests": 0,
+          "pageErrors": 0
+        }
+      },
+      {
+        "id": "servers",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:07.469Z",
+        "durationMs": 1857,
+        "exitCode": 0
+      },
+      {
+        "id": "e2e",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:09.326Z",
+        "durationMs": 9386,
+        "exitCode": 0,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academic-goals.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:18.713Z",
+        "durationMs": 5824,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academic-records-export.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:24.537Z",
+        "durationMs": 7997,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academics-admission.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:32.534Z",
+        "durationMs": 833,
+        "exitCode": 0,
+        "summary": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:academics.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:33.367Z",
+        "durationMs": 7180,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:accounts.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:40.547Z",
+        "durationMs": 5639,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:admin-audit.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:46.186Z",
+        "durationMs": 8228,
+        "exitCode": 0,
+        "summary": {
+          "tests": 16,
+          "pass": 16,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:admin-jobs.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:39:54.414Z",
+        "durationMs": 6254,
+        "exitCode": 0,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:ai-authoring.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:00.668Z",
+        "durationMs": 4924,
+        "exitCode": 0,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:ai-study.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:05.592Z",
+        "durationMs": 4532,
+        "exitCode": 0,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-forum.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:10.125Z",
+        "durationMs": 1378,
+        "exitCode": 0,
+        "summary": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-history-filters.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:11.503Z",
+        "durationMs": 7068,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithm-training-plans.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:18.571Z",
+        "durationMs": 6278,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:algorithms.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:24.849Z",
+        "durationMs": 5666,
+        "exitCode": 0,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:analytics.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:30.516Z",
+        "durationMs": 553,
+        "exitCode": 0,
+        "summary": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:assessment.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:31.069Z",
+        "durationMs": 2856,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:assessment.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:33.925Z",
+        "durationMs": 1568,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:auth-fixes.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:35.494Z",
+        "durationMs": 1683,
+        "exitCode": 0,
+        "summary": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:auth.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:37.177Z",
+        "durationMs": 1534,
+        "exitCode": 0,
+        "summary": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:communication.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:38.711Z",
+        "durationMs": 16241,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:communication.security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:54.953Z",
+        "durationMs": 776,
+        "exitCode": 0,
+        "summary": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:confusion-matrix.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:40:55.730Z",
+        "durationMs": 7203,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:creative.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:02.934Z",
+        "durationMs": 7172,
+        "exitCode": 0,
+        "summary": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:digital-logic.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:10.106Z",
+        "durationMs": 4852,
+        "exitCode": 0,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:exam-insights.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:14.959Z",
+        "durationMs": 684,
+        "exitCode": 0,
+        "summary": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-action-filters.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:15.643Z",
+        "durationMs": 6343,
+        "exitCode": 0,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-actions.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:21.986Z",
+        "durationMs": 4848,
+        "exitCode": 0,
+        "summary": {
+          "tests": 14,
+          "pass": 14,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:learning-overview.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:26.834Z",
+        "durationMs": 6248,
+        "exitCode": 0,
+        "summary": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:minimum-spanning-tree.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:33.082Z",
+        "durationMs": 5377,
+        "exitCode": 0,
+        "summary": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:notes.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:38.459Z",
+        "durationMs": 516,
+        "exitCode": 0,
+        "summary": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:planner.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:38.975Z",
+        "durationMs": 399,
+        "exitCode": 0,
+        "summary": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:population-genetics.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:39.375Z",
+        "durationMs": 5927,
+        "exitCode": 0,
+        "summary": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:programming.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:45.302Z",
+        "durationMs": 6771,
+        "exitCode": 0,
+        "summary": {
+          "tests": 18,
+          "pass": 18,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:simpson-paradox.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:52.073Z",
+        "durationMs": 7327,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:upload-security.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:41:59.400Z",
+        "durationMs": 4950,
+        "exitCode": 0,
+        "summary": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "integration:worker-policy.integration.ts",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:42:04.350Z",
+        "durationMs": 21218,
+        "exitCode": 0,
+        "summary": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "id": "clean-start",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:42:25.569Z",
+        "durationMs": 7803,
+        "exitCode": 0,
+        "summary": {}
+      },
+      {
+        "id": "performance",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:42:33.372Z",
+        "durationMs": 212,
+        "exitCode": 0,
+        "summary": {
+          "requests": 100,
+          "errors": 0,
+          "concurrency": 10,
+          "latencyMs": {
+            "p50": 12,
+            "p95": 21,
+            "max": 22
+          }
+        }
+      },
+      {
+        "id": "browser",
+        "status": "passed",
+        "startedAt": "2026-10-11T09:42:33.585Z",
+        "durationMs": 584949,
+        "exitCode": 0,
+        "summary": {
+          "total": 388,
+          "passed": 388,
+          "skipped": 0,
+          "failedOrIncomplete": []
+        }
+      }
+    ],
+    "fullPassed": true,
+    "testCounts": {
+      "total": 1266,
+      "passed": 1266,
+      "failedOrIncomplete": 0,
+      "skipped": 0
+    },
+    "report": ".data/iteration-ch02K1/report.json"
+  },
+  "targeted": {
+    "nodeUnit": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "pythonProtocol": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "note": "Real FastAPI/SQLite/temp workspace authorization and archives; build concurrency test uses a controlled build substitute, separate from actual APK evidence."
+    },
+    "browser": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "liveBrowser": {
+      "websiteId": "cmv3m2ase00022djm7ph13y4g",
+      "websitePath": "/programming/sites/cmv3m2ase00022djm7ph13y4g",
+      "websiteRendered": true,
+      "websiteButtons": 3,
+      "websiteInteractionExecuted": true,
+      "androidWorkbenchRendered": true,
+      "apkBrowserDownload": true,
+      "apkDownloadName": "android.apk",
+      "aiProviderRequests": 0
+    },
+    "nativeApk": {
+      "ok": true,
+      "task": "assembleDebug",
+      "exitCode": 0,
+      "errorCount": 0,
+      "durationMs": 6557,
+      "apkStatus": 200,
+      "apkBytes": 5732073,
+      "zipMagic": true,
+      "filename": "attachment; filename=\"android-app.apk\"",
+      "manifestPackage": "com.zhixue.starter",
+      "compileSdk": 36,
+      "targetSdk": 34,
+      "minSdk": 24
+    },
+    "realBuildConcurrency": {
+      "concurrentBuildStatus": 429,
+      "cancelStatus": 200,
+      "cancelRequested": true,
+      "buildFinished": true,
+      "receiptState": "canceled"
+    },
+    "macOsSandbox": {
+      "loopbackTcp": "passed for IPv4 and IPv6 Python sockets and IPv4 JVM listener",
+      "externalTcp": "denied",
+      "platformEnvironmentFileRead": "denied"
+    },
+    "paidProviderCalls": 0,
+    "pythonDependencyAudit": {
+      "passed": true,
+      "vulnerabilities": 0,
+      "packages": 32,
+      "versions": {
+        "fastapi": "0.143.0",
+        "starlette": "1.7.0",
+        "anyio": "4.15.1",
+        "python-dotenv": "1.2.4"
+      },
+      "report": ".data/android-dependency-audit.json"
+    }
+  },
+  "priorAttempts": [
+    {
+      "report": ".data/iteration-1PyNqW/report.json",
+      "accepted": false,
+      "reason": "Old stage-count assertion did not account for Android protocol integration. Run interrupted after diagnosis, so remaining canceled/blocked stages are not accepted.",
+      "fix": "Validate discovered TS integration IDs explicitly and require the Android protocol phase separately; rerun entire default full profile."
+    },
+    {
+      "scope": "new mock site browser",
+      "accepted": false,
+      "reason": "Fixture HTML omitted UTF-8, so Chinese heading was decoded incorrectly.",
+      "fix": "Use explicit UTF-8 fixture HTML; all three cases passed on rerun."
+    },
+    {
+      "scope": "actual Android build",
+      "accepted": false,
+      "reason": "Upstream macOS sandbox denied Gradle IPC, then original512-descriptor cap failed on Android dependency transforms.",
+      "fix": "Verified loopback-only policy and forced trusted JVM IPv4; bound workers to2 and Gradle descriptors to2048; real offline APK build and download passed."
+    },
+    {
+      "scope": "Android Python dependencies",
+      "accepted": false,
+      "report": ".data/iteration-9afKy5/report.json",
+      "reason": "Functional full suite passed, but independent Python dependency audit identified vulnerabilities in AnyIO, python-dotenv and Starlette. This original dependency set was not accepted for push.",
+      "fix": "Regenerated hash-pinned dependency lock using compatible fixed packages; independent pip-audit now reports zero vulnerabilities. Native build, APK/browser download and build cancellation passed again; complete full suite rerun is in progress."
+    },
+    {
+      "scope": "Post-upgrade full rerun",
+      "accepted": false,
+      "reason": "Interrupted to investigate APK download during development-server restart triggered by test generation; no incomplete stage accepted.",
+      "fix": "Standalone native build, protocol download, real browser download and cancellation all passed; restarted entire full profile, now passed."
+    }
+  ],
+  "research": [
+    {
+      "title": "Android command-line build",
+      "url": "https://developer.android.com/build/building-cmdline"
+    },
+    {
+      "title": "MDN iframe",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe"
+    },
+    {
+      "title": "Gradle TCP incoming connector source",
+      "url": "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/subprojects/messaging/src/main/java/org/gradle/internal/remote/internal/inet/TcpIncomingConnector.java"
+    },
+    {
+      "title": "Gradle InetAddressFactory source",
+      "url": "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/subprojects/messaging/src/main/java/org/gradle/internal/remote/internal/inet/InetAddressFactory.java"
+    }
+  ],
+  "limitations": [
+    "Website routes are authenticated HTML/CSS/JavaScript execution entry points, with the existing separate preview origin and ten-minute runtime sessions.",
+    "No paid AI/Judge endpoint was exercised; real generation requires the private configured model key.",
+    "Native APK/OS sandbox validation ran on this macOS host. CI covers the complete application suite and portable Python protocol tests; Linux native builds require Android SDK/JDK and bubblewrap."
+  ],
+  "remote": {
+    "commit": null,
+    "ciStatus": "pending",
+    "ciRun": null
+  },
+  "acceptedForPush": true
+}

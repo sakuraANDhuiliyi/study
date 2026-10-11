@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+config.yaml
+data/
+workspaces/
+builds/
+.venv/
+template/.gradle/
+template/local.properties
+template/**/build/
