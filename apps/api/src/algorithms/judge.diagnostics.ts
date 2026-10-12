@@ -146,12 +146,16 @@ export async function diagnoseJudge0(options: { smoke?: boolean } = {}): Promise
         ? '资源上限兼容本项目，使用整组CPU与内存限制'
         : '资源配置不足或过宽，请对照仓库judge0.conf.example',
     );
-    const workers = data.workers.find((item) => item.queue === 'default');
+    // Judge0 CE routes IsolateJob and workers to JUDGE0_VERSION, not "default".
+    // A healthy worker for another version cannot execute this server's jobs.
+    const workers = data.workers.find((item) => item.queue === data.about.version);
     const ready = !!workers && workers.available > workers.paused && workers.idle + workers.working > 0;
     add(
       '执行器',
       ready,
-      ready ? '存在可工作的default队列执行器' : 'default队列没有可工作执行器，请检查VM和worker',
+      ready
+        ? '存在与服务版本匹配的可工作执行器'
+        : '服务版本对应的队列没有可工作执行器；新装实例需核对worker注册与队列登记',
     );
   } catch {
     add(

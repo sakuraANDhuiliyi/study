@@ -1,0 +1,694 @@
+{
+  "iteration": 22,
+  "feature": "Match Judge0 worker health to the actual service version queue",
+  "date": "2026-10-12",
+  "sourceParent": "1700684782aca868dd09f358446da79abc4a3b5e",
+  "runtimeAndTestHashes": {
+    "apps/api/src/algorithms/judge.diagnostics.ts": "69d388c3dfa2a385ce911068cfe27c8ba9a016a6e260b5fb0d3166a3d0b9ac62",
+    "tests/algorithm-judge-config.unit.test.ts": "cf0e3a3d8393856b41252906ece9eac6bdb30d5ad2e9ce00e057dd5e52f1b31a"
+  },
+  "changes": [
+    "Use the service version reported by /about as the Judge0 CE job queue, rather than hard-coding default.",
+    "Reject unrelated version/default queues, unavailable workers, paused workers and workers with no idle or working capacity before creating smoke submissions.",
+    "Keep all authentication, network, extension, resource and response-validation checks unchanged."
+  ],
+  "targeted": {
+    "tests": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "scenarios": [
+      "Current-version idle and busy workers",
+      "Wrong/default queue cannot conceal an unavailable current queue",
+      "Failed preflight creates no submissions",
+      "Configuration and upstream secret redaction"
+    ]
+  },
+  "initialVerificationFailure": {
+    "stage": "migrate",
+    "cause": "The private loopback review PostgreSQL server was not running.",
+    "resolution": "Started a separate persistent review cluster on the unused review port, without resetting or stopping the application database; repeated the entire default full workflow."
+  },
+  "local": {
+    "version": 1,
+    "profile": "full",
+    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "fullReferenceCoverage": true,
+    "startedAt": "2026-10-12T08:05:29.830Z",
+    "finishedAt": "2026-10-12T08:18:14.439Z",
+    "passed": true,
+    "apiPort": 3002,
+    "previewPort": 3003,
+    "fullPassed": true,
+    "testCounts": {
+      "total": 1288,
+      "passed": 1288,
+      "failedOrIncomplete": 0,
+      "skipped": 0
+    }
+  },
+  "stages": [
+    {
+      "id": "generate",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "migrate",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "seed",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "lint",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "unit",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 508,
+        "pass": 508,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "build",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "audit",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    {
+      "id": "integration:android-protocol",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "trusted-references",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "programsPassed": 176,
+        "casesPassed": 1280,
+        "languages": ["python", "javascript", "cpp", "java"],
+        "failures": 0
+      }
+    },
+    {
+      "id": "creative-expression-browser",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "checksPassed": 10,
+        "expressionsPassed": 32,
+        "externalRequests": 0,
+        "pageErrors": 0
+      }
+    },
+    {
+      "id": "servers",
+      "status": "passed",
+      "exitCode": 0
+    },
+    {
+      "id": "e2e",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academic-goals.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academic-records-export.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academics-admission.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academics.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:accounts.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:admin-audit.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:admin-jobs.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:ai-authoring.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:ai-study.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-forum.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-history-filters.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-training-plans.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithms.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:analytics.security.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment-composition.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment.security.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:auth-fixes.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:auth.security.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:communication.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:communication.security.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:confusion-matrix.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:creative.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:digital-logic.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:exam-insights.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-action-filters.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-actions.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-overview.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:minimum-spanning-tree.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:notes.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:planner.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:population-genetics.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:programming.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:simpson-paradox.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:upload-security.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:worker-policy.integration.ts",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "clean-start",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {}
+    },
+    {
+      "id": "performance",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "requests": 100,
+        "errors": 0,
+        "concurrency": 10,
+        "latencyMs": {
+          "p50": 8,
+          "p95": 16,
+          "max": 17
+        }
+      }
+    },
+    {
+      "id": "browser",
+      "status": "passed",
+      "exitCode": 0,
+      "summary": {
+        "total": 397,
+        "passed": 397,
+        "skipped": 0,
+        "failedOrIncomplete": []
+      }
+    }
+  ],
+  "realJudge0": {
+    "readOnlyProbe": "Independently rerun after the VM repair; all configuration, authenticated endpoint, safety, resource, language and current-version worker checks passed.",
+    "fourLanguageSmoke": {
+      "evidenceSource": "User-supplied complete check-judge0.mjs --smoke output in this conversation",
+      "cpp": "passed",
+      "python": "passed",
+      "javascript": "passed",
+      "java": "passed"
+    },
+    "provider": "User-owned self-hosted VM; no paid AI or public Judge provider test"
+  },
+  "research": [
+    "https://github.com/judge0/judge0/blob/v1.13.1/scripts/load-config",
+    "https://github.com/judge0/judge0/blob/v1.13.1/app/jobs/isolate_job.rb",
+    "https://github.com/judge0/judge0/blob/v1.13.1/app/controllers/health_controller.rb",
+    "https://github.com/resque/resque/blob/v2.0.0/lib/resque/worker.rb"
+  ],
+  "limitations": [
+    "This commit fixes the platform diagnostic; the gateway, private-file ownership and Judge0 health-controller compatibility changes were applied separately on the deployment VM.",
+    "Passing fixed programs and declared settings does not certify VM firewall enforcement, adversarial sandbox isolation or every catalog problem performance limit.",
+    "The Linux Docker deployment was operated by the user; the local full gate validates repository code, protocol fixtures and trusted reference programs."
+  ],
+  "remote": {
+    "commit": null,
+    "ciStatus": "pending"
+  },
+  "acceptedForPush": true
+}

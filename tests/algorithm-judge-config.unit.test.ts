@@ -218,7 +218,7 @@ const metadata = {
     max_number_of_runs: 1,
     max_queue_size: 32,
   },
-  workers: [{ queue: 'default', size: 0, available: 2, idle: 2, working: 0, paused: 0 }],
+  workers: [{ queue: '1.13.1', size: 0, available: 2, idle: 2, working: 0, paused: 0 }],
 };
 test('诊断先只读检查，再经原网关执行固定四语言烟测；header和原始上游文本不外泄', async () => {
   await fixture(async () => {
@@ -271,6 +271,11 @@ test('诊断拒绝旧版本、允许联网、没有worker或畸形响应；失�
         { about: { version: '1.13.0' } },
         { config_info: { ...metadata.config_info, allow_enable_network: true } },
         { workers: [] },
+        { workers: [{ ...metadata.workers[0], queue: 'default' }] },
+        { workers: [{ ...metadata.workers[0], queue: '1.13.0' }] },
+        { workers: [{ ...metadata.workers[0], available: 0, idle: 0 }] },
+        { workers: [{ ...metadata.workers[0], paused: 2 }] },
+        { workers: [{ ...metadata.workers[0], idle: 0, working: 0 }] },
         { languages: 'fixture-only-secret' },
         { config_info: { ...metadata.config_info, max_memory_limit: 256000 } },
       ]) {
@@ -290,6 +295,33 @@ test('诊断拒绝旧版本、允许联网、没有worker或畸形响应；失�
       assert.doesNotMatch(JSON.stringify(denied), privateText);
       globalThis.fetch = async () => new Response('x'.repeat(2 * 1048576 + 1));
       assert.ok((await diagnoseJudge0()).some((check) => !check.ok));
+    } finally {
+      globalThis.fetch = saved;
+    }
+  });
+});
+test('诊断只接受当前服务版本的执行器；其他队列不能掩盖当前队列停机', async () => {
+  await fixture(async () => {
+    const saved = globalThis.fetch;
+    let submissions = 0;
+    let workers = [
+      { ...metadata.workers[0], queue: 'default' },
+      { ...metadata.workers[0], queue: '1.13.0' },
+      { ...metadata.workers[0], available: 0, idle: 0 },
+    ];
+    globalThis.fetch = async (url, options) => {
+      if (options?.method === 'POST') submissions += 1;
+      const path = new URL(String(url)).pathname.slice(1);
+      return Response.json(path === 'workers' ? workers : metadata[path as keyof typeof metadata]);
+    };
+    try {
+      const failed = await diagnoseJudge0({ smoke: true });
+      assert.equal(failed.find((check) => check.name === '执行器')?.ok, false);
+      assert.equal(submissions, 0);
+      workers = [...workers, { ...metadata.workers[0], queue: 'scheduler' }];
+      workers[2] = { ...metadata.workers[0], idle: 0, working: 2 };
+      assert.ok((await diagnoseJudge0()).every((check) => check.ok));
+      assert.equal(submissions, 0);
     } finally {
       globalThis.fetch = saved;
     }
