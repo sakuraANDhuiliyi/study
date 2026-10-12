@@ -12,7 +12,7 @@ import { AdminJobsService } from './admin/jobs.service';
 import { AnalyticsController } from './analytics/analytics.controller';
 import { StudentOverviewService } from './analytics/student-overview.service';
 import { AssessmentController } from './assessment/assessment.controller';
-import { AssessmentService } from './assessment/assessment.service';
+import { assessmentProviders } from './assessment/assessment.providers';
 import {
   CommunicationController,
   NotificationController,
@@ -155,7 +155,7 @@ class CatalogController {
     AdminAuditService,
     AdminJobsService,
     JobsService,
-    AssessmentService,
+    ...assessmentProviders,
     CommunicationService,
     CommunicationGateway,
     LocalPrivateStorage,

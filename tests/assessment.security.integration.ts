@@ -3,7 +3,7 @@ import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { AssessmentService } from '../apps/api/src/assessment/assessment.service';
+import { assessmentServices } from './assessment-test-helpers';
 
 const base = process.env.TEST_BASE_URL;
 if (
@@ -267,7 +267,7 @@ test('Assessment security regressions use independent data and real PostgreSQL l
         where: { id: { in: [poisoned.id, healthy.id] } },
         data: { deadlineAt: new Date(Date.now() - 1000) },
       });
-      const runner = new AssessmentService(db as never, {} as never, {} as never);
+      const runner = assessmentServices(db).service;
       await runner.sweepDueAttempts();
       const submitted = await db.examAttempt.findMany({ where: { id: { in: [poisoned.id, healthy.id] } } });
       assert.ok(

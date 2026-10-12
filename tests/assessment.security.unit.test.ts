@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AssessmentService } from '../apps/api/src/assessment/assessment.service';
+import { assessmentServices } from './assessment-test-helpers';
 import type { Actor } from '../apps/api/src/auth/auth.guard';
 
 const actor = (id: string, role = 'TEACHER'): Actor => ({
@@ -12,23 +12,16 @@ const actor = (id: string, role = 'TEACHER'): Actor => ({
   permissions: ['assessment.grade', 'learning.use'],
 });
 const service = (db: unknown) =>
-  new AssessmentService(
-    db as never,
-    {
-      require() {},
-      async course() {},
-    } as never,
-    {} as never,
-  ) as Omit<AssessmentService, never> & {
-    finalizeAttempt: (id: string, source: string) => Promise<unknown>;
-    attemptAccess: (actor: Actor, id: string, grade?: boolean) => Promise<unknown>;
-  };
+  assessmentServices(db, {
+    require() {},
+    async course() {},
+  });
 
 test('截止任务隔离单份失败，并避开失败的100份以处理下一页健康答卷', async () => {
   const records = [...Array.from({ length: 100 }, (_, index) => ({ id: `bad-${index}` })), { id: 'healthy' }];
   const jobs: { status?: string; processed?: number; error?: string | null }[] = [];
   const seen: string[] = [];
-  const target = service({
+  const { deadlines: target, attempts } = service({
     examAttempt: {
       async findMany({ where, take }: { where: { id: { notIn: string[] } }; take: number }) {
         return records.filter((record) => !where.id.notIn.includes(record.id)).slice(0, take);
@@ -45,7 +38,7 @@ test('截止任务隔离单份失败，并避开失败的100份以处理下一�
   });
   // Exercise the actual scheduler while injecting transaction failure boundaries.
   Reflect.set(target, 'logger', { error() {} });
-  Reflect.set(target, 'finalizeAttempt', async (id: string) => {
+  Reflect.set(attempts, 'finalizeAttempt', async (id: string) => {
     seen.push(id);
     if (id.startsWith('bad-')) throw new Error('isolated transaction failure');
   });
@@ -64,7 +57,7 @@ test('截止任务隔离单份失败，并避开失败的100份以处理下一�
 test('隔离是短暂退避；到重试时间后恢复交卷且清除隔离记录', async () => {
   let finished = false;
   let calls = 0;
-  const target = service({
+  const { deadlines: target, attempts } = service({
     examAttempt: {
       async findMany({ where }: { where: { id: { notIn: string[] } } }) {
         return finished || where.id.notIn.includes('transient') ? [] : [{ id: 'transient' }];
@@ -78,7 +71,7 @@ test('隔离是短暂退避；到重试时间后恢复交卷且清除隔离记�
     },
   });
   Reflect.set(target, 'logger', { error() {} });
-  Reflect.set(target, 'finalizeAttempt', async () => {
+  Reflect.set(attempts, 'finalizeAttempt', async () => {
     if (++calls === 1) throw new Error('transient database error');
     finished = true;
   });
@@ -102,7 +95,7 @@ test('非指定教师在所有答卷与成绩入口都在读取业务数据前�
     audience: [],
   };
   const attempt = { id: 'attempt', userId: 'student', exam };
-  const target = service({
+  const { service: target, access } = service({
     exam: {
       async findFirst() {
         return exam;
@@ -132,6 +125,6 @@ test('非指定教师在所有答卷与成绩入口都在读取业务数据前�
     () => target.resolveAppeal(unassigned, 'appeal', { resolution: '复核结论' }),
   ])
     await assert.rejects(operation(), /未被指定为本考试阅卷教师/);
-  assert.equal(await target.attemptAccess(actor('assigned'), 'attempt'), attempt);
-  assert.equal(await target.attemptAccess(actor('student', 'STUDENT'), 'attempt'), attempt);
+  assert.equal(await access.attemptAccess(actor('assigned'), 'attempt'), attempt);
+  assert.equal(await access.attemptAccess(actor('student', 'STUDENT'), 'attempt'), attempt);
 });

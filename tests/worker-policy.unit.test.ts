@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { JobsService } from '../apps/api/src/common/jobs.service';
-import { AssessmentService } from '../apps/api/src/assessment/assessment.service';
+import { assessmentServices } from './assessment-test-helpers';
 import { AdminJobsService } from '../apps/api/src/admin/jobs.service';
 import type { Actor } from '../apps/api/src/auth/auth.guard';
 
@@ -68,7 +68,7 @@ function common(db: unknown, uploads: unknown = { cleanup: async () => {} }) {
   return new JobsService(db as never, {} as never, uploads as never);
 }
 function assessment(db: unknown) {
-  return new AssessmentService(db as never, {} as never, {} as never);
+  return assessmentServices(db).deadlines;
 }
 
 for (const value of ['true', undefined, 'false', 'True', '1']) {

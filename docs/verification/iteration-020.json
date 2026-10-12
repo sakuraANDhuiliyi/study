@@ -268,9 +268,12 @@
     "Production browser cases use controlled API fixtures; real HTTP/database workflows are verified by the full suite."
   ],
   "remote": {
-    "commit": null,
-    "ciRun": null,
-    "ciStatus": "pending"
+    "commit": "cc69a78bb2ff4f6ed23156c8e3824aceda293cbc",
+    "pushed": true,
+    "ciStatus": "success",
+    "ciRun": 38152454848,
+    "ciUrl": "https://github.com/sakuraANDhuiliyi/study/actions/runs/38152454848",
+    "verifiedAt": "2026-10-12T00:07:37.287Z"
   },
   "acceptedForPush": true,
   "local": {
