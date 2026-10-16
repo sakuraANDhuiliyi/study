@@ -11,6 +11,7 @@ import { programmingBackupSchema } from '../programming/programming.backup';
 import * as training from '../algorithms/training-plan.schemas';
 import * as creative from '../programming/creative.schemas';
 import * as forum from '../algorithm-forum/algorithm-forum.schemas';
+import * as live from '../live/live.schemas';
 import { courseInput, lessonInput } from '../courses/courses.controller';
 import { newUser } from '../admin/admin.controller';
 import {
@@ -167,6 +168,16 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       z.object({ oldPassword: z.string(), newPassword: z.string().min(12).max(128) }),
     ],
     ['post', '/courses', courseInput],
+    ['post', '/live/classes', live.liveCreate],
+    ['post', '/live/classes/{id}/start', live.liveRevision],
+    ['post', '/live/classes/{id}/end', live.liveRevision],
+    ['post', '/live/classes/{id}/join', z.object({}).strict()],
+    ['post', '/live/classes/{id}/revoke-all', z.object({}).strict()],
+    ['post', '/live/classes/{id}/heartbeat', live.livePresence],
+    ['post', '/live/classes/{id}/leave', live.livePresence],
+    ['post', '/live/classes/{id}/hand', live.liveHand],
+    ['post', '/live/classes/{id}/members/{memberId}', live.liveModeration],
+    ['post', '/live/classes/{id}/messages', live.liveChat],
     ['patch', '/courses/{id}', courseInput.partial()],
     ['post', '/chapters/{id}/lessons', lessonInput],
     ['patch', '/lessons/{id}', lessonInput.partial()],

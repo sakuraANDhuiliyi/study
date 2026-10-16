@@ -9,7 +9,12 @@ import { AuthService } from '../auth/auth.service';
 import { CommunicationSessions } from './socket-sessions';
 
 /** Sockets carry invalidations only; content is fetched through authorized REST endpoints. */
-@WebSocketGateway({ namespace: '/notifications', transports: ['websocket'], maxHttpBufferSize: 8192 })
+@WebSocketGateway({
+  namespace: '/notifications',
+  transports: ['websocket'],
+  maxHttpBufferSize: 8192,
+  destroyUpgrade: false,
+})
 export class CommunicationGateway
   extends CommunicationSessions
   implements OnGatewayConnection, OnGatewayDisconnect

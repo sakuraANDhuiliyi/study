@@ -911,7 +911,7 @@ export function SystemSettings() {
                           : r.type === 'dictionary'
                             ? `课程分类 ${(value.courseCategories || []).length} 项 · 年级 / 部门 ${(value.grades || []).length} 项`
                             : r.type === 'features'
-                              ? `练习 ${value.practice ? '开启' : '关闭'} · 交流 ${value.communication ? '开启' : '关闭'}`
+                              ? `练习 ${value.practice ? '开启' : '关闭'} · 交流 ${value.communication ? '开启' : '关闭'} · 直播 ${value.live !== false ? '开启' : '关闭'}`
                               : String(value);
                 },
               },
@@ -991,6 +991,14 @@ export function SystemSettings() {
                 <Switch />
               </Form.Item>
               <Form.Item name={['value', 'communication']} label="交流功能" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+              <Form.Item
+                name={['value', 'live']}
+                label="直播功能"
+                valuePropName="checked"
+                initialValue={true}
+              >
                 <Switch />
               </Form.Item>
             </>

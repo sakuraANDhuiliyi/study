@@ -994,7 +994,9 @@ export class AdminController {
         ]),
       ).parse(d.value);
     if (d.key === 'features')
-      z.object({ practice: z.boolean(), communication: z.boolean() }).strict().parse(d.value);
+      z.object({ practice: z.boolean(), communication: z.boolean(), live: z.boolean().optional() })
+        .strict()
+        .parse(d.value);
     if (d.key === 'loginPolicy')
       z.object({ sessionHours: z.number().int().min(1).max(72) })
         .strict()

@@ -14,8 +14,10 @@ export class AuthService {
     const setting = await this.db.systemSetting.findUnique({
       where: { organizationId_key: { organizationId: actor.organizationId, key: 'features' } },
     });
-    const flags = setting?.value as { practice?: boolean; communication?: boolean } | undefined;
+    const flags = setting?.value as
+      { practice?: boolean; communication?: boolean; live?: boolean } | undefined;
     if (
+      (flags?.live === false && /^\/api\/live(?:\/|$)/i.test(path)) ||
       (flags?.practice === false &&
         (/^\/api\/(practice|mistakes|favorites|ai-study|algorithms|algorithm-forum|programming)(\/|$)/i.test(
           path,

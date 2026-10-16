@@ -361,7 +361,20 @@ export function CourseDetail() {
             </div>
           </div>
           <Tabs
+            defaultActiveKey="content"
             items={[
+              {
+                key: 'live',
+                label: '互动直播',
+                children: (
+                  <Panel title="课程直播课堂">
+                    <p>观看课程直播，与老师开麦、开摄像头互动，或共享实践中的问题。</p>
+                    <Link to={`/live?courseId=${id}`}>
+                      <Button type="primary">查看课程直播</Button>
+                    </Link>
+                  </Panel>
+                ),
+              },
               {
                 key: 'content',
                 label: '课程内容',

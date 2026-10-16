@@ -12,3 +12,5 @@ playwright-report/
 *.tsbuildinfo
 *.log
 .DS_Store
+deploy/livekit/livekit.yaml
+deploy/livekit/.env

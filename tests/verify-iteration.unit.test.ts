@@ -42,9 +42,18 @@ test('iteration CLI defaults to all four reference languages and validates expli
 });
 
 test('iteration uses supported LTS runtimes and rejects Node below the project minimum', () => {
-  for (const version of ['22.11.0', '22.22.0', '24.0.0', 'v24.19.0'])
+  for (const version of ['22.22.0', '24.0.0', 'v24.19.0'])
     assert.doesNotThrow(() => validateRuntime(version));
-  for (const version of ['20.19.0', '22.0.0', '22.10.9', '23.0.0', '25.0.0', 'not-a-version'])
+  for (const version of [
+    '20.19.0',
+    '22.0.0',
+    '22.10.9',
+    '22.11.0',
+    '22.21.9',
+    '23.0.0',
+    '25.0.0',
+    'not-a-version',
+  ])
     assert.throws(() => validateRuntime(version));
 });
 

@@ -1,0 +1,32 @@
+# Merge after compose.yaml and any existing local override. Signaling/API 7880 is NOT published.
+services:
+  app:
+    environment:
+      LIVEKIT_ENABLED: 'true'
+      LIVEKIT_URL: http://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Initialize private LiveKit credentials first}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Initialize private LiveKit credentials first}
+    depends_on:
+      livekit: { condition: service_started }
+  livekit:
+    image: livekit/livekit-server:v1.13.10
+    command: ['--config', '/etc/livekit.yaml']
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m']
+    volumes:
+      - type: bind
+        source: ./deploy/livekit/livekit.yaml
+        target: /etc/livekit.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - '7881:7881/tcp'
+      - '7882:7882/udp'
+    cpus: 2
+    mem_limit: 2g
+    pids_limit: 256
+    restart: unless-stopped

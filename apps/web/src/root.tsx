@@ -28,6 +28,7 @@ import {
   Code2,
   GraduationCap,
   Sparkles,
+  Radio,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './auth';
@@ -71,6 +72,10 @@ const AiAuthoring = lazy(() =>
   import('./pages/AiAuthoring').then((module) => ({ default: module.AiAuthoring })),
 );
 const Courses = lazy(() => import('./pages/Courses').then((module) => ({ default: module.Courses })));
+const LiveClasses = lazy(() => import('./pages/Live').then((module) => ({ default: module.LiveClasses })));
+const LiveClassroom = lazy(() =>
+  import('./pages/Live').then((module) => ({ default: module.LiveClassroom })),
+);
 const CourseDetail = lazy(() =>
   import('./pages/Courses').then((module) => ({ default: module.CourseDetail })),
 );
@@ -180,6 +185,7 @@ function Shell() {
           ? [{ path: '/academics', title: '专业学习中心', icon: GraduationCap }]
           : []),
         { path: '/courses', title: isTeacher(user) ? '课程管理' : '我的课程', icon: BookOpen },
+        ...(user.accountMode !== 'PERSONAL' ? [{ path: '/live', title: '互动直播', icon: Radio }] : []),
         { path: '/assignments', title: isTeacher(user) ? '作业管理' : '我的作业', icon: ClipboardList },
         { path: '/practice', title: '练习中心', icon: PenLine },
         ...(user.role === 'STUDENT' ? [{ path: '/algorithms', title: '算法练习', icon: Code2 }] : []),
@@ -594,6 +600,8 @@ export function Root() {
             />
             <Route path="courses" element={<Courses />} />
             <Route path="courses/:id" element={<CourseDetail />} />
+            <Route path="live" element={<LiveClasses />} />
+            <Route path="live/:id" element={<LiveClassroom />} />
             <Route
               path="assignments"
               element={

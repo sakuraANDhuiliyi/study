@@ -20,6 +20,7 @@ COPY --from=build /app/apps/web/dist ./apps/web/dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/scripts/bootstrap.ts ./scripts/bootstrap.ts
 COPY --from=build /app/scripts/provision-runtime-db.mjs ./scripts/provision-runtime-db.mjs
+COPY --from=build /app/scripts/check-livekit.mjs ./scripts/check-livekit.mjs
 RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 USER node
 ENV NODE_ENV=production BIND_HOST=0.0.0.0 PORT=3001

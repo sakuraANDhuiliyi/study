@@ -7,7 +7,7 @@
     "apps/web"
   ],
   "engines": {
-    "node": ">=22.11 <25"
+    "node": ">=22.22 <25"
   },
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
@@ -56,6 +56,8 @@
     "test:algorithm-references": "node scripts/verify-algorithm-references.mjs",
     "test:admin-jobs": "node --import tsx --test tests/admin-jobs.integration.ts",
     "test:admin-audit": "node --import tsx --test tests/admin-audit.integration.ts",
+    "test:live": "node --import tsx --test --test-concurrency=1 tests/live.integration.ts tests/live-browser.integration.ts",
+    "live:setup": "node scripts/setup-livekit.mjs",
     "dev:programming": "node scripts/dev-programming.mjs",
     "android:setup": "node scripts/setup-android-agent.mjs",
     "test:android-protocol": "node scripts/verify-android-protocol.mjs"
@@ -71,6 +73,7 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.6.1",
     "helmet": "^8.1.0",
+    "livekit-server-sdk": "2.19.1",
     "multer": "^2.0.2",
     "pdf-lib": "1.17.1",
     "reflect-metadata": "^0.2.2",

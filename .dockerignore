@@ -13,3 +13,5 @@ uploads
 test-results
 playwright-report
 *.log
+deploy/livekit/.env
+deploy/livekit/livekit.yaml

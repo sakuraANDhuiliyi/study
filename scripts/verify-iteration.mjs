@@ -189,8 +189,8 @@ export function validateEnvironment(env) {
 
 export function validateRuntime(version) {
   const [major, minor] = version.replace(/^v/, '').split('.').map(Number);
-  if (![22, 24].includes(major) || !Number.isInteger(minor) || (major === 22 && minor < 11))
-    throw new Error('Verification requires Node 22.11+ or Node 24');
+  if (![22, 24].includes(major) || !Number.isInteger(minor) || (major === 22 && minor < 22))
+    throw new Error('Verification requires Node 22.22+ or Node 24');
 }
 
 export function discoverTests(names) {
@@ -234,6 +234,7 @@ export function buildStages(options, tests) {
     ),
     npmStep('build', ['run', 'build'], ['generate']),
     npmStep('audit', ['audit', '--audit-level=high', '--json']),
+    nodeStep('livekit-runtime', ['scripts/setup-livekit.mjs']),
     nodeStep('integration:android-protocol', ['scripts/verify-android-protocol.mjs']),
     nodeStep(
       'trusted-references',
@@ -259,7 +260,7 @@ export function buildStages(options, tests) {
       nodeStep(
         `integration:${name}`,
         ['--import', 'tsx', '--test', '--test-reporter=tap', '--test-concurrency=1', `tests/${name}`],
-        ['servers'],
+        name.startsWith('live') ? ['servers', 'livekit-runtime'] : ['servers'],
       ),
     ),
     nodeStep('clean-start', ['scripts/verify-clean-start.mjs'], ['build', 'migrate']),
@@ -580,6 +581,10 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
       BIND_HOST: '127.0.0.1',
       COOKIE_SECURE: 'false',
       DISABLE_JOBS: 'true',
+      LIVEKIT_ENABLED: 'false',
+      LIVEKIT_URL: 'http://127.0.0.1:1',
+      LIVEKIT_API_KEY: '',
+      LIVEKIT_API_SECRET: '',
       ANDROID_AGENT_ENABLED: 'false',
       AI_CONFIG_PATH: configPath,
       // Individual programming fixtures own their preview services. Main verification

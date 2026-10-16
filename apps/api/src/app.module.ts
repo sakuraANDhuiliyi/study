@@ -57,6 +57,11 @@ import { AndroidAgentService } from './programming/android-agent.service';
 import { ProgrammingService } from './programming/programming.service';
 import { ProgrammingGateway } from './programming/programming.gateway';
 import { ProgrammingPreviewService } from './programming/programming-preview.service';
+import { LiveController } from './live/live.controller';
+import { LiveService } from './live/live.service';
+import { LiveMedia } from './live/live.media';
+import { LiveProxy } from './live/live.proxy';
+import { LiveConnections } from './live/live.connections';
 @Controller('health')
 class HealthController {
   constructor(private db: PrismaService) {}
@@ -122,6 +127,7 @@ class CatalogController {
     CatalogController,
     AuthController,
     CoursesController,
+    LiveController,
     AdminController,
     AnalyticsController,
     AssessmentController,
@@ -149,6 +155,10 @@ class CatalogController {
     PrismaService,
     AuthService,
     AuthGuard,
+    LiveService,
+    LiveMedia,
+    LiveProxy,
+    LiveConnections,
     LearningActionsService,
     StudentOverviewService,
     AuditService,

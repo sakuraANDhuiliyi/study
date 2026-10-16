@@ -13,6 +13,7 @@ import { AppModule } from './app.module';
 import { HttpErrorFilter } from './common/http.filter';
 import { enrichOpenAPI } from './common/openapi';
 import { readProgrammingPreviewConfiguration } from './programming/programming-preview.service';
+import { LiveProxy } from './live/live.proxy';
 const root = resolve(__dirname, '../../..');
 config({ path: join(root, '.env') });
 async function bootstrap() {
@@ -48,6 +49,9 @@ async function bootstrap() {
     }),
   );
   app.use(cookieParser());
+  const liveProxy = app.get(LiveProxy);
+  app.use(liveProxy.middleware);
+  liveProxy.attach(app.getHttpServer());
   const requestLimit = `${Math.min(20, Math.max(1, Number(process.env.MAX_JSON_MB) || 2))}mb`;
   app.use((req: any, res: any, next: any) => {
     req.requestId = randomUUID();
@@ -100,7 +104,8 @@ async function bootstrap() {
     app.use(express.static(web, { index: false }));
     app.use((req: any, res: any, next: any) => {
       if (req.method === 'GET' && !/^\/api(?:\/|$)/i.test(req.path) && !req.path.startsWith('/socket.io'))
-        res.sendFile(join(web, 'index.html'));
+        // The fixed SPA entry is safe even when the checkout lives in a hidden worktree.
+        res.sendFile(join(web, 'index.html'), { dotfiles: 'allow' });
       else next();
     });
   }

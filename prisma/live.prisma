@@ -1,0 +1,55 @@
+model LiveClass {
+  id String @id @default(cuid())
+  organizationId String
+  courseId String
+  creatorId String
+  title String
+  scheduledAt DateTime @db.Timestamptz(3)
+  status String @default("SCHEDULED")
+  revision Int @default(0)
+  roomName String @unique
+  maxParticipants Int @default(32)
+  startedAt DateTime? @db.Timestamptz(3)
+  endedAt DateTime? @db.Timestamptz(3)
+  cleanupPending Boolean @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,courseId,scheduledAt,id])
+  @@index([cleanupPending])
+}
+
+model LiveMember {
+  id String @id @default(uuid())
+  liveClassId String
+  userId String
+  sessionId String
+  connectionId String @default(uuid())
+  name String
+  host Boolean @default(false)
+  state String @default("ACTIVE")
+  approved Boolean @default(false)
+  handRaised Boolean @default(false)
+  chatMuted Boolean @default(false)
+  syncPending Boolean @default(false)
+  revision Int @default(0)
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+  heartbeatAt DateTime @default(now()) @db.Timestamptz(3)
+  leftAt DateTime? @db.Timestamptz(3)
+  attendanceSeconds Int @default(0)
+  @@unique([liveClassId,userId])
+  @@index([liveClassId,state,heartbeatAt])
+  @@index([userId])
+  @@index([syncPending])
+}
+
+model LiveMessage {
+  id String @id @default(cuid())
+  liveClassId String
+  userId String
+  name String
+  text String
+  clientId String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([liveClassId,userId,clientId])
+  @@index([liveClassId,createdAt,id])
+}
