@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium, firefox, webkit, expect, type Page } from '@playwright/test';
 import { createLiveFixture } from './live.fixture';
-import { installMedia, attachLogin, inbound } from './live-browser.fixture';
+import { installMedia, attachLogin, inbound, mediaDiagnostics } from './live-browser.fixture';
 
 test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及课堂管理', { timeout: 480_000 }, async (t) => {
   const f = await createLiveFixture();
@@ -98,6 +98,7 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
             'getUserMedia', { configurable: true, value: window.__allowedUserMedia });`);
           await teacherPage.getByRole('button', { name: '开启摄像头', exact: true }).click();
           await teacherPage.getByRole('button', { name: '开启麦克风', exact: true }).click();
+          await expect(teacherPage.getByRole('button', { name: '关闭麦克风', exact: true })).toBeEnabled();
           await expect.poll(() => inbound(studentPage!, 'video'), { timeout: 20000 }).toBeGreaterThan(0);
           await expect.poll(() => inbound(studentPage!, 'audio'), { timeout: 20000 }).toBeGreaterThan(0);
           await expect
@@ -176,6 +177,17 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
           );
           await expect(studentPage.getByRole('button', { name: '进入课堂', exact: true })).toBeDisabled();
           assert.deepEqual(errors, [], 'Browser page errors occurred');
+        } catch (error) {
+          for (const [role, page] of [['teacher', teacherPage], ['student', studentPage]] as const) {
+            if (page && !page.isClosed()) {
+              try {
+                console.error(`${name} ${role} media: ${JSON.stringify(await mediaDiagnostics(page))}`);
+              } catch {
+                console.error(`${name} ${role} media diagnostics unavailable`);
+              }
+            }
+          }
+          throw error;
         } finally {
           await browser.close();
           if (liveId) {

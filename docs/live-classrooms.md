@@ -95,6 +95,17 @@ node --env-file=.data/review.env scripts/verify-iteration.mjs
 
 配置必须是本机、名称含review的测试数据库，且用户具有CREATEDB权限。直播测试只新建和删除自己随机创建的测试库、端口和子进程，不改生产数据库或现有服务。固定媒体二进制经SHA256校验，保存在忽略目录`.data/tools`。三浏览器验收使用合成摄像头、音频和屏幕源，经真实WebRTC/LiveKit收发，验证收包统计；不能替代真实摄像头、麦克风及操作系统权限弹窗的人工验收。
 
+Ubuntu无桌面的测试环境还需可用的音频输出。CI以普通用户启动PulseAudio并创建虚拟输出，避免Firefox的音频图缺少运行时钟；不需要连接物理声卡。首次安装使用`sudo apt-get install -y pulseaudio pulseaudio-utils`，随后以运行测试的普通用户执行：
+
+```bash
+pulseaudio --start --exit-idle-time=-1
+pactl load-module module-null-sink sink_name=live_verification rate=48000 channels=2
+pactl set-default-sink live_verification
+test "$(pactl get-default-sink)" = live_verification
+```
+
+这仅是验收机配置，生产LiveKit服务器不需要PulseAudio。音频断言仍检查真实WebRTC接收字节，失败时仅记录音频上下文状态和媒体计数，不输出凭证或SDP。Mozilla的[Linux媒体测试也使用虚拟音频输出](https://bugzilla.mozilla.org/show_bug.cgi?id=1873806)。
+
 官方参考：
 
 - [LiveKit媒体发布](https://docs.livekit.io/transport/media/publish/)

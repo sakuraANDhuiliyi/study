@@ -34,6 +34,15 @@ jobs:
       - run: cp .env.example .env
       - name: Install browser runtime
         run: npx playwright install --with-deps chromium firefox webkit
+      - name: Start virtual audio output for real browser media tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio pulseaudio-utils
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=live_verification rate=48000 channels=2
+          pactl set-default-sink live_verification
+          test "$(pactl get-default-sink)" = live_verification
+          pactl list short sinks
       - name: Complete verification with automatic test discovery
         run: node --env-file=.env scripts/verify-iteration.mjs --profile=ci
       - uses: actions/upload-artifact@v4

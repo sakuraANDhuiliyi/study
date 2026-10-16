@@ -10,6 +10,8 @@ export async function installMedia(context: BrowserContext) {
     const original = window.RTCPeerConnection;
     const peers: RTCPeerConnection[] = [];
     (window as any).__livePeers = peers;
+    const audioContexts: AudioContext[] = [];
+    (window as any).__liveAudioContexts = audioContexts;
     window.RTCPeerConnection = class extends original {
       constructor(...args: ConstructorParameters<typeof RTCPeerConnection>) {
         super(...args);
@@ -41,6 +43,7 @@ export async function installMedia(context: BrowserContext) {
     };
     const audio = async () => {
       const ctx = new AudioContext();
+      audioContexts.push(ctx);
       const oscillator = ctx.createOscillator();
       oscillator.frequency.value = 440;
       const gain = ctx.createGain();
@@ -122,4 +125,35 @@ export async function inbound(page: Page, kind: string) {
     }
     return bytes;
   }, kind);
+}
+
+// Only state/counters are collected: SDP, candidate addresses, cookies and tokens
+// must never be included in CI diagnostics.
+export async function mediaDiagnostics(page: Page) {
+  return page.evaluate(async () => ({
+    audio: ((window as any).__liveAudioContexts as AudioContext[]).map((ctx) => ({
+      state: ctx.state,
+      time: ctx.currentTime,
+      rate: ctx.sampleRate,
+    })),
+    peers: await Promise.all(
+      ((window as any).__livePeers as RTCPeerConnection[]).map(async (peer) => {
+        const counters: Record<string, unknown>[] = [];
+        if (peer.connectionState !== 'closed') {
+          (await peer.getStats()).forEach((s) => {
+            if (['inbound-rtp', 'outbound-rtp', 'media-source'].includes(s.type))
+              counters.push({
+                type: s.type,
+                kind: s.kind || s.mediaType,
+                bytesSent: s.bytesSent,
+                bytesReceived: s.bytesReceived,
+                totalAudioEnergy: s.totalAudioEnergy,
+                totalSamplesDuration: s.totalSamplesDuration,
+              });
+          });
+        }
+        return { connection: peer.connectionState, ice: peer.iceConnectionState, counters };
+      }),
+    ),
+  }));
 }
