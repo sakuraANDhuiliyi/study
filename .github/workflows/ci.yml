@@ -72,6 +72,9 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: android-actions/setup-android@v3
+        with:
+          # Google removed the legacy "tools" package requested by v3's default.
+          packages: platform-tools
       - name: Install pinned Android build tools
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
       - run: npm ci --prefix apps/mobile
