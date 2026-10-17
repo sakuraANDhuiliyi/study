@@ -633,7 +633,7 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
     const reporterPath = join(directory, 'safe-reporter.mjs');
     await writeFile(
       reporterPath,
-      `import {writeFileSync} from 'node:fs';\nexport default class { constructor(){this.tests=[];} onTestEnd(test,result){this.tests.push({title:test.title,status:result.status,expectedStatus:test.expectedStatus,durationMs:result.duration});if(result.status!=='passed')console.error(test.title+'\\n'+(result.error?.stack||result.error?.message||result.status));} onEnd(result){writeFileSync(${JSON.stringify(browserSummary)},JSON.stringify({status:result.status,tests:this.tests}),{mode:0o600});} }\n`,
+      `import {writeFileSync} from 'node:fs';\nexport default class { constructor(){this.tests=[];} onTestEnd(test,result){this.tests.push({title:test.title,status:result.status,expectedStatus:test.expectedStatus,durationMs:result.duration});if(result.status!=='passed'){const errors=result.errors?.length?result.errors:[result.error];console.error([test.title,...errors.filter(Boolean).map(e=>e.stack||e.message||String(e)),result.status].join('\\n'));}} onEnd(result){writeFileSync(${JSON.stringify(browserSummary)},JSON.stringify({status:result.status,tests:this.tests}),{mode:0o600});} }\n`,
       { mode: 0o600 },
     );
     const browserConfig = join(directory, 'playwright.config.ts');

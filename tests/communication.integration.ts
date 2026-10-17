@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { io, type Socket } from 'socket.io-client';
+import { PrismaClient } from '@prisma/client';
 
 // Run against an actual seeded API: npx tsx --test tests/communication.integration.ts
 // The suite creates isolated accounts/course/class and retains history for audit inspection.
@@ -500,8 +501,54 @@ test('真实数据库交流闭环、幂等、权限撤销和附件访问', { ski
       await request(student, `/attachments/${courseFileId}/download`, 'GET', undefined, 403);
       const listed = (await request(student, '/communication/conversations')).body.items;
       assert(!listed.some((item: any) => item.id === conversationId));
-      await request(student, '/notifications/read-all', 'POST', {}, 201);
-      assert.equal((await request(student, '/notifications')).body.unreadCount, 0);
+      const db = new PrismaClient();
+      try {
+        const owner = await db.user.findUniqueOrThrow({
+          where: { id: student.user.id },
+          select: { organizationId: true },
+        });
+        const known = await db.notification.create({
+          data: {
+            organizationId: owner.organizationId,
+            userId: student.user.id,
+            type: 'SYSTEM',
+            title: '通知已读验收',
+            body: '明确已存在的通知',
+            link: '/',
+            eventKey: `read-all-test:${randomUUID()}`,
+            createdAt: new Date(Date.now() - 1000),
+          },
+        });
+        const before = (await request(student, '/notifications?pageSize=100')).body;
+        assert(before.items.some((item: any) => item.id === known.id && !item.readAt));
+        await request(student, '/notifications/read-all', 'POST', {}, 201);
+        const later = await db.notification.create({
+          data: {
+            organizationId: owner.organizationId,
+            userId: student.user.id,
+            type: 'SYSTEM',
+            title: '稍后到达的通知',
+            body: '全部已读之后的新通知应保留未读',
+            link: '/',
+            eventKey: `read-all-later:${randomUUID()}`,
+          },
+        });
+        const after = (await request(student, '/notifications?pageSize=100')).body;
+        // The outbox worker may deliver another notification after read-all.
+        // Every notification already observed must be read; later arrivals may be unread.
+        for (const item of before.items) {
+          const current = after.items.find((entry: any) => entry.id === item.id);
+          assert(current?.readAt, 'Previously visible notification was not marked read');
+        }
+        assert(after.total <= 100, 'Fixture notifications must fit one verification page');
+        const unread = (await request(student, '/notifications?unread=true&pageSize=100')).body;
+        const observedIds = new Set(before.items.map((item: any) => item.id));
+        assert(!unread.items.some((item: any) => observedIds.has(item.id)));
+        assert(unread.items.some((item: any) => item.id === later.id));
+        assert(unread.unreadCount >= 1);
+      } finally {
+        await db.$disconnect();
+      }
       await request({ ...student, csrf: 'invalid-csrf' }, '/notifications/read-all', 'POST', {}, 403);
     });
 

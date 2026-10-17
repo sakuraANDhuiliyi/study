@@ -35,12 +35,9 @@ async function fixture(page: Page, options: Options = {}) {
   const projects = new Map<string, typeof original>([['original', original]]);
   const requests: { method: string; path: string; body?: any; csrf?: string }[] = [];
   let release!: () => void;
-  let observed!: () => void;
+  let heldRequestObserved = false;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
-  });
-  const reached = new Promise<void>((resolve) => {
-    observed = resolve;
   });
   const json = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -54,7 +51,7 @@ async function fixture(page: Page, options: Options = {}) {
       (options.hold === 'save' && method === 'PATCH') ||
       (options.hold !== 'save' && options.hold && path.endsWith(`/${options.hold}`))
     ) {
-      observed();
+      heldRequestObserved = true;
       await gate;
     }
     if (options.backupFailure && path.endsWith('/backup'))
@@ -167,7 +164,17 @@ async function fixture(page: Page, options: Options = {}) {
     }
     return json(route, { message: `Unhandled fixture ${method} ${path}` }, 404);
   });
-  return { requests, projects, reached, release };
+  return {
+    requests,
+    projects,
+    release,
+    waitReached: () =>
+      expect
+        .poll(() => heldRequestObserved, {
+          message: `Expected the held ${options.hold} API request to start`,
+        })
+        .toBeTruthy(),
+  };
 }
 async function edit(page: Page, content: string) {
   await expect(page.getByRole('heading', { name: '编程工作区', exact: true })).toBeVisible();
@@ -314,8 +321,8 @@ for (const action of ['duplicate', 'backup', 'save'] as const) {
       .getByRole('button', { name: action === 'backup' ? 'JSON 备份' : '复制项目', exact: true })
       .click();
     if (action !== 'backup') await page.getByRole('button', { name: '创建副本', exact: true }).click();
-    await state.reached;
-    await page.goBack();
+    await state.waitReached();
+    await page.goBack({ waitUntil: 'commit' });
     await expect(page.getByRole('heading', { name: '编程工作室', exact: true })).toBeVisible();
     const detailReads = state.requests.filter(
       (request) => request.method === 'GET' && request.path === '/api/programming/projects/original',
@@ -345,8 +352,8 @@ test('离开导入页面后的迟到结果不会跳转新项目或显示全局�
   await page.getByRole('button', { name: '导入 JSON 备份', exact: true }).click();
   await selectBackup(page, bundle());
   await page.getByRole('button', { name: '确认导入', exact: true }).click();
-  await state.reached;
-  await page.goBack();
+  await state.waitReached();
+  await page.goBack({ waitUntil: 'commit' });
   await expect(page.getByRole('heading', { name: '编程工作区', exact: true })).toBeVisible();
   state.release();
   await page.waitForTimeout(200);
@@ -430,7 +437,7 @@ test('旧备份的迟到401不清除后来登录的新身份', async ({ page }) 
     });
   });
   await page.getByRole('button', { name: 'JSON 备份', exact: true }).click();
-  await state.reached;
+  await state.waitReached();
   await page.getByRole('button', { name: '学生 A的账号菜单', exact: true }).click();
   await page.getByRole('menuitem', { name: '退出登录', exact: true }).click();
   await expect(page.getByRole('heading', { name: '登录你的账号', exact: true })).toBeVisible();

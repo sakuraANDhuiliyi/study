@@ -1,7 +1,7 @@
 {
   "feature": "Native Android learning client and mobile classroom experience",
   "baseCommit": "81a0ed6fc4cfc0c2564a1ff639d40d2f6fb5e04e",
-  "recordedAt": "2026-10-17T06:24:51.148612+00:00",
+  "recordedAt": "2026-10-17T07:13:50.683874+00:00",
   "fullVerification": {
     "profile": "full",
     "requestedReferenceLanguages": [
@@ -11,8 +11,8 @@
       "java"
     ],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-17T06:09:11.362Z",
-    "finishedAt": "2026-10-17T06:23:56.319Z",
+    "startedAt": "2026-10-17T06:58:49.664Z",
+    "finishedAt": "2026-10-17T07:13:36.462Z",
     "passed": true
   },
   "testTotals": {
@@ -25,37 +25,37 @@
     {
       "id": "generate",
       "status": "passed",
-      "durationMs": 625,
+      "durationMs": 896,
       "summary": {}
     },
     {
       "id": "migrate",
       "status": "passed",
-      "durationMs": 383,
+      "durationMs": 422,
       "summary": {}
     },
     {
       "id": "seed",
       "status": "passed",
-      "durationMs": 1212,
+      "durationMs": 973,
       "summary": {}
     },
     {
       "id": "typecheck",
       "status": "passed",
-      "durationMs": 7387,
+      "durationMs": 8491,
       "summary": {}
     },
     {
       "id": "lint",
       "status": "passed",
-      "durationMs": 4286,
+      "durationMs": 3950,
       "summary": {}
     },
     {
       "id": "unit",
       "status": "passed",
-      "durationMs": 21790,
+      "durationMs": 19336,
       "summary": {
         "tests": 534,
         "pass": 534,
@@ -68,13 +68,13 @@
     {
       "id": "build",
       "status": "passed",
-      "durationMs": 29609,
+      "durationMs": 29374,
       "summary": {}
     },
     {
       "id": "audit",
       "status": "passed",
-      "durationMs": 1751,
+      "durationMs": 1025,
       "summary": {
         "info": 0,
         "low": 0,
@@ -87,7 +87,7 @@
     {
       "id": "mobile-build",
       "status": "passed",
-      "durationMs": 8787,
+      "durationMs": 15099,
       "summary": {
         "checks": 5,
         "tests": 4,
@@ -118,13 +118,13 @@
     {
       "id": "livekit-runtime",
       "status": "passed",
-      "durationMs": 96,
+      "durationMs": 102,
       "summary": {}
     },
     {
       "id": "integration:android-protocol",
       "status": "passed",
-      "durationMs": 759,
+      "durationMs": 896,
       "summary": {
         "tests": 7,
         "pass": 7,
@@ -137,7 +137,7 @@
     {
       "id": "trusted-references",
       "status": "passed",
-      "durationMs": 48948,
+      "durationMs": 55170,
       "summary": {
         "programsPassed": 176,
         "casesPassed": 1280,
@@ -153,7 +153,7 @@
     {
       "id": "creative-expression-browser",
       "status": "passed",
-      "durationMs": 9123,
+      "durationMs": 9929,
       "summary": {
         "checksPassed": 10,
         "expressionsPassed": 32,
@@ -164,13 +164,13 @@
     {
       "id": "servers",
       "status": "passed",
-      "durationMs": 1856,
+      "durationMs": 2059,
       "summary": {}
     },
     {
       "id": "e2e",
       "status": "passed",
-      "durationMs": 9438,
+      "durationMs": 9419,
       "summary": {
         "tests": 12,
         "pass": 12,
@@ -183,7 +183,7 @@
     {
       "id": "integration:academic-goals.integration.ts",
       "status": "passed",
-      "durationMs": 5018,
+      "durationMs": 5548,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -196,7 +196,7 @@
     {
       "id": "integration:academic-records-export.integration.ts",
       "status": "passed",
-      "durationMs": 7376,
+      "durationMs": 8004,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -209,7 +209,7 @@
     {
       "id": "integration:academics-admission.integration.ts",
       "status": "passed",
-      "durationMs": 628,
+      "durationMs": 716,
       "summary": {
         "tests": 6,
         "pass": 6,
@@ -222,7 +222,7 @@
     {
       "id": "integration:academics.integration.ts",
       "status": "passed",
-      "durationMs": 5369,
+      "durationMs": 5785,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -235,7 +235,7 @@
     {
       "id": "integration:accounts.integration.ts",
       "status": "passed",
-      "durationMs": 4696,
+      "durationMs": 4924,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -248,7 +248,7 @@
     {
       "id": "integration:admin-audit.integration.ts",
       "status": "passed",
-      "durationMs": 5951,
+      "durationMs": 6468,
       "summary": {
         "tests": 16,
         "pass": 16,
@@ -261,7 +261,7 @@
     {
       "id": "integration:admin-jobs.integration.ts",
       "status": "passed",
-      "durationMs": 5101,
+      "durationMs": 5336,
       "summary": {
         "tests": 12,
         "pass": 12,
@@ -274,7 +274,7 @@
     {
       "id": "integration:ai-authoring.integration.ts",
       "status": "passed",
-      "durationMs": 4292,
+      "durationMs": 4404,
       "summary": {
         "tests": 13,
         "pass": 13,
@@ -287,7 +287,7 @@
     {
       "id": "integration:ai-study.integration.ts",
       "status": "passed",
-      "durationMs": 4234,
+      "durationMs": 4224,
       "summary": {
         "tests": 13,
         "pass": 13,
@@ -300,7 +300,7 @@
     {
       "id": "integration:algorithm-forum.integration.ts",
       "status": "passed",
-      "durationMs": 1348,
+      "durationMs": 1340,
       "summary": {
         "tests": 13,
         "pass": 13,
@@ -313,7 +313,7 @@
     {
       "id": "integration:algorithm-history-filters.integration.ts",
       "status": "passed",
-      "durationMs": 5268,
+      "durationMs": 5249,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -326,7 +326,7 @@
     {
       "id": "integration:algorithm-training-plans.integration.ts",
       "status": "passed",
-      "durationMs": 4884,
+      "durationMs": 4880,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -339,7 +339,7 @@
     {
       "id": "integration:algorithms.integration.ts",
       "status": "passed",
-      "durationMs": 4620,
+      "durationMs": 4649,
       "summary": {
         "tests": 14,
         "pass": 14,
@@ -352,7 +352,7 @@
     {
       "id": "integration:analytics.security.integration.ts",
       "status": "passed",
-      "durationMs": 417,
+      "durationMs": 379,
       "summary": {
         "tests": 2,
         "pass": 2,
@@ -365,7 +365,7 @@
     {
       "id": "integration:assessment-composition.integration.ts",
       "status": "passed",
-      "durationMs": 256,
+      "durationMs": 210,
       "summary": {
         "tests": 4,
         "pass": 4,
@@ -378,7 +378,7 @@
     {
       "id": "integration:assessment.integration.ts",
       "status": "passed",
-      "durationMs": 5599,
+      "durationMs": 2824,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -391,7 +391,7 @@
     {
       "id": "integration:assessment.security.integration.ts",
       "status": "passed",
-      "durationMs": 1535,
+      "durationMs": 1209,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -404,7 +404,7 @@
     {
       "id": "integration:auth-fixes.integration.ts",
       "status": "passed",
-      "durationMs": 1386,
+      "durationMs": 960,
       "summary": {
         "tests": 3,
         "pass": 3,
@@ -417,7 +417,7 @@
     {
       "id": "integration:auth.security.integration.ts",
       "status": "passed",
-      "durationMs": 1405,
+      "durationMs": 906,
       "summary": {
         "tests": 4,
         "pass": 4,
@@ -430,7 +430,7 @@
     {
       "id": "integration:communication.integration.ts",
       "status": "passed",
-      "durationMs": 16282,
+      "durationMs": 15892,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -443,7 +443,7 @@
     {
       "id": "integration:communication.security.integration.ts",
       "status": "passed",
-      "durationMs": 887,
+      "durationMs": 702,
       "summary": {
         "tests": 5,
         "pass": 5,
@@ -456,7 +456,7 @@
     {
       "id": "integration:confusion-matrix.integration.ts",
       "status": "passed",
-      "durationMs": 7586,
+      "durationMs": 6234,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -469,7 +469,7 @@
     {
       "id": "integration:creative.integration.ts",
       "status": "passed",
-      "durationMs": 8075,
+      "durationMs": 6872,
       "summary": {
         "tests": 17,
         "pass": 17,
@@ -482,7 +482,7 @@
     {
       "id": "integration:digital-logic.integration.ts",
       "status": "passed",
-      "durationMs": 5355,
+      "durationMs": 4709,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -495,7 +495,7 @@
     {
       "id": "integration:exam-insights.integration.ts",
       "status": "passed",
-      "durationMs": 647,
+      "durationMs": 634,
       "summary": {
         "tests": 12,
         "pass": 12,
@@ -508,7 +508,7 @@
     {
       "id": "integration:learning-action-filters.integration.ts",
       "status": "passed",
-      "durationMs": 5748,
+      "durationMs": 5704,
       "summary": {
         "tests": 14,
         "pass": 14,
@@ -521,7 +521,7 @@
     {
       "id": "integration:learning-actions.integration.ts",
       "status": "passed",
-      "durationMs": 5044,
+      "durationMs": 4836,
       "summary": {
         "tests": 14,
         "pass": 14,
@@ -534,7 +534,7 @@
     {
       "id": "integration:learning-overview.integration.ts",
       "status": "passed",
-      "durationMs": 6316,
+      "durationMs": 6063,
       "summary": {
         "tests": 17,
         "pass": 17,
@@ -547,7 +547,7 @@
     {
       "id": "integration:live-browser.integration.ts",
       "status": "passed",
-      "durationMs": 61564,
+      "durationMs": 61665,
       "summary": {
         "tests": 4,
         "pass": 4,
@@ -560,7 +560,7 @@
     {
       "id": "integration:live.integration.ts",
       "status": "passed",
-      "durationMs": 11613,
+      "durationMs": 11305,
       "summary": {
         "tests": 18,
         "pass": 18,
@@ -573,7 +573,7 @@
     {
       "id": "integration:minimum-spanning-tree.integration.ts",
       "status": "passed",
-      "durationMs": 5236,
+      "durationMs": 5124,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -586,7 +586,7 @@
     {
       "id": "integration:mobile.integration.ts",
       "status": "passed",
-      "durationMs": 15229,
+      "durationMs": 15046,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -599,7 +599,7 @@
     {
       "id": "integration:notes.integration.ts",
       "status": "passed",
-      "durationMs": 526,
+      "durationMs": 498,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -612,7 +612,7 @@
     {
       "id": "integration:planner.integration.ts",
       "status": "passed",
-      "durationMs": 394,
+      "durationMs": 357,
       "summary": {
         "tests": 5,
         "pass": 5,
@@ -625,7 +625,7 @@
     {
       "id": "integration:population-genetics.integration.ts",
       "status": "passed",
-      "durationMs": 5704,
+      "durationMs": 5502,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -638,7 +638,7 @@
     {
       "id": "integration:programming.integration.ts",
       "status": "passed",
-      "durationMs": 6790,
+      "durationMs": 6710,
       "summary": {
         "tests": 18,
         "pass": 18,
@@ -651,7 +651,7 @@
     {
       "id": "integration:simpson-paradox.integration.ts",
       "status": "passed",
-      "durationMs": 6783,
+      "durationMs": 6507,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -664,7 +664,7 @@
     {
       "id": "integration:upload-security.integration.ts",
       "status": "passed",
-      "durationMs": 4921,
+      "durationMs": 4862,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -677,7 +677,7 @@
     {
       "id": "integration:worker-policy.integration.ts",
       "status": "passed",
-      "durationMs": 21222,
+      "durationMs": 21131,
       "summary": {
         "tests": 6,
         "pass": 6,
@@ -690,28 +690,28 @@
     {
       "id": "clean-start",
       "status": "passed",
-      "durationMs": 7437,
+      "durationMs": 7360,
       "summary": {}
     },
     {
       "id": "performance",
       "status": "passed",
-      "durationMs": 197,
+      "durationMs": 191,
       "summary": {
         "requests": 100,
         "errors": 0,
         "concurrency": 10,
         "latencyMs": {
-          "p50": 11,
-          "p95": 22,
-          "max": 30
+          "p50": 9,
+          "p95": 17,
+          "max": 17
         }
       }
     },
     {
       "id": "browser",
       "status": "passed",
-      "durationMs": 465918,
+      "durationMs": 463690,
       "summary": {
         "total": 397,
         "passed": 397,
@@ -772,6 +772,40 @@
     ],
     "apiAndMedia": "isolated real PostgreSQL and LiveKit",
     "device": "Android 12 arm64 emulator; synthetic cameras, host microphone disabled"
+  },
+  "additionalRegressionChecks": {
+    "lateProgrammingRequests": {
+      "normalSpeed": {
+        "pass": 30,
+        "fail": 0
+      },
+      "cpuThrottle6x": {
+        "pass": 30,
+        "fail": 0
+      },
+      "retries": 0
+    },
+    "realIdleAccessExpiry": {
+      "realAccessExpiryReached": true,
+      "sameDeviceSessionRetained": true,
+      "accessCredentialRotated": true,
+      "authenticatedCourseDataLoaded": true,
+      "checkedAt": "2026-10-17T06:49:12.140Z"
+    },
+    "remoteFailureFollowUp": {
+      "run": 39009953782,
+      "androidBuild": "passed",
+      "issues": [
+        "Notification read-all test assumed no outbox delivery after its snapshot",
+        "Deferred programming request test used an unbounded promise and navigation load wait"
+      ],
+      "repairs": [
+        "Assert all previously visible notifications are read and explicitly verify a later notification remains unread",
+        "Bound held-request observation, wait for history commit and retain URL/UI/late-side-effect assertions",
+        "Capture all Playwright result errors for actionable timeout diagnostics"
+      ],
+      "runtimeSourceUnchanged": true
+    }
   },
   "apks": [
     {
