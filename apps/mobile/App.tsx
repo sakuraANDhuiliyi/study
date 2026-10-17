@@ -22,6 +22,7 @@ import * as SecureStore from 'expo-secure-store';
 import { randomUUID } from 'expo-crypto';
 import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
+import { StudyPlan } from './src/StudyPlan';
 import { LiveRoom, type Admission } from './src/LiveRoom';
 import { permissionPrompts } from './src/permission-lifecycle';
 
@@ -99,7 +100,7 @@ type Member = {
   state: string;
 };
 type Route =
-  | { name: 'home' | 'courses' | 'live' | 'me'; courseId?: string }
+  | { name: 'home' | 'courses' | 'live' | 'me' | 'planner'; courseId?: string }
   | { name: 'course'; id: string }
   | { name: 'classroom'; id: string };
 
@@ -299,7 +300,9 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
         ? '我的课程'
         : route.name === 'live' || route.name === 'classroom'
           ? '互动直播'
-          : '我的空间';
+          : route.name === 'planner'
+            ? '学习计划'
+            : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
@@ -328,6 +331,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       </View>
       <View style={s.flex}>
         {route.name === 'home' && <Home client={client} user={user} navigate={setRoute} canLive={canLive} />}
+        {route.name === 'planner' && <StudyPlan client={client} user={user} />}
         {route.name === 'courses' && <Courses client={client} navigate={setRoute} />}
         {route.name === 'course' && (
           <CourseDetail client={client} id={route.id} user={user} navigate={setRoute} />
@@ -372,6 +376,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           [
             { name: 'home', label: '首页', icon: '⌂' },
             { name: 'courses', label: '课程', icon: '▤' },
+            { name: 'planner', label: '计划', icon: '☷' },
             ...(canLive ? [{ name: 'live', label: '直播', icon: '◉' }] : []),
             { name: 'me', label: '我的', icon: '○' },
           ] as const
@@ -387,7 +392,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             }}
             key={tab.name}
             style={s.tab}
-            onPress={() => setRoute({ name: tab.name as 'home' | 'courses' | 'live' | 'me' })}
+            onPress={() => setRoute({ name: tab.name as 'home' | 'courses' | 'live' | 'me' | 'planner' })}
           >
             <Text style={[s.tabIcon, selected(tab.name) && s.selected]}>{tab.icon}</Text>
             <Text style={[s.tabText, selected(tab.name) && s.selected]}>{tab.label}</Text>
@@ -433,6 +438,12 @@ function Home({
           <Shortcut title="互动直播" caption="进入课堂" icon="◉" onPress={() => navigate({ name: 'live' })} />
         )}
       </View>
+      <Shortcut
+        title="学习计划"
+        caption="今日任务与月度日程"
+        icon="☷"
+        onPress={() => navigate({ name: 'planner' })}
+      />
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />
       <Query state={q} />
       {q.data?.items.map((course) => (

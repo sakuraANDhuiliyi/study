@@ -75,7 +75,7 @@ async function click(label: string) {
   await liveWait(400);
 }
 async function type(label: string, value: string) {
-  assert.match(value, /^[A-Za-z0-9_!.-]+$/);
+  assert.match(value, /^[A-Za-z0-9_!.:-]+$/);
   const field = await find(label);
   assert.match(field.class, /EditText$/);
   tap(field);
@@ -214,6 +214,122 @@ async function main() {
     run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
     await find('你好，学生甲');
     passed('secure session survives process restart');
+
+    await click('计划');
+    await find('学习任务中心');
+    await click('新增个人计划');
+    await type('计划标题', 'Android-plan-one');
+    await type('计划说明', 'Cross-device-plan');
+    await scroll('保存个人计划');
+    let plan = await poll(
+      () => f.db.personalTask.findFirst({ where: { userId: f.users.student.id, title: 'Android-plan-one' } }),
+      (p) => !!p,
+      'Native plan was not created',
+    );
+    assert.equal(plan!.description, 'Cross-device-plan');
+    assert.ok((await f.call(f.clients.student, '/planner/tasks/' + plan!.id)).body);
+    passed('native personal plan creation is synchronized with website');
+    await click('月度日程');
+    await scroll('查看日程：Android-plan-one');
+    await type('计划标题', 'Android-unsaved-change');
+    plan = (
+      await f.call(f.clients.student, '/planner/tasks/' + plan!.id, 'PATCH', {
+        revision: plan!.revision,
+        title: 'Website-latest-plan',
+      })
+    ).body;
+    await scroll('保存个人计划');
+    await find('待办已在其他页面修改，请刷新后再保存');
+    assert.equal(
+      (await f.db.personalTask.findUniqueOrThrow({ where: { id: plan!.id } })).title,
+      'Website-latest-plan',
+    );
+    await scroll('重新加载最新版本');
+    await click('加载最新内容');
+    await poll(
+      nodes,
+      (ns) => ns.some((n) => n['content-desc'] === '计划标题' && n.text === 'Website-latest-plan'),
+      'Conflict reload did not fetch latest task',
+    );
+    await type('计划标题', 'Android-final-plan');
+    await scroll('保存个人计划');
+    await poll(
+      () => f.db.personalTask.findUnique({ where: { id: plan!.id } }),
+      (p) => p?.title === 'Android-final-plan',
+      'Native plan edit missing',
+    );
+    passed('website/native revision conflict preserves latest data and explicitly reloads');
+    await scroll('查看日程：Android-final-plan');
+    await scroll('标记计划完成');
+    await poll(
+      () => f.db.personalTask.findUnique({ where: { id: plan!.id } }),
+      (p) => !!p?.completedAt,
+      'Native completion missing',
+    );
+    await scroll('查看日程：Android-final-plan');
+    await scroll('恢复为未完成');
+    await poll(
+      () => f.db.personalTask.findUnique({ where: { id: plan!.id } }),
+      (p) => !!p && p.completedAt === null,
+      'Native reopen missing',
+    );
+    passed('native completion and reopen persist on both devices');
+    await scroll('查看日程：Android-final-plan');
+    await scroll('删除个人计划');
+    await click('确认删除');
+    await poll(
+      () => f.db.personalTask.count({ where: { id: plan!.id } }),
+      (n) => n === 0,
+      'Native deletion missing',
+    );
+    passed('native confirmed deletion removes website task');
+    await click('新增个人计划');
+    await type('计划标题', 'Android-discard-plan');
+    await scroll('关闭计划编辑');
+    await click('继续编辑');
+    await find('计划标题');
+    await scroll('关闭计划编辑');
+    await click('放弃修改');
+    assert.equal(
+      await f.db.personalTask.count({ where: { userId: f.users.student.id, title: 'Android-discard-plan' } }),
+      0,
+    );
+    passed('native unsaved plan discard confirmation preserves editing and never submits silently');
+    const overduePlan = await f.db.personalTask.create({
+      data: {
+        userId: f.users.student.id,
+        organizationId: f.organization.id,
+        title: 'Android-overdue-plan',
+        dueAt: new Date(Date.now() - 60000),
+      },
+    });
+    await click('待完成行动');
+    const overdueControl = (
+      await poll(
+        nodes,
+        (ns) => ns.some((n) => /^已逾期 \d+$/.test(n['content-desc'] || '')),
+        'Missing overdue bucket',
+      )
+    ).find((n) => /^已逾期 \d+$/.test(n['content-desc'] || ''))!;
+    tap(overdueControl);
+    await scroll('完成计划：Android-overdue-plan');
+    await poll(
+      () => f.db.personalTask.findUnique({ where: { id: overduePlan.id } }),
+      (p) => !!p?.completedAt,
+      'Overdue action completion missing',
+    );
+    passed('native overdue action completes with server revision and disappears from pending list');
+    await scroll('筛选课程：全部课程');
+    await find('选择课程：' + f.course.title);
+    await click('选择课程：' + f.course.title);
+    await find('筛选课程：' + f.course.title);
+    await click('个人计划');
+    await find('筛选课程：全部课程');
+    assert.equal((await find('筛选课程：全部课程')).enabled, 'false');
+    passed('native course picker and personal source filter cannot combine incompatible filters');
+    screenshot('android-planner-actions');
+    await click('首页');
+
     browser = await chromium.launch({
       headless: true,
       ...(process.platform === 'darwin' ? { channel: 'chrome' } : {}),

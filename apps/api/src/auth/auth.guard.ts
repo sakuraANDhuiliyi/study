@@ -24,6 +24,10 @@ export function mobileRouteAllowed(path: string, method: string) {
   if (/^\/api\/mobile\/auth\/(me|logout)\/?$/.test(path)) return true;
   if (/^\/api\/live(?:\/|$)/.test(path)) return true;
   if (method === 'GET' && /^\/api\/courses(?:\/[^/]+)?\/?$/.test(path)) return true;
+  if (method === 'GET' && /^\/api\/planner(?:\/actions(?:\/courses)?|\/tasks\/[^/]+)?\/?$/.test(path))
+    return true;
+  if (method === 'POST' && /^\/api\/planner\/tasks\/?$/.test(path)) return true;
+  if (['PATCH', 'DELETE'].includes(method) && /^\/api\/planner\/tasks\/[^/]+\/?$/.test(path)) return true;
   return method === 'PUT' && /^\/api\/lessons\/[^/]+\/progress\/?$/.test(path);
 }
 export const CurrentActor = createParamDecorator(
