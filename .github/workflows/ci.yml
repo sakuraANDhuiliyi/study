@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: npm ci
+      - name: Install isolated native dependencies and reviewed security backports
+        run: npm ci --prefix apps/mobile
       - name: Install Android Agent protocol dependencies
         run: |
           python -m venv .data/android-venv
@@ -55,3 +57,36 @@ jobs:
             .data/iteration-*/*.log
             .data/iteration-*/browser-summary.json
             .data/aora-verification/browser.json
+            apps/mobile/.data/dependency-audit.json
+            apps/mobile/.data/verification/*.log
+            apps/mobile/.data/verification/report.json
+  android-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned Android build tools
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
+      - run: npm ci --prefix apps/mobile
+      - name: Build bundled HTTPS preview APK (public debug signing key)
+        run: npm run build:preview --prefix apps/mobile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zhixue-android-preview-arm64
+          path: |
+            apps/mobile/.data/apk/zhixue-preview-arm64.apk
+            apps/mobile/.data/apk/zhixue-preview-arm64.apk.json
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: android-build-diagnostics
+          include-hidden-files: true
+          path: apps/mobile/.data/apk/*.log

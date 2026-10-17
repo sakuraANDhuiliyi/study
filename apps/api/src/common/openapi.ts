@@ -12,6 +12,7 @@ import * as training from '../algorithms/training-plan.schemas';
 import * as creative from '../programming/creative.schemas';
 import * as forum from '../algorithm-forum/algorithm-forum.schemas';
 import * as live from '../live/live.schemas';
+import { mobileLoginInput, mobileRefreshInput } from '../mobile/mobile.schemas';
 import { courseInput, lessonInput } from '../courses/courses.controller';
 import { newUser } from '../admin/admin.controller';
 import {
@@ -140,6 +141,9 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       '/lessons/{id}/note',
       z.object({ revision: z.number().int().min(1), noteId: z.string().min(1).max(100) }),
     ],
+    ['post', '/mobile/auth/login', mobileLoginInput],
+    ['post', '/mobile/auth/refresh', mobileRefreshInput],
+    ['post', '/mobile/auth/logout', z.object({}).strict()],
     ['post', '/auth/login', z.object({ username: z.string(), password: z.string() })],
     ['post', '/auth/register', registrationSchema],
     ['post', '/account/join-requests', joinRequestSchema],

@@ -122,6 +122,7 @@ test('iteration discovers every current/future integration and keeps all mandato
     'unit',
     'build',
     'audit',
+    'mobile-build',
     'integration:android-protocol',
     'trusted-references',
     'creative-expression-browser',
@@ -325,4 +326,30 @@ test('machine summaries only retain allowlisted counters, never raw subprocess p
   );
   assert.equal(refs.failures, 1);
   assert.doesNotMatch(JSON.stringify(refs), /PRIVATE/);
+});
+
+test('native build gate rejects incomplete bundles and unmitigated dependency advisories', () => {
+  const valid = {
+    checks: 5,
+    tests: 4,
+    pass: 4,
+    fail: 0,
+    skipped: 0,
+    cancelled: 0,
+    todo: 0,
+    bundle: true,
+    audit: { unmitigated: [], patchedFilesVerified: 6 },
+  };
+  assert.equal(evaluateStageResult('mobile-build', { exitCode: 0 }, JSON.stringify(valid)).exitCode, 0);
+  for (const change of [
+    { bundle: false },
+    { tests: 0 },
+    { skipped: 1 },
+    { audit: { unmitigated: ['unknown'], patchedFilesVerified: 6 } },
+    { audit: { unmitigated: [], patchedFilesVerified: 0 } },
+  ])
+    assert.equal(
+      evaluateStageResult('mobile-build', { exitCode: 0 }, JSON.stringify({ ...valid, ...change })).exitCode,
+      1,
+    );
 });

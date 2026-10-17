@@ -303,6 +303,8 @@ export async function createLiveFixture() {
         throw new Error('Media fixture restart failed');
       },
       safe,
+      password,
+      rtcTcp,
       logs: () => safe(logs),
     };
   } catch (error) {

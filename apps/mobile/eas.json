@@ -1,0 +1,7 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
+  "build": {
+    "preview": { "distribution": "internal", "android": { "buildType": "apk" }, "env": { "EXPO_PUBLIC_PREVIEW_BUILD": "true", "EXPO_PUBLIC_API_ORIGIN": "https://study.huiliyi.cn" } },
+    "production": { "autoIncrement": true, "env": { "EXPO_PUBLIC_API_ORIGIN": "https://study.huiliyi.cn" } }
+  }
+}

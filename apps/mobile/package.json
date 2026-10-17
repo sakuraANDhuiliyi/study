@@ -1,0 +1,62 @@
+{
+  "name": "@zhixue/mobile",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@config-plugins/react-native-webrtc": "15.0.2",
+    "@livekit/react-native": "3.0.0",
+    "@livekit/react-native-expo-plugin": "1.0.3",
+    "@livekit/react-native-webrtc": "144.2.0",
+    "expo": "56.0.23",
+    "expo-build-properties": "56.0.27",
+    "expo-constants": "~56.0.27",
+    "expo-crypto": "56.0.5",
+    "expo-linking": "~56.0.18",
+    "expo-router": "~56.2.21",
+    "expo-secure-store": "56.0.4",
+    "expo-splash-screen": "~56.0.15",
+    "expo-status-bar": "56.0.4",
+    "expo-system-ui": "56.0.5",
+    "livekit-client": "2.23.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-reanimated": "4.3.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-worklets": "0.8.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.14",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "export:android": "expo export --platform android --output-dir .data/export-android",
+    "prebuild:android": "expo prebuild --platform android --no-install",
+    "postinstall": "node scripts/harden-build.cjs",
+    "test:build-security": "node --test --test-reporter=tap tests/build-security.test.cjs",
+    "audit:build": "node scripts/audit-build.cjs",
+    "build:preview": "node scripts/build-preview.cjs",
+    "build:local": "node scripts/build-preview.cjs --local",
+    "lint": "../../node_modules/.bin/eslint App.tsx index.ts src scripts tests",
+    "check:sdk": "expo install --check"
+  },
+  "private": true,
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    },
+    "react": "$react",
+    "react-dom": "$react-dom",
+    "react-native": "$react-native",
+    "node-forge": "1.4.0",
+    "braces": "3.0.3",
+    "decode-uri-component": "0.5.0"
+  }
+}

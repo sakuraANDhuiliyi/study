@@ -20,18 +20,20 @@ import { AuthService, tokenHash } from './auth.service';
 import { AuthGuard, CurrentActor, Actor } from './auth.guard';
 import { hashPasswordAsync, verifyPasswordAsync } from './password';
 import { releaseAuthAttempt, reserveAuthAttempt } from './attempt-limit';
+import { authProfile } from './profile';
+import { LoginService } from './login.service';
 import { lockSecurityUser } from './security-transaction';
 import { username, password } from '../common/utils';
-import { AccountsService, canUsePersonalRecovery, majorSummarySelect } from '../accounts/accounts.service';
+import { AccountsService, canUsePersonalRecovery } from '../accounts/accounts.service';
 @ApiTags('认证与个人资料')
 @Controller('auth')
 export class AuthController {
-  private readonly dummyHash = hashPasswordAsync(randomBytes(24).toString('hex'));
   constructor(
     private readonly db: PrismaService,
     private readonly auth: AuthService,
     private readonly audit: AuditService,
     private readonly accounts: AccountsService,
+    private readonly loginService: LoginService,
   ) {}
   private cookieOptions() {
     return {
@@ -45,49 +47,8 @@ export class AuthController {
     if (req.headers.origin && req.headers.origin !== process.env.APP_ORIGIN)
       throw new ForbiddenException('请求来源不被允许');
   }
-  private async view(actor: Actor) {
-    const user = await this.db.user.findUniqueOrThrow({
-      where: { id: actor.id },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        organizationId: true,
-        accountMode: true,
-        majorId: true,
-        personalOrganizationId: true,
-        roles: { select: { roleId: true } },
-      },
-    });
-    const major = user.majorId
-      ? await this.db.academicsMajor.findFirst({
-          where: {
-            id: user.majorId,
-            OR: [{ organizationId: null }, { organizationId: user.organizationId }],
-          },
-          select: majorSummarySelect,
-        })
-      : null;
-    if (user.organizationId !== actor.organizationId)
-      throw new UnauthorizedException('账号归属已变化，请重新登录');
-    const { personalOrganizationId, ...publicUser } = user;
-    return {
-      user: {
-        ...publicUser,
-        major,
-        canReturnToPersonal:
-          user.accountMode === 'ORGANIZATION' &&
-          !!personalOrganizationId &&
-          user.roles.length === 1 &&
-          user.roles[0].roleId === 'STUDENT',
-        roles: user.roles
-          .filter((x) => user.accountMode !== 'PERSONAL' || x.roleId === 'STUDENT')
-          .map((x) => x.roleId),
-        role: actor.role,
-        permissions: actor.permissions,
-      },
-      csrfToken: actor.csrfToken,
-    };
+  private view(actor: Actor) {
+    return authProfile(this.db, actor);
   }
   @Post('register')
   @ApiOperation({ summary: '注册个人学习账号，仅创建学生身份及独立个人数据空间' })
@@ -105,65 +66,8 @@ export class AuthController {
   async login(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const data = z.object({ username, password: z.string().min(1).max(128) }).parse(body);
     this.checkOrigin(req);
-    const reservation = await reserveAuthAttempt(this.db, req.ip || 'unknown', data.username);
-    const user = await this.db.user.findUnique({
-      where: { username: data.username.toLowerCase() },
-      include: { roles: true },
-    });
-    const org = user && (await this.db.organization.findUnique({ where: { id: user.organizationId } }));
-    const passwordValid = await verifyPasswordAsync(
-      data.password,
-      user?.passwordHash || (await this.dummyHash),
-    );
-    const recovery = user && (await this.db.passwordRecovery.findUnique({ where: { userId: user.id } }));
-    if (
-      !user?.active ||
-      !org?.active ||
-      !user.roles.length ||
-      !passwordValid ||
-      (recovery?.pendingUntil && recovery.pendingUntil > new Date())
-    ) {
-      if (user)
-        await this.db.auditLog.create({
-          data: {
-            organizationId: user.organizationId,
-            userId: user.id,
-            action: 'login.failure',
-            resourceType: 'User',
-            resourceId: user.id,
-            details: {},
-          },
-        });
-      throw new UnauthorizedException('账号或密码错误，或账号已停用');
-    }
-    const policy = await this.db.systemSetting.findUnique({
-      where: { organizationId_key: { organizationId: user.organizationId, key: 'loginPolicy' } },
-    });
-    const token = randomBytes(32).toString('base64url');
-    const hours = Math.min(
-      72,
-      Math.max(
-        1,
-        Number((policy?.value as { sessionHours?: number })?.sessionHours) ||
-          Number(process.env.SESSION_HOURS) ||
-          12,
-      ),
-    );
-    const session = await this.db.session.create({
-      data: {
-        userId: user.id,
-        tokenHash: tokenHash(token),
-        role: user.accountMode === 'PERSONAL' ? 'STUDENT' : user.roles[0].roleId,
-        csrfToken: randomBytes(24).toString('hex'),
-        authVersion: user.authVersion,
-        expiresAt: new Date(Date.now() + hours * 3600000),
-      },
-    });
+    const { token, hours, actor } = await this.loginService.login(data, req.ip || 'unknown');
     res.cookie('lms_session', token, { ...this.cookieOptions(), maxAge: hours * 3600000 });
-    const actor = await this.auth.resolveSession(token);
-    if (!actor) throw new UnauthorizedException('账号安全状态已变化，请重新登录');
-    await this.audit.record(actor, 'login.success', 'Session', session.id);
-    await releaseAuthAttempt(this.db, reservation);
     return this.view(actor);
   }
   @Get('me') @UseGuards(AuthGuard) @ApiCookieAuth() async me(@CurrentActor() actor: Actor) {

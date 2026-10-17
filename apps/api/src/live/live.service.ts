@@ -277,7 +277,7 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
   }
   async join(a: Actor, id: string) {
     readLiveConfiguration();
-    const { room, member } = await this.locked(id, async (tx) => {
+    const { room, member, mobileSessionId } = await this.locked(id, async (tx) => {
       const { actor, room, course } = await this.access(a, id, tx);
       this.active(room, course.status);
       const existing = await tx.liveMember.findUnique({
@@ -326,7 +326,7 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
         },
       });
       await this.audit(tx, actor, 'join', id, { memberId: member.id });
-      return { room, member };
+      return { room, member, mobileSessionId: actor.clientType === 'MOBILE' ? actor.sessionId : undefined };
     });
     // A delayed admission must not disconnect a newer tab that already replaced it.
     await this.locked(id, async (tx) => {
@@ -345,10 +345,11 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
         member.approved,
         member.host,
         member.connectionId,
+        mobileSessionId,
       ),
       identity: member.id,
       connectionId: member.connectionId,
-      path: '/api/live/media',
+      path: mobileSessionId ? '/api/live/native-media' : '/api/live/media',
       approved: member.approved,
       host: member.host,
     };
@@ -483,7 +484,7 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
     const results = await Promise.allSettled(ids.map((memberId) => this.syncMember(id, memberId)));
     return { updated: ids.length, cleanupPending: results.some((r) => r.status === 'rejected') };
   }
-  async admission(token: string, cookieToken: string, checkPublish = true) {
+  async admission(token: string, cookieToken: string, checkPublish = true, native = false) {
     if (!token || token.length > 8192) throw new UnauthorizedException();
     let claims;
     try {
@@ -491,7 +492,16 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
     } catch {
       throw new UnauthorizedException();
     }
-    const actor = await this.auth.resolveSession(cookieToken);
+    let metadata;
+    try {
+      metadata = JSON.parse(claims.metadata || '{}');
+    } catch {
+      throw new ForbiddenException();
+    }
+    if (native !== (typeof metadata.mobileSessionId === 'string')) throw new ForbiddenException();
+    const actor = native
+      ? await this.auth.resolveMobileSessionId(metadata.mobileSessionId)
+      : await this.auth.resolveSession(cookieToken);
     if (!actor || !claims.sub) throw new UnauthorizedException();
     const m = await this.db.liveMember.findUnique({ where: { id: claims.sub } });
     if (!m || m.userId !== actor.id || m.sessionId !== actor.sessionId || m.host !== liveHost(actor))
@@ -501,12 +511,7 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
     if (m.state !== 'ACTIVE' || m.syncPending || Date.now() - m.heartbeatAt.getTime() > LIVE_PRESENCE_MS)
       throw new ForbiddenException();
     const g = claims.video;
-    let metadata;
-    try {
-      metadata = JSON.parse(claims.metadata || '{}');
-    } catch {
-      throw new ForbiddenException();
-    }
+    if (native && metadata.mobileSessionId !== m.sessionId) throw new ForbiddenException();
     if (metadata.connectionId !== m.connectionId) throw new ForbiddenException();
     if (
       !g ||
@@ -533,10 +538,17 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
       : ['camera', 'microphone'];
     if (checkPublish && (sources.some((s) => !allowed.includes(s)) || (!m.approved && sources.length)))
       throw new ForbiddenException();
-    return { member: m, room };
+    return { member: m, room, nativeSessionId: native ? m.sessionId : undefined };
   }
-  async connectionAllowed(memberId: string, cookieToken: string, connectionId: string) {
-    const actor = await this.auth.resolveSession(cookieToken);
+  async connectionAllowed(
+    memberId: string,
+    cookieToken: string,
+    connectionId: string,
+    nativeSessionId?: string,
+  ) {
+    const actor = nativeSessionId
+      ? await this.auth.resolveMobileSessionId(nativeSessionId)
+      : await this.auth.resolveSession(cookieToken);
     if (!actor) throw new UnauthorizedException();
     const m = await this.db.liveMember.findUnique({ where: { id: memberId } });
     if (

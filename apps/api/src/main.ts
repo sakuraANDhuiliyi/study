@@ -71,12 +71,16 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addCookieAuth('lms_session')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'ma1' }, 'mobileAccess')
     .build();
   const document = enrichOpenAPI(SwaggerModule.createDocument(app, options));
   for (const [path, methods] of Object.entries(document.paths))
     for (const [method, operation] of Object.entries(methods)) {
       if (!operation || typeof operation !== 'object') continue;
       const op = operation as any;
+      if (path.includes('/mobile/auth/')) {
+        op.security = path.endsWith('/me') || path.endsWith('/logout') ? [{ mobileAccess: [] }] : [];
+      }
       op.responses = {
         ...op.responses,
         '400': { description: '字段验证失败' },
@@ -88,7 +92,8 @@ async function bootstrap() {
       if (
         !['get', 'head', 'options'].includes(method) &&
         !path.endsWith('/auth/login') &&
-        !path.endsWith('/auth/recover')
+        !path.endsWith('/auth/recover') &&
+        !path.includes('/mobile/auth/')
       )
         op.parameters = [
           ...(op.parameters || []),

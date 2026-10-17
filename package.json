@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "npm run db:generate && npm run build -w apps/api && npm run build -w apps/web",
-    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web",
+    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web && npm run typecheck:mobile-device",
     "lint": "eslint apps tests --no-error-on-unmatched-pattern",
     "format": "prettier --write apps prisma docs tests scripts README.md",
     "db:local": "node scripts/local-postgres.mjs",
@@ -60,7 +60,8 @@
     "live:setup": "node scripts/setup-livekit.mjs",
     "dev:programming": "node scripts/dev-programming.mjs",
     "android:setup": "node scripts/setup-android-agent.mjs",
-    "test:android-protocol": "node scripts/verify-android-protocol.mjs"
+    "test:android-protocol": "node scripts/verify-android-protocol.mjs",
+    "typecheck:mobile-device": "tsc --noEmit --target ES2022 --module commonjs --esModuleInterop --skipLibCheck --strict scripts/verify-mobile-device.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

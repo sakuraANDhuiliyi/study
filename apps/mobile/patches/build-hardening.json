@@ -1,0 +1,101 @@
+{
+  "advisories": ["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"],
+  "sources": [
+    "https://github.com/micromatch/braces/issues/70",
+    "https://github.com/digitalbazaar/forge/pull/1152",
+    "https://github.com/advisories/GHSA-vcc3-ghjq-m6fr"
+  ],
+  "patches": [
+    {
+      "package": "braces",
+      "version": "3.0.3",
+      "file": "lib/parse.js",
+      "beforeSha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "afterSha256": "c3485db916ef2c55911f29fe719870385f8804f5484fe1251cdbea9797e2d547",
+      "changes": [
+        {
+          "before": "while (index < length) {",
+          "after": "while (index < length) {\n    if (stack.length > 128) throw new RangeError('Pattern nesting exceeds build limit');"
+        }
+      ]
+    },
+    {
+      "package": "braces",
+      "version": "3.0.3",
+      "file": "lib/compile.js",
+      "beforeSha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "afterSha256": "011304a4d72a9770ffb420914a561aee4b8fa7097e32ea3fe8a623724c2258de",
+      "changes": [
+        {
+          "before": "const walk = (node, parent = {}) => {",
+          "after": "const walk = (node, parent = {}, depth = 0) => {\n    if (depth > 128) throw new RangeError('Pattern nesting exceeds build limit');"
+        },
+        {
+          "before": "walk(child, node)",
+          "after": "walk(child, node, depth + 1)"
+        }
+      ]
+    },
+    {
+      "package": "braces",
+      "version": "3.0.3",
+      "file": "lib/expand.js",
+      "beforeSha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "afterSha256": "4c6111edec2d36da6c2da028a78984ceea368505321771710fa5d22889a53023",
+      "changes": [
+        {
+          "before": "const walk = (node, parent = {}) => {",
+          "after": "const walk = (node, parent = {}, depth = 0) => {\n    if (depth > 128) throw new RangeError('Pattern nesting exceeds build limit');"
+        },
+        {
+          "before": "walk(child, node)",
+          "after": "walk(child, node, depth + 1)"
+        }
+      ]
+    },
+    {
+      "package": "braces",
+      "version": "3.0.3",
+      "file": "lib/stringify.js",
+      "beforeSha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "afterSha256": "e42351fb7bc9f1567302c79f4bcb6d57713522ceedf0ac803939160b6958f326",
+      "changes": [
+        {
+          "before": "const stringify = (node, parent = {}) => {",
+          "after": "const stringify = (node, parent = {}, depth = 0) => {\n    if (depth > 128) throw new RangeError('Pattern nesting exceeds build limit');"
+        },
+        {
+          "before": "stringify(child)",
+          "after": "stringify(child, undefined, depth + 1)"
+        }
+      ]
+    },
+    {
+      "package": "node-forge",
+      "version": "1.4.0",
+      "file": "lib/rsa.js",
+      "beforeSha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+      "afterSha256": "c9b1e3799e230528b6d6815c1f6cd3c6058b9d45975264b55d995abb976589af",
+      "changes": [
+        {
+          "before": "obj.value.length !== 2) {",
+          "after": "obj.value.length !== 2 ||\n            obj.value[0].value.length !==\n              (('parameters' in capture) ? 2 : 1)) {"
+        }
+      ]
+    },
+    {
+      "package": "query-string",
+      "version": "7.1.3",
+      "file": "index.js",
+      "reason": "CommonJS consumer interoperates with the fixed ESM decoder 0.5.0",
+      "beforeSha256": "caa3f2c8b45dfe1e91db22ae10743af68de8d96f26515132bb52485ec0f037fa",
+      "afterSha256": "1f472678e7f925232226a94f076f1db086313698c7fde2ebb7f8c3d006d0ec43",
+      "changes": [
+        {
+          "before": "const decodeComponent = require('decode-uri-component');",
+          "after": "const decodeModule = require('decode-uri-component');\nconst decodeComponent = typeof decodeModule === 'function' ? decodeModule : decodeModule.default;"
+        }
+      ]
+    }
+  ]
+}

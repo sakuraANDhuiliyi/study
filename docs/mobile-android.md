@@ -1,0 +1,94 @@
+# 知学 Android 首版
+
+本项目新增 `apps/mobile`，使用 React Native / Expo 56、原生 WebRTC 和 Android 安全存储。它是学习平台的客户端，与 `services/android-agent` 中“帮助学生生成 APK”的编程工具分别部署；无需运行 Android Agent 才能登录或连麦。手机与网页共用现有后端、账号、权限、课程和数据库。
+
+本轮结果见[完整验收记录](verification/mobile-android-20261017.json)，以及[原生首页](screenshots/mobile-android-home.png)、[双向连麦](screenshots/mobile-android-live.png)截图。截图使用隔离测试账号和模拟摄像头。
+
+## 首版范围
+
+- 独立原生登录、恢复登录、设备会话刷新、退出和重新登录；密码不落盘。
+- 学习首页、课程分页、章节、文字课时、学习完成标记，与网站实时共用数据。
+- 课程直播列表、课堂信息、观看和收听、举手、教师批准/收回连麦、麦克风、摄像头、音频输出设备、课堂消息、离开课堂。
+- 教师可在 App 开始和结束已有预约；新建预约仍在网站操作。
+- App 进入后台会停止采集并离开课堂，回到前台后手动重新进入；没有后台录音、锁屏直播或推送服务。
+- 视频课件、附件、作业考试、算法编辑器、个人专业学习和管理后台本轮仍通过手机网页使用；App 不宣称已覆盖网站所有功能。iOS 尚未构建验收。
+- 手机网页继续保留完整功能，直播触摸按钮至少 44px，支持单独静音课堂声音，方便同机测试。
+
+## 服务器升级
+
+先备份数据库，再按现有部署流程更新网站镜像并执行迁移。新增迁移 `202610170030_mobile_sessions` 向 Session 添加 WEB/MOBILE 类型并创建手机凭据表；旧会话默认 WEB，不重置现有数据。
+
+Nginx 除原 `/api/live/media/` 外，需要加入 [直播代理片段](../deploy/livekit/nginx.location.conf) 中 `/api/live/native-media/` 整段，然后 `nginx -t` 和 reload。保持现有 HTTPS、LiveKit RTC 端口、防火墙和 TURN 配置；不直接公开 LiveKit HTTP 管理接口。
+
+手机平台地址填写 `https://study.huiliyi.cn`，不填 `/api`，不填 API 密钥。App 内使用原有学生或教师账号。服务器未更新手机接口时会提示需要升级。手机使用 HTTPS 证书校验，不允许忽略 TLS 错误。
+
+## 安装依赖和验证
+
+使用 Node 22.22+ 或 24 LTS。原生依赖独立安装，避免与网站的 React 18 混用：
+
+```bash
+npm ci
+npm ci --prefix apps/mobile
+node scripts/verify-mobile.mjs
+node --env-file=.data/review.env scripts/verify-iteration.mjs
+```
+
+完整验收自动包含原生类型检查、安全回归、依赖审计和 Android Hermes 页面打包，仍包含全部网站测试、真实数据库、三浏览器、迁移空库和四语言可信参考程序。Android 原生二进制与设备验收额外执行下列流程。
+
+### 本地生成安装包
+
+安装 JDK 17、Android SDK platform 36、build-tools 35.0.0 / 36.0.0、NDK 27.1.12297006 和 CMake 3.22.1；设置 JAVA_HOME、ANDROID_HOME。首次构建需要下载 Gradle、Maven 及原生依赖。
+
+```bash
+npm run build:preview --prefix apps/mobile
+```
+
+输出 `apps/mobile/.data/apk/zhixue-preview-arm64.apk`，可脱离 Metro 安装运行。此包使用公开的 Android 调试签名，仅供内部预览，不用于商店发布。独立包名 `cn.huiliyi.study.preview`，不覆盖未来的正式 App。默认正式 HTTPS 地址，可在登录页更改为信任的平台 HTTPS 地址。
+
+面向本机模拟器的版本：
+
+```bash
+npm run build:local --prefix apps/mobile
+```
+
+仅此构建允许 localhost、127.0.0.1、模拟器宿主地址 10.0.2.2 的 HTTP，并显示不含凭据的媒体计数；正式预览版本不允许 HTTP。不要将本地测试版作为正式安装包发布。脚本生成的 android/ios 目录不入库，配置通过 app.json 和插件维护。
+
+每次打包会重新生成 JS/Hermes 包；Metro 缓存按平台地址、构建类型和依赖修复指纹隔离。构建脚本额外检查安装包内的平台地址，防止切换本地/HTTPS 版本后误用旧配置，同时检查签名、备份策略、权限、架构及独立运行所需的页面包。
+
+### 独立模拟器完整验收
+
+准备单独的 Android 12+ arm64 模拟器，不使用个人设备；禁用宿主真实麦克风，摄像头使用模拟源。构建网站和 API，准备回环测试数据库及固定版本的本地 LiveKit 测试工具后：
+
+```bash
+export MOBILE_TEST_SERIAL=emulator-5580
+export DOTENV_CONFIG_PATH=.data/review.env
+node --env-file=.data/review.env --import tsx scripts/verify-mobile-device.ts
+```
+
+此流程只清空 `cn.huiliyi.study.preview` 的测试数据，不清理其他应用；通过独立随机数据库、API 和媒体服务验证安装、原生登录、课程进度、重启恢复、双向真实 RTP、教师审批、收回权限、后台退出和注销重登。测试结束删除自身数据库、进程和 adb reverse；结果在 `.data/mobile-device-verification/`。测试不访问真实 AI 或收费判题服务。
+
+模拟源不能证明真实手机的声学回声抑制、蓝牙适配、弱网/TURN、厂商后台限制或实际摄像头效果。上线前仍应使用两台真机/电脑配耳机，分别验证 Wi-Fi、蜂窝网络、拒绝和重新授权设备、教师撤权、断网重连及后台回收。
+
+### 云构建与正式发布
+
+`apps/mobile/eas.json` 提供 Expo EAS 的内部预览和 production 配置。需要项目持有者自行关联 Expo 项目并管理正式签名；本轮没有上传源代码、创建云账号或读取生产签名。正式商店版本还需隐私政策、摄像头/麦克风用途说明、应用备案、发布账号及持久化保存的私有签名密钥。
+
+## 会话与媒体安全
+
+手机 access token 15 分钟，refresh token 单次轮换，总会话期限仍受机构登录策略约束，刷新不延长总期限。每设备最多保留 512 次已消费刷新记录，足够覆盖 72 小时的正常续期；异常高速轮换达到上限后撤销该设备会话，记录随之外键级联删除。数据库仅存摘要；Android SecureStore 通过设备密钥保护会话。系统授权窗口与真正的后台切换分别处理；请求设备权限前暂停已有采集，只有返回前台、课堂仍连接且仍有连麦权限时才恢复。并发刷新由客户端合并；重放已消耗刷新凭据会撤销整个手机会话。网页 cookie 和 CSRF 逻辑继续使用，不通过放宽浏览器 CORS 来接入手机。
+
+原生访问限定在课程读取、进度更新、课堂接口和手机会话接口；管理和其他敏感接口不接受手机 token。媒体 ticket 绑定手机 Session、课堂成员及连接代次。加入、审批和持续连接均复核权限；网页和原生媒体代理不能混用凭据。注销、停用、选课撤销、移出和结束课堂仍由服务端生效。
+
+## 原生依赖审计记录
+
+目前 Expo/React Native 构建链引用的 braces 3.0.3 与 node-forge 1.4.0 尚无包含相应修复的 npm 发布版。不能把原生 `npm audit` 结果表述为零漏洞。原始结果完整保存在 `apps/mobile/.data/dependency-audit.json`，其中多条上层包记录由同一根依赖传递而来。
+
+本项目在安装时对固定版本应用可复核的修复：braces 深层模式/AST 增加深度上限；node-forge 按上游 PR 1152 补上嵌套 DigestAlgorithm 长度校验。每个文件验证安装前后 SHA-256，版本或文件不符立即失败；配有恶意输入回归以及 Node/OpenSSL 独立签名对照。原始包版本不会伪造，公告不会从审计输出中移除。仅在修复文件全部匹配且没有其他未处理公告时，此验收项才通过。decode-uri-component 已升级至公告修复版 0.5.0，并为 query-string 7.1.3 增加带文件指纹的 CommonJS/ESM 兼容修复，课程参数跳转单独回归；UUID 使用 11.1.1。后续应跟进上游正式版本并移除本地修复。
+
+上游依据：[braces 公告](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)、[forge 修复](https://github.com/digitalbazaar/forge/pull/1152)、[decode-uri-component 公告](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr)、[Expo 56 文档](https://docs.expo.dev/versions/v56.0.0/)、[LiveKit React Native](https://docs.livekit.io/transport/sdk-platforms/react-native/)。
+
+## 后续迭代依据与顺序
+
+参考 [Moodle 官方移动端能力](https://download.moodle.org/mobile) 的课程内容、进度、成绩和离线学习，以及 [Canvas 官方 Android 使用指南](https://community.instructure.com/en/kb/articles/661692-unknown) 的待办、课程日历、通知与成绩。结合本项目已有接口，下一轮优先完成“学习待办与截止时间 → 作业反馈/成绩 → 视频与受控附件阅读”，再考虑可撤销的离线缓存和通知。这个顺序是对本项目的实施判断，不代表这些能力已在本版 App 实现。
+
+先扩展清晰的手机接口权限范围，保证课程退出、账号停用、成绩未发布及附件权限仍由服务端控制；离线缓存需要设备加密、过期策略和重新联网后的资格复核。平台管理侧下一步提供设备会话列表与远程撤销，再接入移动端行为事件的去重、前台有效学习时长及保留期限；不把简单点击次数当作真实学习成效。

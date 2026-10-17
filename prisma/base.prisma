@@ -76,6 +76,9 @@ model SensitiveGrant {
   @@unique([userId,permissionId])
 }
 model Session {
+  clientType String @default("WEB")
+  mobileCredential MobileCredential?
+  mobileRefreshUses MobileRefreshUse[]
   id String @id @default(cuid())
   tokenHash String @unique
   userId String

@@ -9,11 +9,17 @@ import { LiveService } from './live.service';
 import { LiveConnections } from './live.connections';
 import { readLiveConfiguration } from './live.config';
 import { LIVE_MEDIA_PREFIX } from './live.schemas';
+export const LIVE_NATIVE_PREFIX = '/api/live/native-media';
+const mediaPrefix = (path: string) =>
+  path.startsWith(LIVE_NATIVE_PREFIX + '/') ? LIVE_NATIVE_PREFIX : LIVE_MEDIA_PREFIX;
+const mediaRequest = (path: string) =>
+  [LIVE_MEDIA_PREFIX, LIVE_NATIVE_PREFIX].some((p) => path.startsWith(p + '/'));
 
 export function liveMediaPath(value: string) {
   if (value.length > 32_768) return null;
   const url = new URL(value, 'http://localhost');
-  if (!/^\/api\/live\/media\/rtc(?:\/v1)?(?:\/validate)?$/.test(url.pathname)) return null;
+  if (value.split('?')[0] !== url.pathname) return null;
+  if (!/^\/api\/live\/(?:media|native-media)\/rtc(?:\/v1)?(?:\/validate)?$/.test(url.pathname)) return null;
   if (url.searchParams.getAll('access_token').length !== 1) return null;
   return url;
 }
@@ -41,21 +47,23 @@ export class LiveProxy implements OnModuleDestroy {
   private async admit(req: IncomingMessage, checkPublish = true) {
     const url = liveMediaPath(req.url || '');
     if (!url || req.method !== 'GET') throw new Error('invalid request');
-    if (req.headers.origin && req.headers.origin !== process.env.APP_ORIGIN)
+    const native = mediaPrefix(url.pathname) === LIVE_NATIVE_PREFIX;
+    if (!native && req.headers.origin && req.headers.origin !== process.env.APP_ORIGIN)
       throw new Error('invalid origin');
+    if (native && req.headers.cookie) throw new Error('mixed credentials');
     const token = url.searchParams.get('access_token') || '';
     const cookie = sessionCookie(req.headers.cookie);
-    const entry = await this.live.admission(token, cookie, checkPublish);
-    return { ...entry, token, cookie, url };
+    const entry = await this.live.admission(token, cookie, checkPublish, native);
+    return { ...entry, token, cookie, url, native };
   }
   private target(url: URL) {
     const target = new URL(readLiveConfiguration().serverUrl);
-    target.pathname = url.pathname.slice(LIVE_MEDIA_PREFIX.length);
+    target.pathname = url.pathname.slice(mediaPrefix(url.pathname).length);
     target.search = url.search;
     return target;
   }
   middleware = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith(LIVE_MEDIA_PREFIX + '/')) return next();
+    if (!mediaRequest(req.path)) return next();
     res.setHeader('Cache-Control', 'no-store');
     if (this.pending >= 64) return void res.status(429).end();
     this.pending++;
@@ -103,7 +111,7 @@ export class LiveProxy implements OnModuleDestroy {
   };
   attach(server: Server) {
     server.on('upgrade', (req, socket, head) => {
-      if (!(req.url || '').startsWith(LIVE_MEDIA_PREFIX + '/')) {
+      if (!mediaRequest(req.url || '')) {
         // Engine.IO leaves other upgrades alone so the live gateway can handle them.
         // Explicitly reject unknown routes instead of leaving unowned sockets open.
         if (!(req.url || '').startsWith('/socket.io/')) socket.destroy();
@@ -120,7 +128,13 @@ export class LiveProxy implements OnModuleDestroy {
     this.pending++;
     socket.pause();
     try {
-      if (!req.headers.origin || req.headers.origin !== process.env.APP_ORIGIN) throw new Error();
+      const signalPath = liveMediaPath(req.url || '');
+      if (!signalPath) throw new Error();
+      if (
+        mediaPrefix(signalPath.pathname) !== LIVE_NATIVE_PREFIX &&
+        (!req.headers.origin || req.headers.origin !== process.env.APP_ORIGIN)
+      )
+        throw new Error();
       const entry = await this.admit(req);
       if (entry.url.pathname.endsWith('/validate') || socket.destroyed) throw new Error();
       if (
@@ -178,7 +192,7 @@ export class LiveProxy implements OnModuleDestroy {
         peer.once('error', close);
         try {
           // Close the race between admission and a concurrent end/kick/logout.
-          await this.live.admission(entry.token, entry.cookie);
+          await this.live.admission(entry.token, entry.cookie, true, entry.native);
           if (closed || socket.destroyed) return close();
           upstream.setTimeout(0);
           socket.write(
@@ -200,7 +214,12 @@ export class LiveProxy implements OnModuleDestroy {
             try {
               // Existing sessions are revalidated without treating the original JWT expiry
               // as a session expiry; LiveKit refreshes its own credentials after admission.
-              await this.live.connectionAllowed(entry.member.id, entry.cookie, entry.member.connectionId);
+              await this.live.connectionAllowed(
+                entry.member.id,
+                entry.cookie,
+                entry.member.connectionId,
+                entry.nativeSessionId,
+              );
             } catch {
               close();
             } finally {

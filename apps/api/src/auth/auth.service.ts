@@ -31,6 +31,20 @@ export class AuthService {
   async resolveSession(token?: string): Promise<Actor | null> {
     if (!token || token.length > 200) return null;
     const session = await this.db.session.findUnique({ where: { tokenHash: tokenHash(token) } });
+    if (session?.clientType !== 'WEB') return null;
+    return this.actorForSession(session);
+  }
+  async resolveMobileAccess(token: string): Promise<Actor | null> {
+    if (!/^ma1_[A-Za-z0-9_-]{43}$/.test(token)) return null;
+    const credential = await this.db.mobileCredential.findUnique({ where: { accessHash: tokenHash(token) } });
+    if (!credential || credential.accessExpiresAt <= new Date()) return null;
+    return this.resolveMobileSessionId(credential.sessionId);
+  }
+  async resolveMobileSessionId(id: string): Promise<Actor | null> {
+    const credential = await this.db.mobileCredential.findUnique({ where: { sessionId: id } });
+    if (!credential) return null;
+    const session = await this.db.session.findUnique({ where: { id } });
+    if (session?.clientType !== 'MOBILE') return null;
     return this.actorForSession(session);
   }
   async resolveSessionId(id: string): Promise<Actor | null> {
@@ -73,6 +87,7 @@ export class AuthService {
       permissions,
       sessionId: session.id,
       csrfToken: session.csrfToken,
+      clientType: session.clientType === 'MOBILE' ? 'MOBILE' : 'WEB',
     };
   }
   async courseIds(actor: Actor): Promise<string[]> {

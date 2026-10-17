@@ -234,6 +234,7 @@ export function buildStages(options, tests) {
     ),
     npmStep('build', ['run', 'build'], ['generate']),
     npmStep('audit', ['audit', '--audit-level=high', '--json']),
+    nodeStep('mobile-build', ['scripts/verify-mobile.mjs']),
     nodeStep('livekit-runtime', ['scripts/setup-livekit.mjs']),
     nodeStep('integration:android-protocol', ['scripts/verify-android-protocol.mjs']),
     nodeStep(
@@ -270,6 +271,13 @@ export function buildStages(options, tests) {
 }
 
 export function safeSummary(id, output) {
+  if (id === 'mobile-build') {
+    try {
+      return JSON.parse(output.trim().split('\n').at(-1));
+    } catch {
+      return {};
+    }
+  }
   if (id === 'creative-expression-browser') {
     try {
       const report = JSON.parse(output.slice(Math.max(0, output.lastIndexOf('\n{') + 1)));
@@ -454,6 +462,22 @@ async function commandResult(stage, env) {
 
 export function evaluateStageResult(id, result, output) {
   const summary = safeSummary(id, output);
+  if (
+    id === 'mobile-build' &&
+    !(
+      summary.checks === 5 &&
+      summary.bundle &&
+      summary.tests === 4 &&
+      summary.pass === 4 &&
+      summary.fail === 0 &&
+      summary.skipped === 0 &&
+      summary.cancelled === 0 &&
+      summary.todo === 0 &&
+      summary.audit?.unmitigated?.length === 0 &&
+      summary.audit?.patchedFilesVerified >= 6
+    )
+  )
+    return { ...result, exitCode: 1, reason: 'Native build or dependency verification incomplete', summary };
   if (
     id === 'creative-expression-browser' &&
     !(
@@ -751,7 +775,12 @@ export async function main(args = process.argv.slice(2), inputEnv = process.env)
           counts.failedOrIncomplete +=
             summary.failedOrIncomplete?.filter((item) => item.status !== 'skipped').length || 0;
           counts.skipped += summary.skipped || 0;
-        } else if (stage.id === 'unit' || stage.id === 'e2e' || stage.id.startsWith('integration:')) {
+        } else if (
+          stage.id === 'unit' ||
+          stage.id === 'mobile-build' ||
+          stage.id === 'e2e' ||
+          stage.id.startsWith('integration:')
+        ) {
           counts.total += summary.tests || 0;
           counts.passed += summary.pass || 0;
           counts.failedOrIncomplete += (summary.fail || 0) + (summary.cancelled || 0);

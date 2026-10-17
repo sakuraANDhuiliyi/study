@@ -175,7 +175,8 @@
     gap: 8px;
   }
   .live-controls .ant-btn {
-    height: 40px;
+    min-height: 44px;
+    height: auto;
   }
   .live-stage-status {
     padding: 12px;

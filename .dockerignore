@@ -15,3 +15,6 @@ playwright-report
 *.log
 deploy/livekit/.env
 deploy/livekit/livekit.yaml
+
+# Native client has an isolated toolchain and is not part of the website image.
+apps/mobile/

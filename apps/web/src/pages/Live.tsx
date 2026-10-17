@@ -14,7 +14,7 @@ import {
   Space,
   Tag,
 } from 'antd';
-import { Camera, CameraOff, Hand, Mic, MicOff, MonitorUp, Radio, Volume2 } from 'lucide-react';
+import { Camera, CameraOff, Hand, Mic, MicOff, MonitorUp, Radio, Volume2, VolumeX } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ConnectionState,
@@ -233,7 +233,7 @@ function VideoTile({
     </div>
   );
 }
-function AudioTrack({ publication }: { publication: TrackPublication }) {
+function AudioTrack({ publication, muted }: { publication: TrackPublication; muted: boolean }) {
   const ref = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -245,7 +245,7 @@ function AudioTrack({ publication }: { publication: TrackPublication }) {
       };
     }
   }, [publication.track]);
-  return <audio ref={ref} autoPlay />;
+  return <audio ref={ref} autoPlay muted={muted} />;
 }
 
 export function LiveClassroom() {
@@ -266,8 +266,10 @@ export function LiveClassroom() {
   const [devicesOpen, setDevicesOpen] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [pendingMessage, setPendingMessage] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(false);
   const host = !!c?.canManage;
   const connected = client?.state === ConnectionState.Connected;
+  const playbackBlocked = connected && client?.canPlaybackAudio === false;
   const canPublish = !!client?.localParticipant.permissions?.canPublish;
 
   const localDisconnect = () => {
@@ -502,7 +504,7 @@ export function LiveClassroom() {
                 )}
               </div>
               {audio.map((t) => (
-                <AudioTrack key={t.trackSid} publication={t} />
+                <AudioTrack key={t.trackSid} publication={t} muted={soundMuted} />
               ))}
               <div className="live-controls">
                 {!connected ? (
@@ -579,12 +581,16 @@ export function LiveClassroom() {
                       选择设备
                     </Button>
                     <Button
-                      icon={<Volume2 size={18} />}
+                      icon={soundMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      aria-pressed={soundMuted}
                       onClick={() => {
-                        void client?.startAudio().catch(() => message.error('请检查浏览器声音权限'));
+                        if (soundMuted || playbackBlocked) {
+                          void client?.startAudio().catch(() => message.error('请检查浏览器声音权限'));
+                          setSoundMuted(false);
+                        } else setSoundMuted(true);
                       }}
                     >
-                      启用声音
+                      {soundMuted ? '恢复课堂声音' : playbackBlocked ? '启用课堂声音' : '静音课堂声音'}
                     </Button>
                     <Button danger onClick={() => void leave()}>
                       离开课堂

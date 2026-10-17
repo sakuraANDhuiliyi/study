@@ -2,6 +2,8 @@ import { Module, Controller, Get, UseGuards } from '@nestjs/common';
 import { PrismaService } from './common/prisma.service';
 import { AuthService } from './auth/auth.service';
 import { Actor, AuthGuard, CurrentActor } from './auth/auth.guard';
+import { LoginService } from './auth/login.service';
+import { MobileAuthController } from './mobile/mobile-auth.controller';
 import { AuthController } from './auth/auth.controller';
 import { AuditService } from './common/audit.service';
 import { JobsService } from './common/jobs.service';
@@ -126,6 +128,7 @@ class CatalogController {
     PlatformController,
     CatalogController,
     AuthController,
+    MobileAuthController,
     CoursesController,
     LiveController,
     AdminController,
@@ -154,6 +157,7 @@ class CatalogController {
   providers: [
     PrismaService,
     AuthService,
+    LoginService,
     AuthGuard,
     LiveService,
     LiveMedia,

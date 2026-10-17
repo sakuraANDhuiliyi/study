@@ -31,13 +31,14 @@ export class LiveMedia {
     approved: boolean,
     host: boolean,
     connectionId: string,
+    mobileSessionId?: string,
   ) {
     const c = readLiveConfiguration();
     const token = new AccessToken(c.apiKey, c.apiSecret, {
       identity,
       name,
       ttl: 60,
-      metadata: JSON.stringify({ connectionId }),
+      metadata: JSON.stringify({ connectionId, ...(mobileSessionId ? { mobileSessionId } : {}) }),
     });
     const p = publicationPermission(approved, host);
     token.addGrant({

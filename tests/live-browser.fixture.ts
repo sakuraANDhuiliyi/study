@@ -7,6 +7,16 @@ import type { LiveTestClient } from './live.fixture';
 // remain manual checks.
 export async function installMedia(context: BrowserContext) {
   const setup = () => {
+    const play = HTMLMediaElement.prototype.play;
+    Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+      configurable: true,
+      writable: true,
+      value: function (this: HTMLMediaElement) {
+        if (this.tagName === 'AUDIO' && (window as any).__liveDenyPlayback)
+          return Promise.reject(new DOMException('Autoplay denied by fixture', 'NotAllowedError'));
+        return play.call(this);
+      },
+    });
     const original = window.RTCPeerConnection;
     const peers: RTCPeerConnection[] = [];
     (window as any).__livePeers = peers;
@@ -63,6 +73,7 @@ export async function installMedia(context: BrowserContext) {
       return track;
     };
     const getUserMedia = async (constraints: MediaStreamConstraints) => {
+      if ((window as any).__liveDenyCapture) throw new DOMException('Denied by fixture', 'NotAllowedError');
       const tracks: MediaStreamTrack[] = [];
       if (constraints?.video) tracks.push(video());
       if (constraints?.audio) tracks.push(await audio());

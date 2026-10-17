@@ -83,10 +83,7 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
           await expect(studentPage.getByRole('button', { name: '开启麦克风', exact: true })).toBeDisabled();
           await expect(studentPage.getByRole('button', { name: '开启摄像头', exact: true })).toBeDisabled();
 
-          await teacherPage.evaluate(`window.__allowedUserMedia = navigator.mediaDevices.getUserMedia;
-            Object.defineProperty(Object.getPrototypeOf(navigator.mediaDevices), 'getUserMedia', {
-              configurable: true, value: async function () { throw new DOMException('Denied by test', 'NotAllowedError'); }
-            });`);
+          await teacherPage.evaluate('window.__liveDenyCapture = true');
           await teacherPage.getByRole('button', { name: '开启摄像头', exact: true }).click();
           await expect(
             teacherPage.getByText('无法开启设备或共享，请检查浏览器授权、设备占用及系统权限。', {
@@ -94,8 +91,8 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
             }),
           ).toBeVisible();
           await expect(teacherPage.locator('.live-stage-status').getByRole('status')).toHaveText('已连接');
-          await teacherPage.evaluate(`Object.defineProperty(Object.getPrototypeOf(navigator.mediaDevices),
-            'getUserMedia', { configurable: true, value: window.__allowedUserMedia });`);
+          await teacherPage.evaluate('window.__liveDenyCapture = false');
+          await studentPage.evaluate('window.__liveDenyPlayback = true');
           await teacherPage.getByRole('button', { name: '开启摄像头', exact: true }).click();
           await teacherPage.getByRole('button', { name: '开启麦克风', exact: true }).click();
           await expect(teacherPage.getByRole('button', { name: '关闭麦克风', exact: true })).toBeEnabled();
@@ -108,6 +105,36 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
               { timeout: 15000 },
             )
             .toBeGreaterThan(0);
+
+          await expect(studentPage.getByRole('button', { name: '启用课堂声音', exact: true })).toBeVisible();
+          await studentPage.evaluate('window.__liveDenyPlayback = false');
+          await studentPage.getByRole('button', { name: '启用课堂声音', exact: true }).click();
+          await expect(studentPage.getByRole('button', { name: '静音课堂声音', exact: true })).toBeVisible();
+          await studentPage.getByRole('button', { name: '静音课堂声音', exact: true }).click();
+          await expect
+            .poll(() =>
+              studentPage!
+                .locator('audio')
+                .evaluateAll(
+                  (elements) => elements.length > 0 && elements.every((el) => (el as HTMLAudioElement).muted),
+                ),
+            )
+            .toBe(true);
+          await expect(studentPage.getByRole('button', { name: '恢复课堂声音' })).toHaveAttribute(
+            'aria-pressed',
+            'true',
+          );
+          await studentPage.getByRole('button', { name: '恢复课堂声音', exact: true }).click();
+          await expect
+            .poll(() =>
+              studentPage!
+                .locator('audio')
+                .evaluateAll(
+                  (elements) =>
+                    elements.length > 0 && elements.every((el) => !(el as HTMLAudioElement).muted),
+                ),
+            )
+            .toBe(true);
 
           await studentPage.getByRole('button', { name: '举手申请连麦', exact: true }).click();
           const memberRow = teacherPage.locator('.live-member').filter({ hasText: '学生甲' });
@@ -178,7 +205,10 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
           await expect(studentPage.getByRole('button', { name: '进入课堂', exact: true })).toBeDisabled();
           assert.deepEqual(errors, [], 'Browser page errors occurred');
         } catch (error) {
-          for (const [role, page] of [['teacher', teacherPage], ['student', studentPage]] as const) {
+          for (const [role, page] of [
+            ['teacher', teacherPage],
+            ['student', studentPage],
+          ] as const) {
             if (page && !page.isClosed()) {
               try {
                 console.error(`${name} ${role} media: ${JSON.stringify(await mediaDiagnostics(page))}`);
