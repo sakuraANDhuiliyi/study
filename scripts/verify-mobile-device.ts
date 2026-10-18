@@ -898,6 +898,87 @@ async function main() {
     screenshot('android-exam-result');
     await scroll('Android-released-explanation');
     passed('native released exam score, feedback and reference review follow teacher publication');
+    await scroll('成绩复核与变更记录');
+    await scroll('成绩复核理由');
+    await type('成绩复核理由', 'Android-review-reason');
+    await click('首页');
+    await find('离开成绩复核？');
+    await click('继续填写');
+    await scroll('提交成绩复核');
+    await click('继续检查');
+    assert.equal(await f.db.gradeAppeal.count({ where: { attemptId: attempt.id } }), 0);
+    passed('native review protects unsent reason and explicit confirmation never submits on cancel');
+    await scroll('提交成绩复核');
+    await click('确认提交复核');
+    await scroll('复核申请已受理');
+    const appeal = await f.db.gradeAppeal.findUniqueOrThrow({
+      where: { attemptId_userId: { attemptId: attempt.id, userId: f.users.student.id } },
+    });
+    assert.equal(appeal.reason, 'Android-review-reason');
+    assert.equal(await f.db.auditLog.count({ where: { action: 'grade.appeal', resourceId: appeal.id } }), 1);
+    passed('native review submits one first-reason application and shows the server receipt');
+    await click('首页');
+    await scroll('成绩复核');
+    await scroll('待处理复核');
+    await scroll('查看复核：' + exam.title);
+    await scroll('复核申请已受理');
+    passed('native review list filters pending applications and links the exact own attempt');
+    await f.db.sensitiveGrant.create({
+      data: {
+        organizationId: f.organization.id,
+        userId: f.users.teacher.id,
+        permissionId: 'grade.revise',
+        grantedBy: f.users.admin.id,
+        reason: 'isolated Android review acceptance',
+        expiresAt: new Date(Date.now() + 3600000),
+      },
+    });
+    await f.call(f.clients.teacher, '/appeals/' + appeal.id + '/resolve', 'POST', {
+      resolution: 'Android-review-resolution',
+      scoreCents: 550,
+    });
+    await scroll('核对复核回执与处理进度');
+    await scroll('当前有效成绩：5.50');
+    await scroll('Android-review-resolution');
+    await scroll('5 → 5.50 分');
+    screenshot('android-review-result');
+    assert.equal(
+      await f.db.gradeRevision.count({ where: { attemptId: attempt.id, appealId: appeal.id } }),
+      1,
+    );
+    passed(
+      'website teacher processing updates native public resolution, effective score and immutable grade history',
+    );
+    run('shell', 'am', 'force-stop', pkg);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+    await scroll('成绩复核');
+    await scroll('已处理复核');
+    await scroll('查看复核：' + exam.title);
+    await scroll('复核已处理');
+    await f.db.exam.update({ where: { id: exam.id }, data: { appealDeadline: new Date(Date.now() - 1000) } });
+    const repeated = (
+      await f.call(f.clients.student, '/attempts/' + attempt.id + '/appeals', 'POST', {
+        reason: 'Do-not-overwrite-first-reason',
+      })
+    ).body;
+    assert.equal(repeated.id, appeal.id);
+    assert.equal(repeated.reason, 'Android-review-reason');
+    assert.equal(await f.db.gradeAppeal.count({ where: { attemptId: attempt.id } }), 1);
+    passed(
+      'native resolved review survives restart and response recovery after deadline cannot overwrite the reason',
+    );
+    await f.db.examAttempt.update({ where: { id: attempt.id }, data: { releaseStatus: 'pending' } });
+    await scroll('核对复核回执与处理进度');
+    await scroll('当前有效成绩：待发布');
+    assert.equal(
+      nodes().some((n) => n.text === 'Android-review-resolution'),
+      false,
+    );
+    await scroll('当前没有可公开的成绩变更记录。');
+    passed('native review hides effective score, resolution and grade changes when publication is withdrawn');
+    await f.db.examAttempt.update({ where: { id: attempt.id }, data: { releaseStatus: 'released' } });
+
     await click('首页');
     const seqIds: string[] = [];
     for (let i = 0; i < 2; i++) {

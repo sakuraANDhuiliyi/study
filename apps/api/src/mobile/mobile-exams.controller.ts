@@ -16,7 +16,8 @@ import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../common/prisma.service';
 import { AssessmentService } from '../assessment/assessment.service';
-import { listSchema, saveSchema, submitExamSchema } from '../assessment/assessment.schemas';
+import { GradeAppealsService } from '../assessment/grade-appeals.service';
+import { appealSchema, listSchema, saveSchema, submitExamSchema } from '../assessment/assessment.schemas';
 const querySchema = listSchema
   .pick({ page: true, pageSize: true, courseId: true, search: true })
   .extend({ pageSize: z.coerce.number().int().min(1).max(20).default(10) })
@@ -28,6 +29,7 @@ export class MobileExamsController {
     private db: PrismaService,
     private auth: AuthService,
     private service: AssessmentService,
+    private reviews: GradeAppealsService,
   ) {}
   private async current(a: Actor) {
     if (a.clientType !== 'MOBILE' || a.role !== 'STUDENT') throw new ForbiddenException('请使用学生手机会话');
@@ -138,5 +140,53 @@ export class MobileExamsController {
       id,
       submitExamSchema.strict().parse(body).idempotencyKey,
     );
+  }
+  @Get('appeals')
+  async appeals(@CurrentActor() a: Actor, @Query() input: unknown) {
+    const q = listSchema
+      .pick({ page: true, pageSize: true, courseId: true })
+      .extend({
+        pageSize: z.coerce.number().int().min(1).max(20).default(10),
+        status: z.enum(['pending', 'resolved']).optional(),
+      })
+      .strict()
+      .parse(input);
+    const actor = await this.current(a),
+      before = JSON.stringify((await this.auth.courseIds(actor)).sort());
+    const result = await this.service.appeals(actor, q);
+    for (const row of result.items) await this.attemptScope(a, row.attemptId);
+    if (before !== JSON.stringify((await this.auth.courseIds(await this.current(a))).sort()))
+      throw new ForbiddenException('课程资格已变化，请刷新');
+    return {
+      ...result,
+      items: result.items.map((row) => ({
+        id: row.id,
+        attemptId: row.attemptId,
+        reason: row.reason,
+        status: row.status,
+        createdAt: row.createdAt,
+        resolution: row.resolution,
+        resolvedAt: row.resolvedAt,
+        title: row.attempt.exam.title,
+        courseId: row.attempt.exam.courseId,
+        scoreCents: row.attempt.scoreCents,
+      })),
+      serverTime: new Date().toISOString(),
+    };
+  }
+  @Get('exam-attempts/:id/review')
+  async review(@CurrentActor() a: Actor, @Param('id') id: string, @Query() input: unknown) {
+    const q = listSchema
+      .pick({ page: true, pageSize: true })
+      .extend({ pageSize: z.coerce.number().int().min(1).max(20).default(10) })
+      .strict()
+      .parse(input);
+    return this.reviews.studentReview(await this.attemptScope(a, id), id, q);
+  }
+  @Post('exam-attempts/:id/appeals')
+  async apply(@CurrentActor() a: Actor, @Param('id') id: string, @Body() body: unknown) {
+    const actor = await this.attemptScope(a, id);
+    await this.service.appeal(actor, id, appealSchema.strict().parse(body).reason);
+    return this.reviews.studentReview(actor, id, { page: 1, pageSize: 10 });
   }
 }

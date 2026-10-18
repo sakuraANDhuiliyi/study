@@ -24,6 +24,7 @@ import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { Reviews, Review } from './src/Reviews';
 import { Exams, Exam, ExamAnswer } from './src/Exams';
 import { Lesson } from './src/Lesson';
 import { clearLessonTransfers } from './src/lesson-files';
@@ -105,11 +106,14 @@ type Member = {
   state: string;
 };
 type Route =
-  | { name: 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments' | 'exams'; courseId?: string }
+  | {
+      name: 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments' | 'exams' | 'appeals';
+      courseId?: string;
+    }
   | { name: 'course'; id: string }
   | { name: 'classroom'; id: string }
   | { name: 'assignment'; id: string }
-  | { name: 'exam' | 'examAttempt'; id: string };
+  | { name: 'exam' | 'examAttempt' | 'review'; id: string };
 
 const AuthContext = createContext<{ client: MobileClient; user: MobileUser } | null>(null);
 export default function App() {
@@ -282,12 +286,14 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             ? '/assignments/[id]'
             : next.name === 'exam'
               ? '/exams/[id]'
-              : next.name === 'examAttempt'
-                ? '/exam-attempts/[id]'
-                : next.name === 'classroom'
-                  ? '/live/[id]'
-                  : '/' + next.name;
-    const params = ['course', 'classroom', 'assignment', 'exam', 'examAttempt'].includes(next.name)
+              : next.name === 'review'
+                ? '/reviews/[id]'
+                : next.name === 'examAttempt'
+                  ? '/exam-attempts/[id]'
+                  : next.name === 'classroom'
+                    ? '/live/[id]'
+                    : '/' + next.name;
+    const params = ['course', 'classroom', 'assignment', 'exam', 'examAttempt', 'review'].includes(next.name)
       ? { id: (next as { id: string }).id }
       : (next.name === 'live' || next.name === 'assignments' || next.name === 'exams') && next.courseId
         ? { courseId: next.courseId }
@@ -302,10 +308,16 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
   const selected = (name: string) =>
     route.name === name ||
     (name === 'courses' &&
-      ['course', 'assignments', 'assignment', 'exams', 'exam', 'examAttempt'].includes(route.name)) ||
+      ['course', 'assignments', 'assignment', 'exams', 'exam', 'examAttempt', 'appeals', 'review'].includes(
+        route.name,
+      )) ||
     (name === 'live' && route.name === 'classroom');
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (route.name === 'review') {
+        setRoute({ name: 'appeals' });
+        return true;
+      }
       if (route.name === 'exam' || route.name === 'examAttempt') {
         setRoute({ name: 'exams' });
         return true;
@@ -335,17 +347,19 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           ? '互动直播'
           : route.name === 'assignments' || route.name === 'assignment'
             ? '我的作业'
-            : ['exams', 'exam', 'examAttempt'].includes(route.name)
-              ? '我的考试'
-              : route.name === 'planner'
-                ? '学习计划'
-                : '我的空间';
+            : route.name === 'appeals' || route.name === 'review'
+              ? '成绩复核'
+              : ['exams', 'exam', 'examAttempt'].includes(route.name)
+                ? '我的考试'
+                : route.name === 'planner'
+                  ? '学习计划'
+                  : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
         <Pressable
           accessibilityLabel={
-            ['course', 'classroom', 'assignment', 'exam', 'examAttempt'].includes(route.name)
+            ['course', 'classroom', 'assignment', 'exam', 'examAttempt', 'review'].includes(route.name)
               ? '返回列表'
               : '知学首页'
           }
@@ -360,12 +374,16 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                       ? 'assignments'
                       : route.name === 'exam' || route.name === 'examAttempt'
                         ? 'exams'
-                        : 'home',
+                        : route.name === 'review'
+                          ? 'appeals'
+                          : 'home',
             })
           }
         >
           <Text style={s.headerLogo}>
-            {['course', 'classroom', 'assignment', 'exam', 'examAttempt'].includes(route.name) ? '‹' : '知'}
+            {['course', 'classroom', 'assignment', 'exam', 'examAttempt', 'review'].includes(route.name)
+              ? '‹'
+              : '知'}
           </Text>
         </Pressable>
         <Text style={s.headerTitle}>{heading}</Text>
@@ -398,7 +416,25 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           <Exam client={client} id={route.id} openAttempt={(id) => setRoute({ name: 'examAttempt', id })} />
         )}
         {route.name === 'examAttempt' && (
-          <ExamAnswer key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
+          <ExamAnswer
+            key={route.id}
+            client={client}
+            id={route.id}
+            registerLeave={registerLeave}
+            openReview={(id) => setRoute({ name: 'review', id })}
+          />
+        )}
+        {route.name === 'appeals' && (
+          <Reviews client={client} open={(id) => setRoute({ name: 'review', id })} />
+        )}
+        {route.name === 'review' && (
+          <Review
+            key={route.id}
+            client={client}
+            id={route.id}
+            registerLeave={registerLeave}
+            openAttempt={(id) => setRoute({ name: 'examAttempt', id })}
+          />
         )}
         {route.name === 'planner' && <StudyPlan client={client} user={user} />}
         {route.name === 'courses' && <Courses client={client} navigate={setRoute} />}
@@ -436,7 +472,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 }}
               />
             </View>
-            <Text style={s.small}>知学 Android · 预览版 0.4.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
+            <Text style={s.small}>知学 Android · 预览版 0.5.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
           </ScrollView>
         )}
       </View>
@@ -457,9 +493,16 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
               selected:
                 route.name === tab.name ||
                 (tab.name === 'courses' &&
-                  ['course', 'assignments', 'assignment', 'exams', 'exam', 'examAttempt'].includes(
-                    route.name,
-                  )) ||
+                  [
+                    'course',
+                    'assignments',
+                    'assignment',
+                    'exams',
+                    'exam',
+                    'examAttempt',
+                    'appeals',
+                    'review',
+                  ].includes(route.name)) ||
                 (tab.name === 'live' && route.name === 'classroom'),
             }}
             key={tab.name}
@@ -532,6 +575,14 @@ function Home({
           caption="限时作答与成绩回执"
           icon="✓"
           onPress={() => navigate({ name: 'exams' })}
+        />
+      )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="成绩复核"
+          caption="申请进度与成绩变更"
+          icon="↺"
+          onPress={() => navigate({ name: 'appeals' })}
         />
       )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />

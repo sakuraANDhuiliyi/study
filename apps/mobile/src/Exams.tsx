@@ -260,10 +260,12 @@ export function ExamAnswer({
   client,
   id,
   registerLeave,
+  openReview,
 }: {
   client: MobileClient;
   id: string;
   registerLeave(guard: LeaveGuard): void;
+  openReview(id: string): void;
 }) {
   const [d, setD] = useState<ExamAttempt | null>(null),
     [error, setError] = useState(''),
@@ -484,6 +486,7 @@ export function ExamAnswer({
                     : '满分 ' + money(d.exam.totalCents) + ' 分'}
               </Text>
               {d.feedback && <RichText html={d.feedback} />}
+              <AButton title="成绩复核与变更记录" onPress={() => openReview(id)} />
             </>
           ) : (
             <>

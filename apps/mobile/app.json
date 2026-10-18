@@ -2,7 +2,7 @@
   "expo": {
     "name": "知学",
     "slug": "zhixue-mobile",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "cn.huiliyi.study",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": ["CAMERA", "RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS", "BLUETOOTH_CONNECT"],
       "allowBackup": false,
       "blockedPermissions": [

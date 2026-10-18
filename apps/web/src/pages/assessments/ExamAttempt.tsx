@@ -338,7 +338,7 @@ export function ExamAttempt() {
                     </div>
                     <div>
                       <dt>复核截止时间</dt>
-                      <dd>{date(d.exam.appealDeadline)}</dd>
+                      <dd>{d.exam.appealDeadline ? date(d.exam.appealDeadline) : '未设置固定截止时间'}</dd>
                     </div>
                   </dl>
                   <Button
@@ -347,8 +347,8 @@ export function ExamAttempt() {
                     onClick={() => setAppealOpen(true)}
                     disabled={
                       d.releaseStatus !== 'released' ||
-                      !d.exam.appealDeadline ||
-                      new Date(d.exam.appealDeadline) < new Date()
+                      d.gradingStatus !== 'graded' ||
+                      (d.exam.appealDeadline && new Date(d.exam.appealDeadline) <= new Date())
                     }
                   >
                     申请成绩复核

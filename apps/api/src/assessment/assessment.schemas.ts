@@ -197,7 +197,11 @@ export const extensionSchema = z.object({
   deadlineAt: date,
   extraAttempts: z.number().int().min(0).max(10).default(0),
 });
-export const appealSchema = z.object({ reason: text(4000).pipe(z.string().min(5)) });
+export const appealSchema = z.object({
+  reason: text(4000)
+    .transform((value) => value.trim())
+    .pipe(z.string().min(5)),
+});
 export const resolveSchema = z.object({
   resolution: text(4000).pipe(z.string().min(5)),
   scoreCents: cents.optional(),
