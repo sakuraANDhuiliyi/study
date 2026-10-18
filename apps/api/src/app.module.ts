@@ -3,6 +3,7 @@ import { PrismaService } from './common/prisma.service';
 import { AuthService } from './auth/auth.service';
 import { Actor, AuthGuard, CurrentActor } from './auth/auth.guard';
 import { LoginService } from './auth/login.service';
+import { MobileAssignmentsController } from './mobile/mobile-assignments.controller';
 import { MobileAuthController } from './mobile/mobile-auth.controller';
 import { AuthController } from './auth/auth.controller';
 import { AuditService } from './common/audit.service';
@@ -129,6 +130,7 @@ class CatalogController {
     CatalogController,
     AuthController,
     MobileAuthController,
+    MobileAssignmentsController,
     CoursesController,
     LiveController,
     AdminController,

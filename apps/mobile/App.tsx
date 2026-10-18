@@ -23,6 +23,8 @@ import { randomUUID } from 'expo-crypto';
 import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
+import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { clearAssignmentTransfers } from './src/assignment-files';
 import { LiveRoom, type Admission } from './src/LiveRoom';
 import { permissionPrompts } from './src/permission-lifecycle';
 
@@ -100,9 +102,10 @@ type Member = {
   state: string;
 };
 type Route =
-  | { name: 'home' | 'courses' | 'live' | 'me' | 'planner'; courseId?: string }
+  | { name: 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments'; courseId?: string }
   | { name: 'course'; id: string }
-  | { name: 'classroom'; id: string };
+  | { name: 'classroom'; id: string }
+  | { name: 'assignment'; id: string };
 
 const AuthContext = createContext<{ client: MobileClient; user: MobileUser } | null>(null);
 export default function App() {
@@ -118,6 +121,9 @@ function Application() {
   const active = useRef<MobileClient | null>(null);
   const [user, setUser] = useState<MobileUser | null>(null);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    clearAssignmentTransfers();
+  }, [user?.id, client?.origin]);
   const [error, setError] = useState('');
   const [server, setServer] = useState(defaultOrigin),
     [username, setUsername] = useState(''),
@@ -257,30 +263,44 @@ export function Screen({ route }: { route: Route }) {
 }
 function Workspace({ client, user, route }: { client: MobileClient; user: MobileUser; route: Route }) {
   const [logoutBusy, setLogoutBusy] = useState(false);
-  const setRoute = (next: Route) => {
+  const leaveGuard = useRef<LeaveGuard>(null);
+  const registerLeave = (guard: LeaveGuard) => {
+    leaveGuard.current = guard;
+  };
+  const moveRoute = (next: Route) => {
     const pathname =
       next.name === 'home'
         ? '/'
         : next.name === 'course'
           ? '/courses/[id]'
-          : next.name === 'classroom'
-            ? '/live/[id]'
-            : '/' + next.name;
+          : next.name === 'assignment'
+            ? '/assignments/[id]'
+            : next.name === 'classroom'
+              ? '/live/[id]'
+              : '/' + next.name;
     const params =
-      next.name === 'course' || next.name === 'classroom'
+      next.name === 'course' || next.name === 'classroom' || next.name === 'assignment'
         ? { id: next.id }
-        : next.name === 'live' && next.courseId
+        : (next.name === 'live' || next.name === 'assignments') && next.courseId
           ? { courseId: next.courseId }
           : {};
     router.replace({ pathname, params } as never);
   };
+  const setRoute = (next: Route) => {
+    if (leaveGuard.current) leaveGuard.current(() => moveRoute(next));
+    else moveRoute(next);
+  };
   const canLive = user.accountMode !== 'PERSONAL';
   const selected = (name: string) =>
     route.name === name ||
-    (name === 'courses' && route.name === 'course') ||
+    (name === 'courses' && ['course', 'assignments', 'assignment'].includes(route.name)) ||
     (name === 'live' && route.name === 'classroom');
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (route.name === 'assignment') {
+        setRoute({ name: 'assignments' });
+        return true;
+      }
       if (route.name === 'course' || route.name === 'classroom') {
         setRoute({ name: route.name === 'course' ? 'courses' : 'live' });
         return true;
@@ -300,22 +320,37 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
         ? '我的课程'
         : route.name === 'live' || route.name === 'classroom'
           ? '互动直播'
-          : route.name === 'planner'
-            ? '学习计划'
-            : '我的空间';
+          : route.name === 'assignments' || route.name === 'assignment'
+            ? '我的作业'
+            : route.name === 'planner'
+              ? '学习计划'
+              : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
         <Pressable
-          accessibilityLabel={route.name === 'course' || route.name === 'classroom' ? '返回列表' : '知学首页'}
+          accessibilityLabel={
+            route.name === 'course' || route.name === 'classroom' || route.name === 'assignment'
+              ? '返回列表'
+              : '知学首页'
+          }
           onPress={() =>
             setRoute({
-              name: route.name === 'course' ? 'courses' : route.name === 'classroom' ? 'live' : 'home',
+              name:
+                route.name === 'course'
+                  ? 'courses'
+                  : route.name === 'classroom'
+                    ? 'live'
+                    : route.name === 'assignment'
+                      ? 'assignments'
+                      : 'home',
             })
           }
         >
           <Text style={s.headerLogo}>
-            {route.name === 'course' || route.name === 'classroom' ? '‹' : '知'}
+            {route.name === 'course' || route.name === 'classroom' || route.name === 'assignment'
+              ? '‹'
+              : '知'}
           </Text>
         </Pressable>
         <Text style={s.headerTitle}>{heading}</Text>
@@ -331,6 +366,16 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       </View>
       <View style={s.flex}>
         {route.name === 'home' && <Home client={client} user={user} navigate={setRoute} canLive={canLive} />}
+        {route.name === 'assignments' && (
+          <Assignments
+            client={client}
+            courseId={route.courseId}
+            open={(id) => setRoute({ name: 'assignment', id })}
+          />
+        )}
+        {route.name === 'assignment' && (
+          <Assignment key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
+        )}
         {route.name === 'planner' && <StudyPlan client={client} user={user} />}
         {route.name === 'courses' && <Courses client={client} navigate={setRoute} />}
         {route.name === 'course' && (
@@ -367,7 +412,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 }}
               />
             </View>
-            <Text style={s.small}>知学 Android · 预览版 0.1.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
+            <Text style={s.small}>知学 Android · 预览版 0.2.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
           </ScrollView>
         )}
       </View>
@@ -387,12 +432,14 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             accessibilityState={{
               selected:
                 route.name === tab.name ||
-                (tab.name === 'courses' && route.name === 'course') ||
+                (tab.name === 'courses' && ['course', 'assignments', 'assignment'].includes(route.name)) ||
                 (tab.name === 'live' && route.name === 'classroom'),
             }}
             key={tab.name}
             style={s.tab}
-            onPress={() => setRoute({ name: tab.name as 'home' | 'courses' | 'live' | 'me' | 'planner' })}
+            onPress={() =>
+              setRoute({ name: tab.name as 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments' })
+            }
           >
             <Text style={[s.tabIcon, selected(tab.name) && s.selected]}>{tab.icon}</Text>
             <Text style={[s.tabText, selected(tab.name) && s.selected]}>{tab.label}</Text>
@@ -444,6 +491,14 @@ function Home({
         icon="☷"
         onPress={() => navigate({ name: 'planner' })}
       />
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="我的作业"
+          caption="作答、提交与成绩反馈"
+          icon="✎"
+          onPress={() => navigate({ name: 'assignments' })}
+        />
+      )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />
       <Query state={q} />
       {q.data?.items.map((course) => (
@@ -524,6 +579,13 @@ function CourseDetail({
             </Text>
           </View>
           <Text style={s.body}>{c.description}</Text>
+          {user.role === 'STUDENT' && (
+            <Button
+              title="查看课程作业"
+              secondary
+              onPress={() => navigate({ name: 'assignments', courseId: id })}
+            />
+          )}
           <Button title="查看课程直播" secondary onPress={() => navigate({ name: 'live', courseId: id })} />
           {lesson && (
             <View style={s.card}>

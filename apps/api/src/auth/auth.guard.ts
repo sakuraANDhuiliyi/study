@@ -22,6 +22,10 @@ export interface Actor {
 }
 export function mobileRouteAllowed(path: string, method: string) {
   if (/^\/api\/mobile\/auth\/(me|logout)\/?$/.test(path)) return true;
+  if (method === 'GET' && /^\/api\/mobile\/assignments(?:\/[^/]+(?:\/files\/[^/]+)?)?\/?$/.test(path))
+    return true;
+  if (method === 'PUT' && /^\/api\/mobile\/assignments\/[^/]+\/draft\/?$/.test(path)) return true;
+  if (method === 'POST' && /^\/api\/mobile\/assignments\/[^/]+\/(submit|files)\/?$/.test(path)) return true;
   if (/^\/api\/live(?:\/|$)/.test(path)) return true;
   if (method === 'GET' && /^\/api\/courses(?:\/[^/]+)?\/?$/.test(path)) return true;
   if (method === 'GET' && /^\/api\/planner(?:\/actions(?:\/courses)?|\/tasks\/[^/]+)?\/?$/.test(path))

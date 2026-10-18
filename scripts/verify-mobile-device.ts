@@ -76,14 +76,32 @@ async function click(label: string) {
 }
 async function type(label: string, value: string) {
   assert.match(value, /^[A-Za-z0-9_!.:-]+$/);
-  const field = await find(label);
-  assert.match(field.class, /EditText$/);
-  tap(field);
-  if (field.text)
-    run('shell', 'input', 'keyevent', '123', ...Array(Math.min(256, field.text.length)).fill('67'));
-  run('shell', 'input', 'text', value);
-  run('shell', 'input', 'keyevent', '4');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const field = await find(label);
+    assert.match(field.class, /EditText$/);
+    tap(field);
+    await liveWait(600);
+    if (field.text) {
+      run('shell', 'input', 'keyevent', '123', ...Array(Math.min(256, field.text.length)).fill('67'));
+      await liveWait(300);
+    }
+    for (const chunk of value.match(attempt ? /./g : /.{1,4}/g) || []) {
+      run('shell', 'input', 'text', chunk);
+      await liveWait(150);
+    }
+    await liveWait(300);
+    const actual = await find(label);
+    const correct = actual.password === 'true' ? actual.text.length === value.length : actual.text === value;
+    if (!correct) continue;
+    // BACK dismisses a visible IME, but navigates away when the IME never opened.
+    const ime = run('shell', 'dumpsys', 'input_method');
+    if (/\bmInputShown=true\b/.test(ime)) run('shell', 'input', 'keyevent', '4');
+    await liveWait(400);
+    return;
+  }
+  throw new Error('Android input could not be verified: ' + label);
 }
+
 function screenshot(name: string) {
   const data = execFileSync(adb, ['-s', serial, 'exec-out', 'screencap', '-p'], { timeout: 15000 });
   writeFileSync(resolve(output, name + '.png'), data);
@@ -139,7 +157,6 @@ async function main() {
         maxParticipants: 10,
       })
     ).body;
-    await f.call(f.clients.teacher, `/live/classes/${live.id}/start`, 'POST', { revision: live.revision });
     const otherCourse = await f.db.course.create({
       data: {
         organizationId: f.organization.id,
@@ -330,6 +347,233 @@ async function main() {
     screenshot('android-planner-actions');
     await click('首页');
 
+    const questionIds: string[] = [];
+    for (const [i, typeName] of ['single', 'multiple', 'boolean', 'blank', 'short', 'composite'].entries()) {
+      const question = (
+        await f.call(f.clients.teacher, '/questions', 'POST', {
+          courseId: f.course.id,
+          type: typeName,
+          stem: '<p>Android-device-question-' + i + '</p>',
+          scoreCents: 100,
+          options: ['single', 'multiple'].includes(typeName)
+            ? [
+                { id: 'A', text: 'Alpha' },
+                { id: 'B', text: 'Beta' },
+              ]
+            : [],
+          answer:
+            typeName === 'multiple'
+              ? ['A', 'B']
+              : typeName === 'boolean'
+                ? false
+                : typeName === 'blank'
+                  ? [['one']]
+                  : typeName === 'composite'
+                    ? {}
+                    : 'A',
+          children:
+            typeName === 'composite'
+              ? [
+                  {
+                    id: 'child',
+                    type: 'short',
+                    stem: '<p>Android-child</p>',
+                    answer: 'reference',
+                    scoreCents: 100,
+                  },
+                ]
+              : [],
+          explanation: 'Android-released-explanation',
+        })
+      ).body;
+      questionIds.push(question.versions[0].id);
+    }
+    const assignment = (
+      await f.call(f.clients.teacher, '/assignments', 'POST', {
+        courseId: f.course.id,
+        title: 'Android-native-assignment',
+        opensAt: new Date(Date.now() - 60000).toISOString(),
+        dueAt: new Date(Date.now() + 3600000).toISOString(),
+        maxAttempts: 2,
+        questionVersionIds: questionIds,
+        audienceIds: [f.users.student.id],
+      })
+    ).body;
+    await f.call(f.clients.teacher, '/assignments/' + assignment.id + '/publish', 'POST');
+    await scroll('我的作业');
+    await scroll('打开作业：' + assignment.title);
+    await scroll('第1题：Alpha');
+    await scroll('第2题：Alpha');
+    await scroll('第2题：Beta');
+    await scroll('第3题：错误');
+    await scroll('第4题答案');
+    await type('第4题答案', 'one');
+    await scroll('第5题答案');
+    await type('第5题答案', 'Android-short-answer');
+    await scroll('第6题-子题1答案');
+    await type('第6题-子题1答案', 'Android-composite-answer');
+    await click('首页');
+    await find('离开作业？');
+    await click('继续作答');
+    passed('native six question controls preserve unsaved answers behind a leave confirmation');
+    await scroll('保存作业草稿');
+    let draft = await poll(
+      () =>
+        f.db.assignmentDraft.findUnique({
+          where: { assignmentId_userId: { assignmentId: assignment.id, userId: f.users.student.id } },
+        }),
+      (p) => !!p,
+      'Native assignment draft missing',
+    );
+    const answerValues = (draft!.answers as any[]).map((x) => x.value);
+    assert.deepEqual(answerValues, [
+      'A',
+      ['A', 'B'],
+      false,
+      ['one'],
+      'Android-short-answer',
+      { child: 'Android-composite-answer' },
+    ]);
+    const webDraft = (await f.call(f.clients.student, '/assignments/' + assignment.id)).body.draft;
+    assert.deepEqual(webDraft.answers, draft!.answers);
+    passed('native all-type draft is persisted and readable on website');
+    const payloadText = 'Android-private-file';
+    const fixtureFile = resolve(output, 'zhixue-native-assignment.txt');
+    writeFileSync(fixtureFile, payloadText);
+    run('push', fixtureFile, '/sdcard/Download/zhixue-native-assignment.txt');
+    try {
+      await scroll('选择并上传作业附件');
+      // Android's system picker is the only authority granted to read this fixture.
+      const picker = await poll(
+        nodes,
+        (ns) =>
+          ns.some(
+            (n) =>
+              n['resource-id'] === 'com.google.android.documentsui:id/roots_toolbar' ||
+              n['content-desc'] === 'Show roots' ||
+              n.text === 'Downloads' ||
+              n.text === '下载',
+          ),
+        'System document picker missing',
+      );
+      if (!picker.some((n) => n.text === 'zhixue-native-assignment.txt')) {
+        const roots = picker.find(
+          (n) => n['content-desc'] === 'Show roots' || n['content-desc'] === '显示根目录',
+        );
+        if (roots) tap(roots);
+        const downloads = (
+          await poll(
+            nodes,
+            (ns) => ns.some((n) => n.text === 'Downloads' || n.text === '下载'),
+            'Downloads location missing',
+          )
+        ).find((n) => n.text === 'Downloads' || n.text === '下载')!;
+        tap(downloads);
+      }
+      await click('zhixue-native-assignment.txt');
+      await scroll('下载附件：zhixue-native-assignment.txt');
+      await poll(
+        nodes,
+        (ns) =>
+          ns.some(
+            (n) =>
+              n.text === '打开或保存作业附件' ||
+              n.text === 'Bluetooth' ||
+              n.text === '蓝牙' ||
+              n['resource-id'] === 'android:id/chooser_header',
+          ),
+        'Private attachment share chooser missing',
+      );
+      run('shell', 'input', 'keyevent', '4');
+      await scroll('保存作业草稿');
+      draft = await poll(
+        () =>
+          f.db.assignmentDraft.findUnique({
+            where: { assignmentId_userId: { assignmentId: assignment.id, userId: f.users.student.id } },
+          }),
+        (p) => !!p?.attachmentIds.length,
+        'Native attachment not saved',
+      );
+      const attachment = await f.db.attachment.findUniqueOrThrow({ where: { id: draft!.attachmentIds[0] } });
+      assert.equal(attachment.size, Buffer.byteLength(payloadText));
+      assert.equal(attachment.assignmentId, assignment.id);
+      passed('Android system picker uploads a scoped private attachment and download opens the OS chooser');
+    } finally {
+      run('shell', 'rm', '-f', '/sdcard/Download/zhixue-native-assignment.txt');
+    }
+    const changed = (
+      await f.call(f.clients.student, '/assignments/' + assignment.id + '/draft', 'PUT', {
+        revision: draft!.revision,
+        answers: draft!.answers,
+        attachmentIds: draft!.attachmentIds,
+      })
+    ).body;
+    await scroll('保存作业草稿');
+    await scroll('另一页面已保存新草稿，请刷新后继续');
+    assert.equal(
+      (await f.db.assignmentDraft.findUniqueOrThrow({ where: { id: draft!.id } })).revision,
+      changed.revision,
+    );
+    await scroll('刷新作业与最新草稿');
+    // A saved, stale editor has no unsaved changes; no discard confirmation is needed.
+    await scroll('提交作业');
+    await click('正式提交');
+    const submission = await poll(
+      () =>
+        f.db.assignmentSubmission.findFirst({
+          where: { assignmentId: assignment.id, userId: f.users.student.id, version: 1 },
+        }),
+      (p) => !!p,
+      'Native formal submission missing',
+    );
+    assert.equal(
+      await f.db.assignmentSubmission.count({
+        where: { assignmentId: assignment.id, userId: f.users.student.id },
+      }),
+      1,
+    );
+    passed('cross-device revision conflict reload and explicit native formal submission');
+    await f.call(f.clients.teacher, '/submissions/' + submission!.id + '/grade', 'PUT', {
+      revision: 0,
+      items: questionIds.map((questionVersionId) => ({
+        questionVersionId,
+        scoreCents: 80,
+        comment: 'Android-item-feedback',
+      })),
+      comment: 'Android-published-feedback',
+    });
+    await scroll('刷新作业与最新草稿');
+    await scroll('查看第1次提交与反馈');
+    await find('教师尚未发布成绩与反馈。');
+    assert.equal(
+      nodes().some((n) => n.text === 'Android-published-feedback'),
+      false,
+    );
+    await scroll('关闭提交反馈');
+    await f.call(f.clients.teacher, '/assignments/' + assignment.id + '/release', 'POST');
+    await scroll('刷新作业与最新草稿');
+    await scroll('查看第1次提交与反馈');
+    await scroll('Android-published-feedback');
+    screenshot('android-assignment-feedback');
+    passed('unpublished grading stays hidden and released feedback appears in native history');
+    await scroll('使用本次答案重新作答');
+    await click('复制到当前作答');
+    await scroll('提交作业');
+    await click('正式提交');
+    await poll(
+      () =>
+        f.db.assignmentSubmission.count({
+          where: { assignmentId: assignment.id, userId: f.users.student.id },
+        }),
+      (n) => n === 2,
+      'Native resubmission missing',
+    );
+    await scroll('已达提交次数上限，可向教师申请重交。');
+    passed('native history reuse creates a controlled immutable second version and enforces attempt limit');
+    await click('首页');
+
+    await f.call(f.clients.teacher, `/live/classes/${live.id}/start`, 'POST', { revision: live.revision });
+
     browser = await chromium.launch({
       headless: true,
       ...(process.platform === 'darwin' ? { channel: 'chrome' } : {}),
@@ -359,8 +603,7 @@ async function main() {
     screenshot('android-live-viewing');
     passed('native WebRTC receives real audio and decodes video');
     await scroll('课堂发言');
-    run('shell', 'input', 'text', 'Android-device-test');
-    run('shell', 'input', 'keyevent', '4');
+    await type('课堂发言', 'Android-device-test');
     await scroll('发送消息');
     await poll(
       () =>

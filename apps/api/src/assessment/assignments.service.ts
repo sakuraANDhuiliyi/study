@@ -4,13 +4,16 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import { Actor } from '../auth/auth.guard';
+import { AuthService } from '../auth/auth.service';
+import { PrismaService } from '../common/prisma.service';
 import { AssessmentContext } from './assessment-context';
-import { content, itemInclude, json, unique } from './assessment-values';
+import { content, itemInclude, json, unique, type Tx } from './assessment-values';
 import * as schema from './assessment.schemas';
 import { QuestionSelectionService } from './question-selection.service';
 import { autoScore, paginate, publicQuestion } from './scoring';
@@ -22,17 +25,22 @@ export class AssignmentsService {
     private readonly selection: QuestionSelectionService,
   ) {}
 
-  private async assignmentAccess(actor: Actor, id: string, write = false) {
+  private async assignmentAccess(
+    actor: Actor,
+    id: string,
+    write = false,
+    database: PrismaService | Tx = this.context.db,
+  ) {
     this.context.require(
       actor,
       this.context.student(actor) ? 'learning.use' : write ? 'assessment.manage' : 'assessment.grade',
     );
-    const assignment = await this.context.db.assignment.findFirst({
+    const assignment = await database.assignment.findFirst({
       where: { id, organizationId: actor.organizationId },
       include: { items: { include: itemInclude, orderBy: { position: 'asc' } }, audience: true },
     });
     if (!assignment) throw new NotFoundException('作业不存在');
-    await this.context.scoped(actor, assignment.courseId, write);
+    await new AuthService(database as PrismaService).course(actor, assignment.courseId, write);
     if (
       this.context.student(actor) &&
       (assignment.status !== 'published' || !assignment.audience.some((item) => item.userId === actor.id))
@@ -297,20 +305,38 @@ export class AssignmentsService {
       throw new ConflictException('作业已截止，草稿不等于正式提交；可向教师申请补交');
   }
 
+  private async currentWriter(actor: Actor, id: string, tx: Tx) {
+    const current = actor.sessionId
+      ? await new AuthService(tx as PrismaService).resolveSessionId(actor.sessionId)
+      : null;
+    if (
+      !current ||
+      current.id !== actor.id ||
+      current.organizationId !== actor.organizationId ||
+      current.role !== actor.role ||
+      current.clientType !== actor.clientType ||
+      current.csrfToken !== actor.csrfToken
+    )
+      throw new UnauthorizedException('身份或会话已变化，请重新登录');
+    this.context.require(current, 'learning.use');
+    const assignment = await this.assignmentAccess(current, id, false, tx);
+    const exception = await tx.assignmentException.findUnique({
+      where: { assignmentId_userId: { assignmentId: id, userId: current.id } },
+    });
+    return { current, assignment, exception };
+  }
+
   async saveAssignmentDraft(actor: Actor, id: string, input: z.infer<typeof schema.draftSchema>) {
     this.context.require(actor, 'learning.use');
-    const assignment = await this.assignmentAccess(actor, id);
-    const exception = await this.context.db.assignmentException.findUnique({
-      where: { assignmentId_userId: { assignmentId: id, userId: actor.id } },
-    });
-    this.checkAssignmentWindow(assignment, exception);
-    this.context.validateAnswerValues(
-      input.answers,
-      assignment.items.map((item) => content(item.questionVersion)),
-    );
-    await this.context.validateAttachments(actor, input.attachmentIds, id);
     return this.context.db.$transaction(async (tx) => {
       await this.context.lock(tx, `assignment:${id}:${actor.id}`);
+      const { current, assignment, exception } = await this.currentWriter(actor, id, tx);
+      this.checkAssignmentWindow(assignment, exception);
+      this.context.validateAnswerValues(
+        input.answers,
+        assignment.items.map((item) => content(item.questionVersion)),
+      );
+      await this.context.validateAttachments(current, input.attachmentIds, id, undefined, true, tx);
       const draft = await tx.assignmentDraft.findUnique({
         where: { assignmentId_userId: { assignmentId: id, userId: actor.id } },
       });
@@ -336,14 +362,9 @@ export class AssignmentsService {
 
   async submitAssignment(actor: Actor, id: string, input: z.infer<typeof schema.submissionSchema>) {
     this.context.require(actor, 'learning.use');
-    const assignment = await this.assignmentAccess(actor, id);
-    this.context.validateAnswerValues(
-      input.answers,
-      assignment.items.map((item) => content(item.questionVersion)),
-    );
-    await this.context.validateAttachments(actor, input.attachmentIds, id);
     const submission = await this.context.db.$transaction(async (tx) => {
       await this.context.lock(tx, `assignment:${id}:${actor.id}`);
+      const { current, assignment, exception } = await this.currentWriter(actor, id, tx);
       const prior = await tx.assignmentSubmission.findUnique({
         where: {
           assignmentId_userId_idempotencyKey: {
@@ -361,14 +382,28 @@ export class AssignmentsService {
           throw new ConflictException('同一幂等键不能用于不同提交内容');
         return prior;
       }
-      const exception = await tx.assignmentException.findUnique({
-        where: { assignmentId_userId: { assignmentId: id, userId: actor.id } },
-      });
       this.checkAssignmentWindow(assignment, exception);
+      this.context.validateAnswerValues(
+        input.answers,
+        assignment.items.map((item) => content(item.questionVersion)),
+      );
+      await this.context.validateAttachments(current, input.attachmentIds, id, undefined, true, tx);
+      if (input.expectedDraftRevision !== undefined) {
+        const draft = await tx.assignmentDraft.findUnique({
+          where: { assignmentId_userId: { assignmentId: id, userId: actor.id } },
+        });
+        if ((draft?.revision ?? 0) !== input.expectedDraftRevision)
+          throw new ConflictException('另一页面已保存新草稿，请刷新后再提交');
+      }
       const last = await tx.assignmentSubmission.findFirst({
         where: { assignmentId: id, userId: actor.id },
         orderBy: { version: 'desc' },
       });
+      if (
+        input.expectedSubmissionVersion !== undefined &&
+        (last?.version ?? 0) !== input.expectedSubmissionVersion
+      )
+        throw new ConflictException('其他页面已提交新版本，请刷新后确认再提交');
       if ((last?.version ?? 0) >= assignment.maxAttempts + (exception?.extraAttempts ?? 0))
         throw new ConflictException('已达提交次数上限，请申请重交');
       const scores = assignment.items.map((item) =>

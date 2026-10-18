@@ -57,6 +57,20 @@ function validSession(value: unknown): value is MobileSession {
 }
 export class MobileClient {
   private session: MobileSession | null = null;
+  private identityCleanup = new Set<() => void>();
+  onSessionInvalidated(cleanup: () => void) {
+    this.identityCleanup.add(cleanup);
+    return () => {
+      this.identityCleanup.delete(cleanup);
+    };
+  }
+  private invalidateResources() {
+    for (const cleanup of this.identityCleanup) {
+      try {
+        cleanup();
+      } catch {}
+    }
+  }
   private generation = 0;
   private refreshWork: Promise<void> | null = null;
   private storageWork: Promise<void> = Promise.resolve();
@@ -77,7 +91,13 @@ export class MobileClient {
     this.storageWork = work;
     await work;
   }
-  private async wire(path: string, body?: unknown, method = 'GET', token?: string) {
+  private async wire(
+    path: string,
+    body?: unknown,
+    method = 'GET',
+    token?: string,
+    transfer?: { multipart?: boolean; binary?: boolean },
+  ) {
     if (!/^\/[a-zA-Z0-9][^\\]*$/.test(path) || path.startsWith('//') || path.includes('://'))
       throw new Error('请求路径无效');
     let response: Response;
@@ -87,15 +107,30 @@ export class MobileClient {
         credentials: 'omit',
         redirect: 'error',
         headers: {
-          accept: 'application/json',
-          ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+          accept: transfer?.binary ? 'application/octet-stream' : 'application/json',
+          ...(body !== undefined && !transfer?.multipart ? { 'content-type': 'application/json' } : {}),
           ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-        signal: AbortSignal.timeout(20000),
+        ...(body !== undefined
+          ? { body: transfer?.multipart ? (body as FormData) : JSON.stringify(body) }
+          : {}),
+        signal: AbortSignal.timeout(transfer ? 60000 : 20000),
       });
     } catch {
       throw new MobileApiError(0, '无法连接平台，请检查地址、网络及服务器状态。');
+    }
+    if (response.ok && transfer?.binary) {
+      const length = Number(response.headers.get('content-length'));
+      if (
+        !response.headers.has('content-length') ||
+        !Number.isSafeInteger(length) ||
+        length < 0 ||
+        length > 50 * 1024 * 1024
+      )
+        throw new MobileApiError(502, '文件长度无效或超过手机端下载上限。');
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength !== length) throw new MobileApiError(502, '文件接收不完整，请重新下载。');
+      return bytes;
     }
     const data = await response.json().catch(() => null);
     if (!response.ok)
@@ -128,6 +163,7 @@ export class MobileClient {
     }
   }
   async login(username: string, password: string) {
+    this.invalidateResources();
     const generation = ++this.generation;
     this.session = null;
     this.changed(null);
@@ -166,7 +202,12 @@ export class MobileClient {
       if (this.refreshWork === work) this.refreshWork = null;
     }
   }
-  async request<T = any>(path: string, body?: unknown, method = 'GET'): Promise<T> {
+  async request<T = any>(
+    path: string,
+    body?: unknown,
+    method = 'GET',
+    transfer?: { multipart?: boolean; binary?: boolean },
+  ): Promise<T> {
     const generation = this.generation;
     if (!this.session) throw new MobileApiError(401, '请先登录');
     try {
@@ -174,12 +215,12 @@ export class MobileClient {
       const token = this.session!.accessToken;
       let result;
       try {
-        result = await this.wire(path, body, method, token);
+        result = await this.wire(path, body, method, token, transfer);
       } catch (error) {
         if (!(error instanceof MobileApiError) || error.status !== 401 || generation !== this.generation)
           throw error;
         if (this.session?.accessToken === token) await this.refresh(generation);
-        result = await this.wire(path, body, method, this.session?.accessToken);
+        result = await this.wire(path, body, method, this.session?.accessToken, transfer);
       }
       if (generation !== this.generation) throw new MobileApiError(409, '响应所属的登录身份已变化');
       return result;
@@ -189,11 +230,34 @@ export class MobileClient {
       throw error;
     }
   }
+  sessionEpoch() {
+    return this.generation;
+  }
+  ownsSession(epoch: number) {
+    return epoch === this.generation && this.session !== null;
+  }
+  uploadAssignmentFile<T>(assignmentId: string, body: FormData) {
+    return this.request<T>(
+      '/mobile/assignments/' + encodeURIComponent(assignmentId) + '/files',
+      body,
+      'POST',
+      { multipart: true },
+    );
+  }
+  downloadAssignmentFile(assignmentId: string, fileId: string) {
+    return this.request<Uint8Array>(
+      '/mobile/assignments/' + encodeURIComponent(assignmentId) + '/files/' + encodeURIComponent(fileId),
+      undefined,
+      'GET',
+      { binary: true },
+    );
+  }
   async logout() {
     await this.request('/mobile/auth/logout', {}, 'POST');
     await this.clear();
   }
   async clear() {
+    this.invalidateResources();
     const generation = ++this.generation;
     this.session = null;
     this.changed(null);

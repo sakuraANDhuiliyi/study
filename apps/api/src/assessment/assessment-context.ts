@@ -73,9 +73,10 @@ export class AssessmentContext {
     assignmentId?: string,
     courseId?: string,
     requireOwnership = true,
+    database: PrismaService | Tx = this.db,
   ) {
     if (!ids.length) return;
-    const attachments = await this.db.attachment.findMany({
+    const attachments = await database.attachment.findMany({
       where: {
         id: { in: unique(ids) },
         organizationId: actor.organizationId,

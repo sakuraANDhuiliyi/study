@@ -45,6 +45,7 @@ export function AssignmentDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [revision, setRevision] = useState(0);
+  const [submissionVersion, setSubmissionVersion] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [lastSaved, setLastSaved] = useState('');
@@ -64,6 +65,7 @@ export function AssignmentDetail() {
     if (d && loaded.current !== id) {
       setAnswers(answerMap(d.draft?.answers || []));
       setRevision(d.draft?.revision || 0);
+      setSubmissionVersion(Math.max(0, ...d.mySubmissions.map((s: any) => s.version)));
       setAttachments((d.draft?.attachmentIds || []).map((id: string) => ({ id, name: '已保存附件' })));
       loaded.current = id || '';
     }
@@ -83,15 +85,19 @@ export function AssignmentDetail() {
     setLastSaved(new Date().toISOString());
   }
   async function submit() {
-    await action.mutateAsync({
+    const submitted = await action.mutateAsync({
       path: `/assignments/${id}/submit`,
       body: {
         answers: answerArray(answers),
         attachmentIds: attachments.map((f) => f.id),
         idempotencyKey: submissionKey.current,
+        expectedDraftRevision: revision,
+        expectedSubmissionVersion: submissionVersion,
       },
     });
     setDirty(false);
+    setRevision(0);
+    setSubmissionVersion(submitted.version);
     submissionKey.current = crypto.randomUUID();
     query.refetch();
   }

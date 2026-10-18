@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -162,7 +163,13 @@ export function StudyPlan({ client, user }: { client: MobileClient; user: Mobile
       {view === 'actions' ? (
         <Actions client={client} user={user} version={version} refresh={refresh} edit={setEditing} />
       ) : (
-        <Calendar client={client} version={version} refresh={refresh} edit={setEditing} />
+        <Calendar
+          client={client}
+          version={version}
+          refresh={refresh}
+          edit={setEditing}
+          nativeAssignments={user.role === 'STUDENT'}
+        />
       )}
       {editing && (
         <TaskEditor
@@ -347,15 +354,26 @@ function AssessmentLink({
   client,
   path,
   title = '查看详情',
+  nativeAssignments = true,
 }: {
   client: MobileClient;
   path?: string;
   title?: string;
+  nativeAssignments?: boolean;
 }) {
   const target = assessmentPage(path);
+  if (nativeAssignments && target?.startsWith('/assignments/'))
+    return (
+      <Button
+        title={title === '查看详情' ? '打开作业' : title}
+        onPress={() =>
+          router.replace({ pathname: '/assignments/[id]', params: { id: target.split('/')[2] } } as never)
+        }
+      />
+    );
   return (
     <View>
-      <Text style={s.muted}>作业提交和考试作答本轮仍在手机网页进行，网页需单独登录。</Text>
+      <Text style={s.muted}>此操作仍在手机网页进行，网页需单独登录。</Text>
       {target && (
         <Button
           secondary
@@ -375,11 +393,13 @@ function Calendar({
   version,
   refresh,
   edit,
+  nativeAssignments,
 }: {
   client: MobileClient;
   version: number;
   refresh(): void;
   edit(id: string): void;
+  nativeAssignments: boolean;
 }) {
   const [month, setMonth] = useState(shanghaiInput().slice(0, 7));
   const [type, setType] = useState<(typeof sourceChoices)[number]['value']>('all');
@@ -472,7 +492,7 @@ function Calendar({
                 <Text style={s.body}>原截止：{formatPlanTime(detail.originalDueAt)}</Text>
               )}
               <Text style={s.body}>{detail.description}</Text>
-              <AssessmentLink client={client} path={detail.path} />
+              <AssessmentLink client={client} path={detail.path} nativeAssignments={nativeAssignments} />
               <Button title="关闭日程详情" secondary onPress={() => setDetail(null)} />
             </ScrollView>
           </SafeAreaView>

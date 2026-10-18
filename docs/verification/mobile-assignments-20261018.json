@@ -1,0 +1,898 @@
+{
+  "feature": "Native Android student assignments, private files, cross-device submission consistency and published grading feedback",
+  "baseCommit": "eaec7e09fd17b5df9c8620ef1167814c04288308",
+  "recordedAt": "2026-10-18T02:27:58.378227+00:00",
+  "sourceSha256": {
+    "apps/api/src/app.module.ts": "23becee6624fd56f24228137094426cddb3ae8b2c17494180af510629fd38107",
+    "apps/api/src/assessment/assessment-context.ts": "34304edc9042862dc27dbec7985863afb68374d72a0e04247947e6eff4465636",
+    "apps/api/src/assessment/assessment.schemas.ts": "9956e5e2b43e1f3bf4b2b33f2ac8555795f1badd7e0ede87129b7e38cecf902f",
+    "apps/api/src/assessment/assignments.service.ts": "3072309a75593ffb393692a5418d8df0ad3fad3f6b510309bffd7cf1e6e36a4a",
+    "apps/api/src/auth/auth.guard.ts": "537be286433aae1ba75b1a884392dee86c62921acba6de888c88c167672921cd",
+    "apps/api/src/mobile/mobile-assignments.controller.ts": "8039b5363bfc8fc6c0bd9c7009acd32698e9dd28f153df9e5e7d48f3bbaa8717",
+    "apps/api/src/mobile/private-stream.ts": "0886de1b9c5d2386dc202337bc4f12323a11c6e88129335700b028f79053ee57",
+    "apps/mobile/App.tsx": "b3fc367b3b0b1ad9f7c53f482d8d4c8b4e209277b015c513e6ab19aca158d276",
+    "apps/mobile/app.json": "e51fa66524a3c51b10c3e39eb97647bf31d14bc7f599006557ec5e2d10d35dd0",
+    "apps/mobile/package-lock.json": "b2414689d3d8ca238120e229c31f55528643ca6d705caafe228e6597884ac815",
+    "apps/mobile/package.json": "17e1f83c482810a4d41adeafcea7636ae1ae9ac2c556bf5713e6e36f43394cfb",
+    "apps/mobile/src/Assignments.tsx": "07c62d9e1dbfa4f5a2d20d03b5bfbf64b331b19bbc926c6c744b948c11a95f8e",
+    "apps/mobile/src/StudyPlan.tsx": "f830ec3fa722c70ac56682d02696342370a934c24ffa2cb7d13ca4befc879b21",
+    "apps/mobile/src/app/assignments/[id].tsx": "767d0392525892acf806f97c66ea31b22cb8e62160fcbcf748eb3244c5253851",
+    "apps/mobile/src/app/assignments/index.tsx": "7f79df92196b3a509c3c09aface2a9864c459d484308f627eb42d609da310f45",
+    "apps/mobile/src/assignment-files.ts": "67b5f33aa715b2d18caad7b05f696d52f5b09716d753dfcaad5f61b8c4f976b4",
+    "apps/mobile/src/assignment-model.ts": "f69123762c144e6d3026be54806cdc2e421f3eb62be8d36a0471568dd4426e35",
+    "apps/mobile/src/assignment-ui.tsx": "45b3ecea0f4a431ebf37e5f82ca6379e3cc2fcc99aa87f4d11dbb3a0c1eb2e4c",
+    "apps/mobile/src/assignment-upload.ts": "32f687b9589b314f251b2c035e0b5ee553012cc7a870ea03a86efc08f220fa66",
+    "apps/mobile/src/client.ts": "c161c29225e3d2667483242c3c4f8b444294cbcb985bba8968d912515afad304",
+    "apps/mobile/src/submission-ledger.ts": "3e048f45df886c962c0861283aadae7671cbbc2bb30b3df746a66c1c6d1489ea",
+    "apps/web/src/pages/assessments/AssignmentDetail.tsx": "a55711eeae659e7de777c2e5de1c96baa56be5aea73e482c62bebfe98e660122",
+    "scripts/verify-mobile-device.ts": "40df2e2384057a7306abe329431d74104b3e6b3271db54ebe9ff5cde34e86a30",
+    "tests/mobile-assignment-browser.integration.ts": "acd57c934079a4f08cc9b1825526c7a3581e76896607b7f92c7cbcc0b335ca25",
+    "tests/mobile-assignment.unit.test.ts": "e0003a1bce334d684d6a0d63aef36e9e29035bb5aa9c9a2a45580e88320ec686",
+    "tests/mobile-assignments.integration.ts": "207907152cd45167c1f07f28d600475b55512d9f07b69bfe03f1e75fa0e05184"
+  },
+  "fullVerification": {
+    "profile": "full",
+    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "fullReferenceCoverage": true,
+    "startedAt": "2026-10-18T01:54:55.172Z",
+    "finishedAt": "2026-10-18T02:12:00.108Z",
+    "passed": true
+  },
+  "testTotals": {
+    "tests": 1382,
+    "pass": 1382,
+    "fail": 0,
+    "skipped": 0
+  },
+  "stages": [
+    {
+      "id": "generate",
+      "status": "passed",
+      "durationMs": 687,
+      "summary": {}
+    },
+    {
+      "id": "migrate",
+      "status": "passed",
+      "durationMs": 437,
+      "summary": {}
+    },
+    {
+      "id": "seed",
+      "status": "passed",
+      "durationMs": 1479,
+      "summary": {}
+    },
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "durationMs": 9365,
+      "summary": {}
+    },
+    {
+      "id": "lint",
+      "status": "passed",
+      "durationMs": 4838,
+      "summary": {}
+    },
+    {
+      "id": "unit",
+      "status": "passed",
+      "durationMs": 23901,
+      "summary": {
+        "tests": 551,
+        "pass": 551,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "build",
+      "status": "passed",
+      "durationMs": 50264,
+      "summary": {}
+    },
+    {
+      "id": "audit",
+      "status": "passed",
+      "durationMs": 1283,
+      "summary": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    {
+      "id": "mobile-build",
+      "status": "passed",
+      "durationMs": 22009,
+      "summary": {
+        "checks": 5,
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0,
+        "bundle": true,
+        "audit": {
+          "rawVulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 49,
+            "critical": 0,
+            "total": 49
+          },
+          "backportedAdvisories": ["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"],
+          "patchedFilesVerified": 6,
+          "unmitigated": []
+        }
+      }
+    },
+    {
+      "id": "livekit-runtime",
+      "status": "passed",
+      "durationMs": 101,
+      "summary": {}
+    },
+    {
+      "id": "integration:android-protocol",
+      "status": "passed",
+      "durationMs": 1753,
+      "summary": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "trusted-references",
+      "status": "passed",
+      "durationMs": 69676,
+      "summary": {
+        "programsPassed": 176,
+        "casesPassed": 1280,
+        "languages": ["python", "javascript", "cpp", "java"],
+        "failures": 0
+      }
+    },
+    {
+      "id": "creative-expression-browser",
+      "status": "passed",
+      "durationMs": 10130,
+      "summary": {
+        "checksPassed": 10,
+        "expressionsPassed": 32,
+        "externalRequests": 0,
+        "pageErrors": 0
+      }
+    },
+    {
+      "id": "servers",
+      "status": "passed",
+      "durationMs": 2289
+    },
+    {
+      "id": "e2e",
+      "status": "passed",
+      "durationMs": 9397,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academic-goals.integration.ts",
+      "status": "passed",
+      "durationMs": 6242,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academic-records-export.integration.ts",
+      "status": "passed",
+      "durationMs": 9517,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academics-admission.integration.ts",
+      "status": "passed",
+      "durationMs": 661,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academics.integration.ts",
+      "status": "passed",
+      "durationMs": 6298,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:accounts.integration.ts",
+      "status": "passed",
+      "durationMs": 4949,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:admin-audit.integration.ts",
+      "status": "passed",
+      "durationMs": 6972,
+      "summary": {
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:admin-jobs.integration.ts",
+      "status": "passed",
+      "durationMs": 5540,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:ai-authoring.integration.ts",
+      "status": "passed",
+      "durationMs": 4901,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:ai-study.integration.ts",
+      "status": "passed",
+      "durationMs": 5143,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-forum.integration.ts",
+      "status": "passed",
+      "durationMs": 1382,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-history-filters.integration.ts",
+      "status": "passed",
+      "durationMs": 5902,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-training-plans.integration.ts",
+      "status": "passed",
+      "durationMs": 4920,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithms.integration.ts",
+      "status": "passed",
+      "durationMs": 4651,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:analytics.security.integration.ts",
+      "status": "passed",
+      "durationMs": 370,
+      "summary": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment-composition.integration.ts",
+      "status": "passed",
+      "durationMs": 225,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment.integration.ts",
+      "status": "passed",
+      "durationMs": 2337,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment.security.integration.ts",
+      "status": "passed",
+      "durationMs": 1295,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:auth-fixes.integration.ts",
+      "status": "passed",
+      "durationMs": 1433,
+      "summary": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:auth.security.integration.ts",
+      "status": "passed",
+      "durationMs": 2225,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:communication.integration.ts",
+      "status": "passed",
+      "durationMs": 15923,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:communication.security.integration.ts",
+      "status": "passed",
+      "durationMs": 764,
+      "summary": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:confusion-matrix.integration.ts",
+      "status": "passed",
+      "durationMs": 6689,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:creative.integration.ts",
+      "status": "passed",
+      "durationMs": 6963,
+      "summary": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:digital-logic.integration.ts",
+      "status": "passed",
+      "durationMs": 5123,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:exam-insights.integration.ts",
+      "status": "passed",
+      "durationMs": 858,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-action-filters.integration.ts",
+      "status": "passed",
+      "durationMs": 6024,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-actions.integration.ts",
+      "status": "passed",
+      "durationMs": 6144,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-overview.integration.ts",
+      "status": "passed",
+      "durationMs": 6923,
+      "summary": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:live-browser.integration.ts",
+      "status": "passed",
+      "durationMs": 68375,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:live.integration.ts",
+      "status": "passed",
+      "durationMs": 11694,
+      "summary": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:minimum-spanning-tree.integration.ts",
+      "status": "passed",
+      "durationMs": 5336,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-assignment-browser.integration.ts",
+      "status": "passed",
+      "durationMs": 5098,
+      "summary": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-assignments.integration.ts",
+      "status": "passed",
+      "durationMs": 4538,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-planner.integration.ts",
+      "status": "passed",
+      "durationMs": 3943,
+      "summary": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile.integration.ts",
+      "status": "passed",
+      "durationMs": 15220,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:notes.integration.ts",
+      "status": "passed",
+      "durationMs": 541,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:planner.integration.ts",
+      "status": "passed",
+      "durationMs": 404,
+      "summary": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:population-genetics.integration.ts",
+      "status": "passed",
+      "durationMs": 6169,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:programming.integration.ts",
+      "status": "passed",
+      "durationMs": 7900,
+      "summary": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:simpson-paradox.integration.ts",
+      "status": "passed",
+      "durationMs": 8580,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:upload-security.integration.ts",
+      "status": "passed",
+      "durationMs": 5070,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:worker-policy.integration.ts",
+      "status": "passed",
+      "durationMs": 21392,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "clean-start",
+      "status": "passed",
+      "durationMs": 8341,
+      "summary": {}
+    },
+    {
+      "id": "performance",
+      "status": "passed",
+      "durationMs": 211,
+      "summary": {
+        "requests": 100,
+        "errors": 0,
+        "concurrency": 10,
+        "latencyMs": {
+          "p50": 10,
+          "p95": 27,
+          "max": 32
+        }
+      }
+    },
+    {
+      "id": "browser",
+      "status": "passed",
+      "durationMs": 514086,
+      "summary": {
+        "total": 397,
+        "passed": 397,
+        "skipped": 0,
+        "failedOrIncomplete": []
+      }
+    }
+  ],
+  "androidDevice": {
+    "apkSha256": "afadb22a2156cc7b6ded5ce23740f647d801732232abe73a9861f3052510d3c3",
+    "passed": 30,
+    "failed": 0,
+    "skipped": 0,
+    "checks": [
+      "install, native login and learning home",
+      "course content and real cross-device progress",
+      "course-to-live navigation decodes and preserves the course filter",
+      "secure session survives process restart",
+      "native personal plan creation is synchronized with website",
+      "website/native revision conflict preserves latest data and explicitly reloads",
+      "native completion and reopen persist on both devices",
+      "native confirmed deletion removes website task",
+      "native unsaved plan discard confirmation preserves editing and never submits silently",
+      "native overdue action completes with server revision and disappears from pending list",
+      "native course picker and personal source filter cannot combine incompatible filters",
+      "native six question controls preserve unsaved answers behind a leave confirmation",
+      "native all-type draft is persisted and readable on website",
+      "Android system picker uploads a scoped private attachment and download opens the OS chooser",
+      "cross-device revision conflict reload and explicit native formal submission",
+      "unpublished grading stays hidden and released feedback appears in native history",
+      "native history reuse creates a controlled immutable second version and enforces attempt limit",
+      "native WebRTC receives real audio and decodes video",
+      "native classroom chat persisted",
+      "OS camera permission denial preserves classroom viewing",
+      "teacher approval and native camera/microphone publish real RTP",
+      "teacher revocation enforces server media permissions",
+      "background stops capture and releases classroom",
+      "logout revokes device session",
+      "relogin after native logout",
+      "native scheduling prevents overlapping course broadcasts",
+      "native teacher starts scheduled class",
+      "native teacher enters hosted classroom",
+      "native teacher ends class and releases media",
+      "native teacher logout preserves website session"
+    ],
+    "apiAndMedia": "isolated real PostgreSQL and LiveKit",
+    "device": "Android 12 arm64 emulator; synthetic cameras, host microphone disabled"
+  },
+  "apks": [
+    {
+      "package": "cn.huiliyi.study.preview",
+      "signatureVerified": true,
+      "cleartextAllowed": false,
+      "backupAllowed": false,
+      "debuggable": false,
+      "bundled": true,
+      "sha256": "0a8efe6caeb8b78fb2b3e7b778984e798445467bb119d4d33e68d420bc2550ab",
+      "localPreview": false,
+      "signing": "public Android debug key; preview only",
+      "architecture": "arm64-v8a",
+      "filename": "zhixue-preview-arm64.apk",
+      "bytes": 54015377,
+      "version": "0.2.0",
+      "versionCode": 2
+    },
+    {
+      "package": "cn.huiliyi.study.preview",
+      "signatureVerified": true,
+      "cleartextAllowed": true,
+      "backupAllowed": false,
+      "debuggable": false,
+      "bundled": true,
+      "sha256": "afadb22a2156cc7b6ded5ce23740f647d801732232abe73a9861f3052510d3c3",
+      "localPreview": true,
+      "signing": "public Android debug key; preview only",
+      "architecture": "arm64-v8a",
+      "filename": "zhixue-local-preview-arm64.apk",
+      "bytes": 54017605,
+      "version": "0.2.0",
+      "versionCode": 2
+    }
+  ],
+  "databaseMigrationRequired": false,
+  "supplementalValidation": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "sourceSha256": "40df2e2384057a7306abe329431d74104b3e6b3271db54ebe9ff5cde34e86a30",
+    "reason": "Verify actual input before submission, retry only the driver input if Android drops keys, dismiss only a visible keyboard; start empty media room immediately before media acceptance"
+  },
+  "permissionAndConcurrencyChecks": [
+    "Student MOBILE session only; exact assignment routes; general files, grading, roster and other accounts remain inaccessible",
+    "Draft revision and latest submission version checked under per-assignment/user transaction lock; stale concurrent native and web writes rejected",
+    "Session, role, current enrollment, audience, opening/deadline, exemptions and permitted attempts checked after lock acquisition",
+    "Fixed idempotency payload retries return the same immutable submission even after draft deletion or deadline; changed payload rejected",
+    "Cross-device Chromium browser test confirms stale website submission cannot overwrite native draft or consume another attempt",
+    "Upload admission, actual file type, quota and ownership reused; cross-assignment and cross-student file access rejected",
+    "Private storage I/O errors during permission recheck yield safe errors and keep the API healthy without leaking paths",
+    "Expo 56 asynchronous file copy awaited and Blob-compatible File uploaded; logout/account changes during copy stop the upload",
+    "Unpublished score, comments, grading records and question reference answers remain hidden; published composite child references displayed",
+    "All six native answer controls, unsaved leave prompt, OS file picker/chooser, grade release, history reuse and attempt limit exercised on actual emulator",
+    "Existing native session, course progress, planner, real bidirectional LiveKit audio/video, teacher revocation, background cleanup and logout all revalidated"
+  ],
+  "scope": [
+    "Native student assignment list/search/page and home/course/planner navigation without WebView",
+    "Native single, multiple, boolean, blank, short and composite questions; drafts, private file upload/download, explicit submit, resubmit and released feedback",
+    "Website submission now sends draft and submission concurrency preconditions; legacy API clients remain compatible"
+  ],
+  "resolvedDuringAcceptance": [
+    "Async File.copy was originally not awaited; now covered by delayed-copy and identity-change unit regressions",
+    "Expo 56 fetch rejects legacy URI-only multipart parts; replaced with SDK File/Blob-compatible form data and verified through Android OS picker",
+    "Guarded early disk-stream errors across asynchronous permission rechecks and sanitized download failures",
+    "Device automation now waits for keyboard transitions and starts the empty media room immediately before media acceptance; final runner lint/typecheck rerun separately and all native checks rerun"
+  ],
+  "limits": [
+    "Whole-site native migration remains in progress; see docs/mobile-migration.md",
+    "Teacher authoring/grading/publishing, exams, course video, course files, algorithms, programming, academic and management modules are not completed by this iteration",
+    "Private/relative inline images currently show a placeholder; public HTTPS images and authorized assignment attachment downloads are supported",
+    "Unknown submission recovery stays in memory for the current login/process; after restart inspect submission history first",
+    "Android 12 arm64 emulator with synthetic media; physical devices, external document apps, acoustics, Bluetooth, cellular and TURN need hardware acceptance",
+    "Preview APK uses the public Android debug key and is not a store release; iOS has not been built",
+    "Native raw audit retains inherited advisories; fingerprinted backports verified and no unmitigated findings accepted",
+    "Production API must be updated for the new native assignment routes; local demo accounts and server accounts are separate; no automatic server deployment"
+  ],
+  "research": [
+    "https://docs.moodle.org/en/Assignment_activity",
+    "https://docs.expo.dev/versions/v56.0.0/sdk/document-picker/",
+    "https://docs.expo.dev/versions/v56.0.0/sdk/filesystem/",
+    "https://docs.expo.dev/versions/v56.0.0/sdk/sharing/"
+  ],
+  "privacy": "Isolated disposable PostgreSQL/API/LiveKit fixtures; no paid AI/Judge calls, production data changes, secrets, private deployment configuration, environment files or databases included"
+}

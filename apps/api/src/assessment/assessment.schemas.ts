@@ -122,9 +122,11 @@ export const submissionSchema = z.object({
   answers: z.array(answerSchema).max(200),
   attachmentIds: z.array(id).max(20).default([]),
   idempotencyKey: z.string().min(8).max(128),
+  expectedDraftRevision: z.number().int().min(0).optional(),
+  expectedSubmissionVersion: z.number().int().min(0).optional(),
 });
 export const draftSchema = submissionSchema
-  .omit({ idempotencyKey: true })
+  .omit({ idempotencyKey: true, expectedDraftRevision: true, expectedSubmissionVersion: true })
   .extend({ revision: z.number().int().min(0) });
 export const gradeSchema = z.object({
   revision: z.number().int().min(0),
