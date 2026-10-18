@@ -107,7 +107,14 @@ function tap(n: Record<string, string>) {
   assert.ok(b?.length === 4);
   run('shell', 'input', 'tap', String(Math.floor((b[0] + b[2]) / 2)), String(Math.floor((b[1] + b[3]) / 2)));
 }
+async function dismissKeyboard() {
+  if (/\bmInputShown=true\b/.test(run('shell', 'dumpsys', 'input_method'))) {
+    run('shell', 'input', 'keyevent', '4');
+    await liveWait(300);
+  }
+}
 async function click(label: string) {
+  await dismissKeyboard();
   tap(await find(label));
   await liveWait(400);
 }
@@ -144,6 +151,8 @@ function screenshot(name: string) {
   writeFileSync(resolve(output, name + '.png'), data);
 }
 async function scroll(label: string, completedLabel?: string) {
+  // A restored focused field can reopen the IME; page controls must be unobscured.
+  await dismissKeyboard();
   for (const direction of ['down', 'up'])
     for (let i = 0; i < 8; i++) {
       const current = nodes();
@@ -716,6 +725,245 @@ async function main() {
     );
     await scroll('已达提交次数上限，可向教师申请重交。');
     passed('native history reuse creates a controlled immutable second version and enforces attempt limit');
+    await click('首页');
+
+    const examQuestionIds: string[] = [];
+    for (const [i, typeName] of ['single', 'multiple', 'boolean', 'blank', 'short', 'composite'].entries()) {
+      const question = (
+        await f.call(f.clients.teacher, '/questions', 'POST', {
+          courseId: f.course.id,
+          type: typeName,
+          stem: '<p>Android-exam-question-' + i + '</p>',
+          scoreCents: 100,
+          options: ['single', 'multiple'].includes(typeName)
+            ? [
+                { id: 'A', text: 'Alpha' },
+                { id: 'B', text: 'Beta' },
+              ]
+            : [],
+          answer:
+            typeName === 'multiple'
+              ? ['A', 'B']
+              : typeName === 'boolean'
+                ? false
+                : typeName === 'blank'
+                  ? [['one']]
+                  : typeName === 'composite'
+                    ? {}
+                    : 'A',
+          children:
+            typeName === 'composite'
+              ? [
+                  {
+                    id: 'child',
+                    type: 'short',
+                    stem: '<p>Android-child</p>',
+                    answer: 'reference',
+                    scoreCents: 100,
+                  },
+                ]
+              : [],
+          explanation: 'Android-released-explanation',
+        })
+      ).body;
+      examQuestionIds.push(question.versions[0].id);
+    }
+
+    const exam = (
+      await f.call(f.clients.teacher, '/exams', 'POST', {
+        courseId: f.course.id,
+        title: 'Android-native-exam',
+        startsAt: new Date(Date.now() - 60000).toISOString(),
+        endsAt: new Date(Date.now() + 3600000).toISOString(),
+        entryClosesAt: new Date(Date.now() + 1800000).toISOString(),
+        durationMinutes: 20,
+        passCents: 100,
+        maxAttempts: 1,
+        graderIds: [f.users.teacher.id],
+        questionVersionIds: examQuestionIds,
+        audienceIds: [f.users.student.id],
+      })
+    ).body;
+    await f.call(f.clients.teacher, '/exams/' + exam.id + '/publish', 'POST');
+    await scroll('我的考试');
+    await scroll('打开考试：' + exam.title);
+    await scroll('开始考试');
+    await click('开始作答');
+    await scroll('考试第1题：Alpha');
+    await scroll('标记本题');
+    await scroll('下一题');
+    await scroll('考试第2题：Alpha');
+    await scroll('考试第2题：Beta');
+    await scroll('下一题');
+    await scroll('考试第3题：错误');
+    await scroll('下一题');
+    await scroll('考试第4题答案');
+    await type('考试第4题答案', 'one');
+    await scroll('下一题');
+    await scroll('考试第5题答案');
+    await type('考试第5题答案', 'Android-exam-essay');
+    await scroll('下一题');
+    await scroll('考试第6题-子题1答案');
+    await type('考试第6题-子题1答案', 'Android-exam-child');
+    await scroll('保存考试答案');
+    let attempt = await poll(
+      () =>
+        f.db.examAttempt.findFirst({
+          where: { examId: exam.id, userId: f.users.student.id },
+          include: { answers: true },
+        }),
+      (p) => !!p && p.answers.length === 6,
+      'Native exam six answers missing',
+    );
+    const actual = Object.fromEntries(attempt!.answers.map((x) => [x.questionVersionId, x.value]));
+    assert.deepEqual(
+      examQuestionIds.map((id) => actual[id]),
+      ['A', ['A', 'B'], false, ['one'], 'Android-exam-essay', { child: 'Android-exam-child' }],
+    );
+    assert.deepEqual(attempt!.flags, [examQuestionIds[0]]);
+    passed(
+      'native exam starts one server-timed attempt and autosaves all six answer types, flags and position',
+    );
+    await click('首页');
+    await find('离开考试？');
+    await click('继续作答');
+    passed('native in-progress exam exit explains continuing timer and protects unsynced work');
+    run('shell', 'am', 'force-stop', pkg);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+    await scroll('我的考试');
+    await scroll('打开考试：' + exam.title);
+    await scroll('继续本次考试');
+    await scroll('考试第6题-子题1答案');
+    assert.equal((await find('考试第6题-子题1答案')).text, 'Android-exam-child');
+    assert.equal(await f.db.examAttempt.count({ where: { examId: exam.id, userId: f.users.student.id } }), 1);
+    await click('计划');
+    await click('保存后离开');
+    await scroll('课程考试');
+    await scroll('继续答卷');
+    await scroll('考试第6题-子题1答案');
+    assert.equal((await find('考试第6题-子题1答案')).text, 'Android-exam-child');
+    passed('native exam restart and planner link resume saved answers and position without another attempt');
+    run('shell', 'input', 'keyevent', '3');
+    await liveWait(700);
+    attempt = await f.db.examAttempt.findUniqueOrThrow({
+      where: { id: attempt!.id },
+      include: { answers: true },
+    });
+    await f.call(f.clients.student, '/attempts/' + attempt.id + '/answers', 'PUT', {
+      revision: attempt.revision,
+      answers: [{ questionVersionId: examQuestionIds[5], value: { child: 'Website-new-answer' } }],
+    });
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await scroll('答卷已在其他设备更新，请核对并重新加载服务器答卷。');
+    await scroll('重新加载服务器答卷');
+    await click('以服务器为准');
+    await scroll('考试第6题-子题1答案');
+    assert.equal((await find('考试第6题-子题1答案')).text, 'Website-new-answer');
+    passed(
+      'native exam foreground rechecks server revision and requires explicit reload after website edits',
+    );
+    await scroll('交卷');
+    await click('确认交卷');
+    await scroll('服务器已接收答卷');
+    assert.equal(
+      (await f.db.examAttempt.findUniqueOrThrow({ where: { id: attempt.id } })).status,
+      'submitted',
+    );
+    assert.equal(await f.db.auditLog.count({ where: { action: 'exam.submit', resourceId: attempt.id } }), 1);
+    assert.equal(
+      nodes().some((n) => n.text === 'Android-released-explanation'),
+      false,
+    );
+    passed(
+      'native exam submission displays server receipt while unpublished grading and answer keys remain hidden',
+    );
+    await f.db.exam.update({
+      where: { id: exam.id },
+      data: {
+        endsAt: new Date(Date.now() - 1000),
+        entryClosesAt: new Date(Date.now() - 2000),
+        scoreReleaseAt: new Date(Date.now() - 1000),
+        answerReleaseAt: new Date(Date.now() - 1000),
+        explanationReleaseAt: new Date(Date.now() - 1000),
+      },
+    });
+    await f.db.examAttempt.update({
+      where: { id: attempt.id },
+      data: { scoreCents: 500, gradingStatus: 'graded', feedback: 'Android-exam-feedback' },
+    });
+    await f.call(f.clients.teacher, '/exams/' + exam.id + '/release', 'POST');
+    await scroll('核对服务器回执');
+    await scroll('考试得分：5');
+    screenshot('android-exam-result');
+    await scroll('Android-released-explanation');
+    passed('native released exam score, feedback and reference review follow teacher publication');
+    await click('首页');
+    const seqIds: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      const q = (
+        await f.call(f.clients.teacher, '/questions', 'POST', {
+          courseId: f.course.id,
+          type: 'single',
+          stem: 'Sequential-native-' + i,
+          scoreCents: 100,
+          options: [
+            { id: 'A', text: 'Alpha' },
+            { id: 'B', text: 'Beta' },
+          ],
+          answer: 'A',
+        })
+      ).body;
+      seqIds.push(q.versions[0].id);
+    }
+    const seq = (
+      await f.call(f.clients.teacher, '/exams', 'POST', {
+        courseId: f.course.id,
+        title: 'Android-sequential-exam',
+        startsAt: new Date(Date.now() - 60000).toISOString(),
+        endsAt: new Date(Date.now() + 3600000).toISOString(),
+        entryClosesAt: new Date(Date.now() + 1800000).toISOString(),
+        durationMinutes: 20,
+        passCents: 100,
+        allowBacktrack: false,
+        questionVersionIds: seqIds,
+        audienceIds: [f.users.student.id],
+      })
+    ).body;
+    await f.call(f.clients.teacher, '/exams/' + seq.id + '/publish', 'POST');
+    await scroll('我的考试');
+    await scroll('打开考试：' + seq.title);
+    await scroll('开始考试');
+    await click('开始作答');
+    await scroll('考试第1题：Alpha');
+    await scroll('下一题');
+    await click('进入下一题');
+    await scroll('考试第2题：Beta');
+    assert.equal((await find('上一题')).enabled, 'false');
+    const seqAttempt = await f.db.examAttempt.findFirstOrThrow({
+      where: { examId: seq.id, userId: f.users.student.id },
+    });
+    assert.equal(seqAttempt.currentPosition, 1);
+    passed('native sequential exams confirm irreversible navigation and disable backtracking');
+    await scroll('保存考试答案');
+    await poll(
+      () => f.db.examAnswer.count({ where: { attemptId: seqAttempt.id } }),
+      (n) => n === 2,
+      'Sequential exam save missing',
+    );
+    run('shell', 'input', 'keyevent', '3');
+    await liveWait(700);
+    await f.db.examAttempt.update({
+      where: { id: seqAttempt.id },
+      data: { deadlineAt: new Date(Date.now() - 1000) },
+    });
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await scroll('服务器已到时交卷');
+    assert.equal(
+      (await f.db.examAttempt.findUniqueOrThrow({ where: { id: seqAttempt.id } })).status,
+      'timed_out',
+    );
+    passed('native exam returning from background observes server deadline and immutable timeout receipt');
     await click('首页');
 
     await f.call(f.clients.teacher, `/live/classes/${live.id}/start`, 'POST', { revision: live.revision });

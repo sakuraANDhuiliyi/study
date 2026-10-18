@@ -1,3 +1,4 @@
+import { nativeExamPage } from './exam-model';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -362,6 +363,14 @@ function AssessmentLink({
   nativeAssignments?: boolean;
 }) {
   const target = assessmentPage(path);
+  const examTarget = nativeExamPage(target);
+  if (nativeAssignments && examTarget)
+    return (
+      <Button
+        title={title === '查看详情' ? '打开考试' : title}
+        onPress={() => router.replace(examTarget as never)}
+      />
+    );
   if (nativeAssignments && target?.startsWith('/assignments/'))
     return (
       <Button

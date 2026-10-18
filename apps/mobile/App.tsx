@@ -24,6 +24,7 @@ import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { Exams, Exam, ExamAnswer } from './src/Exams';
 import { Lesson } from './src/Lesson';
 import { clearLessonTransfers } from './src/lesson-files';
 import { clearAssignmentTransfers } from './src/assignment-files';
@@ -104,10 +105,11 @@ type Member = {
   state: string;
 };
 type Route =
-  | { name: 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments'; courseId?: string }
+  | { name: 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments' | 'exams'; courseId?: string }
   | { name: 'course'; id: string }
   | { name: 'classroom'; id: string }
-  | { name: 'assignment'; id: string };
+  | { name: 'assignment'; id: string }
+  | { name: 'exam' | 'examAttempt'; id: string };
 
 const AuthContext = createContext<{ client: MobileClient; user: MobileUser } | null>(null);
 export default function App() {
@@ -278,15 +280,18 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           ? '/courses/[id]'
           : next.name === 'assignment'
             ? '/assignments/[id]'
-            : next.name === 'classroom'
-              ? '/live/[id]'
-              : '/' + next.name;
-    const params =
-      next.name === 'course' || next.name === 'classroom' || next.name === 'assignment'
-        ? { id: next.id }
-        : (next.name === 'live' || next.name === 'assignments') && next.courseId
-          ? { courseId: next.courseId }
-          : {};
+            : next.name === 'exam'
+              ? '/exams/[id]'
+              : next.name === 'examAttempt'
+                ? '/exam-attempts/[id]'
+                : next.name === 'classroom'
+                  ? '/live/[id]'
+                  : '/' + next.name;
+    const params = ['course', 'classroom', 'assignment', 'exam', 'examAttempt'].includes(next.name)
+      ? { id: (next as { id: string }).id }
+      : (next.name === 'live' || next.name === 'assignments' || next.name === 'exams') && next.courseId
+        ? { courseId: next.courseId }
+        : {};
     router.replace({ pathname, params } as never);
   };
   const setRoute = (next: Route) => {
@@ -296,10 +301,15 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
   const canLive = user.accountMode !== 'PERSONAL';
   const selected = (name: string) =>
     route.name === name ||
-    (name === 'courses' && ['course', 'assignments', 'assignment'].includes(route.name)) ||
+    (name === 'courses' &&
+      ['course', 'assignments', 'assignment', 'exams', 'exam', 'examAttempt'].includes(route.name)) ||
     (name === 'live' && route.name === 'classroom');
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (route.name === 'exam' || route.name === 'examAttempt') {
+        setRoute({ name: 'exams' });
+        return true;
+      }
       if (route.name === 'assignment') {
         setRoute({ name: 'assignments' });
         return true;
@@ -325,15 +335,17 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           ? '互动直播'
           : route.name === 'assignments' || route.name === 'assignment'
             ? '我的作业'
-            : route.name === 'planner'
-              ? '学习计划'
-              : '我的空间';
+            : ['exams', 'exam', 'examAttempt'].includes(route.name)
+              ? '我的考试'
+              : route.name === 'planner'
+                ? '学习计划'
+                : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
         <Pressable
           accessibilityLabel={
-            route.name === 'course' || route.name === 'classroom' || route.name === 'assignment'
+            ['course', 'classroom', 'assignment', 'exam', 'examAttempt'].includes(route.name)
               ? '返回列表'
               : '知学首页'
           }
@@ -346,14 +358,14 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                     ? 'live'
                     : route.name === 'assignment'
                       ? 'assignments'
-                      : 'home',
+                      : route.name === 'exam' || route.name === 'examAttempt'
+                        ? 'exams'
+                        : 'home',
             })
           }
         >
           <Text style={s.headerLogo}>
-            {route.name === 'course' || route.name === 'classroom' || route.name === 'assignment'
-              ? '‹'
-              : '知'}
+            {['course', 'classroom', 'assignment', 'exam', 'examAttempt'].includes(route.name) ? '‹' : '知'}
           </Text>
         </Pressable>
         <Text style={s.headerTitle}>{heading}</Text>
@@ -378,6 +390,15 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
         )}
         {route.name === 'assignment' && (
           <Assignment key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
+        )}
+        {route.name === 'exams' && (
+          <Exams client={client} courseId={route.courseId} open={(id) => setRoute({ name: 'exam', id })} />
+        )}
+        {route.name === 'exam' && (
+          <Exam client={client} id={route.id} openAttempt={(id) => setRoute({ name: 'examAttempt', id })} />
+        )}
+        {route.name === 'examAttempt' && (
+          <ExamAnswer key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
         )}
         {route.name === 'planner' && <StudyPlan client={client} user={user} />}
         {route.name === 'courses' && <Courses client={client} navigate={setRoute} />}
@@ -415,7 +436,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 }}
               />
             </View>
-            <Text style={s.small}>知学 Android · 预览版 0.2.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
+            <Text style={s.small}>知学 Android · 预览版 0.4.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
           </ScrollView>
         )}
       </View>
@@ -435,7 +456,10 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             accessibilityState={{
               selected:
                 route.name === tab.name ||
-                (tab.name === 'courses' && ['course', 'assignments', 'assignment'].includes(route.name)) ||
+                (tab.name === 'courses' &&
+                  ['course', 'assignments', 'assignment', 'exams', 'exam', 'examAttempt'].includes(
+                    route.name,
+                  )) ||
                 (tab.name === 'live' && route.name === 'classroom'),
             }}
             key={tab.name}
@@ -500,6 +524,14 @@ function Home({
           caption="作答、提交与成绩反馈"
           icon="✎"
           onPress={() => navigate({ name: 'assignments' })}
+        />
+      )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="我的考试"
+          caption="限时作答与成绩回执"
+          icon="✓"
+          onPress={() => navigate({ name: 'exams' })}
         />
       )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />
@@ -588,6 +620,13 @@ function CourseDetail({
               onPress={() => navigate({ name: 'assignments', courseId: id })}
             />
           )}
+          {user.role === 'STUDENT' && (
+            <Button
+              title="查看课程考试"
+              secondary
+              onPress={() => navigate({ name: 'exams', courseId: id })}
+            />
+          )}
           <Button title="查看课程直播" secondary onPress={() => navigate({ name: 'live', courseId: id })} />
           {lesson &&
             (user.role === 'STUDENT' ? (
@@ -603,6 +642,13 @@ function CourseDetail({
               title="在手机网页查看完整课程"
               secondary
               onPress={() => void Linking.openURL(client.origin + '/courses/' + encodeURIComponent(id))}
+            />
+          )}
+          {user.role === 'STUDENT' && (
+            <Button
+              title="查看课程考试"
+              secondary
+              onPress={() => navigate({ name: 'exams', courseId: id })}
             />
           )}
           {c.chapters?.map((ch) => (

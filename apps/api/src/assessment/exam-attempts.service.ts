@@ -4,11 +4,14 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { z } from 'zod';
 import { Actor } from '../auth/auth.guard';
 import { AssessmentContext } from './assessment-context';
-import { content, json, secureShuffle } from './assessment-values';
+import { AuthService } from '../auth/auth.service';
+import { PrismaService } from '../common/prisma.service';
+import { content, json, secureShuffle, type Tx } from './assessment-values';
 import * as schema from './assessment.schemas';
 import { ExamAccessService } from './exam-access.service';
 import { autoScore, personalDeadline, publicQuestion } from './scoring';
@@ -20,6 +23,23 @@ export class ExamAttemptsService {
     private readonly access: ExamAccessService,
   ) {}
 
+  /** Recheck session and course on the locked transaction connection, including queued requests. */
+  private async currentWriter(actor: Actor, courseId: string, tx: Tx) {
+    const auth = new AuthService(tx as PrismaService);
+    const fresh = actor.sessionId ? await auth.resolveSessionId(actor.sessionId) : null;
+    if (
+      !fresh ||
+      fresh.id !== actor.id ||
+      fresh.role !== actor.role ||
+      fresh.organizationId !== actor.organizationId ||
+      fresh.clientType !== actor.clientType ||
+      fresh.csrfToken !== actor.csrfToken
+    )
+      throw new UnauthorizedException('身份或会话已变化，请重新登录');
+    auth.require(fresh, 'learning.use');
+    await auth.course(fresh, courseId);
+  }
+
   async startExam(actor: Actor, id: string) {
     this.context.require(actor, 'learning.use');
     const exam = await this.access.examAccess(actor, id);
@@ -27,6 +47,7 @@ export class ExamAttemptsService {
     const attempt = await this.context.db.$transaction(async (tx) => {
       await this.context.lock(tx, `exam-lifecycle:${id}`);
       await this.context.lock(tx, `exam-start:${id}:${actor.id}`);
+      await this.currentWriter(actor, exam.courseId, tx);
       const lifecycle = await tx.exam.findUniqueOrThrow({ where: { id } });
       if (lifecycle.status !== 'published' || lifecycle.gradesReleasedAt)
         throw new ConflictException('考试已取消或成绩已发布，不能继续开始考试');
@@ -190,6 +211,7 @@ export class ExamAttemptsService {
         where: { id },
         include: { exam: { include: { audience: true } } },
       });
+      await this.currentWriter(actor, current.exam.courseId, tx);
       if (
         current.exam.status !== 'published' ||
         !current.exam.audience.some((row) => row.userId === actor.id && row.eligible)
@@ -233,7 +255,7 @@ export class ExamAttemptsService {
   }
 
   /** The row claim serializes manual submit, deadline submit, autosave, and marking. */
-  async finalizeAttempt(id: string, source: 'manual' | 'deadline', key?: string) {
+  async finalizeAttempt(id: string, source: 'manual' | 'deadline', key?: string, actor?: Actor) {
     return this.context.db.$transaction(
       async (tx) => {
         await tx.$queryRaw`SELECT id FROM "ExamAttempt" WHERE id = ${id} FOR UPDATE`;
@@ -242,6 +264,15 @@ export class ExamAttemptsService {
           include: { exam: { include: { snapshot: { include: { items: true } } } } },
         });
         if (!initial) throw new NotFoundException('答卷不存在');
+        if (actor) {
+          await this.currentWriter(actor, initial.exam.courseId, tx);
+          if (initial.userId !== actor.id) throw new ForbiddenException('只能提交本人答卷');
+          const eligible = await tx.examAudience.findUnique({
+            where: { examId_userId: { examId: initial.examId, userId: actor.id } },
+          });
+          if (initial.exam.status !== 'published' || !eligible?.eligible)
+            throw new ForbiddenException('考试已取消或资格已撤销');
+        }
         if (initial.status !== 'in_progress') return initial;
         if (source === 'deadline' && initial.deadlineAt > new Date()) return initial;
         const timedOut = initial.deadlineAt <= new Date();
@@ -301,7 +332,7 @@ export class ExamAttemptsService {
     const attempt = await this.access.attemptAccess(actor, id);
     if (attempt.userId !== actor.id) throw new ForbiddenException('只能提交本人答卷');
     if (attempt.status === 'cancelled') throw new ConflictException('考试或个人资格已取消');
-    await this.finalizeAttempt(id, 'manual', key);
+    await this.finalizeAttempt(id, 'manual', key, actor);
     return this.attempt(actor, id);
   }
 }
