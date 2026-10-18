@@ -218,8 +218,11 @@ async function practice(page: Page) {
 }
 async function loadExample(page: Page, name: string) {
   await page.getByRole('button', { name, exact: true }).click();
-  await page.getByRole('tooltip').getByRole('button', { name: '载入示例', exact: true }).click();
-  await expect(page.getByRole('tooltip')).toBeHidden();
+  const confirmation = page.getByRole('tooltip').filter({
+    has: page.getByRole('button', { name: '载入示例', exact: true }),
+  });
+  await confirmation.getByRole('button', { name: '载入示例', exact: true }).click();
+  await expect(confirmation).toBeHidden();
 }
 async function checkTooltip(
   page: Page,

@@ -9,7 +9,7 @@ import { pipeline } from 'node:stream/promises';
 export interface PrivateStorage {
   put(key: string, bytes: Buffer): Promise<void>;
   putStream(key: string, stream: Readable): Promise<void>;
-  get(key: string): ReadStream;
+  get(key: string, range?: { start: number; end: number }): ReadStream;
   delete(key: string): Promise<void>;
 }
 
@@ -38,8 +38,8 @@ export class LocalPrivateStorage implements PrivateStorage {
       throw error;
     }
   }
-  get(key: string): ReadStream {
-    return createReadStream(this.path(key));
+  get(key: string, range?: { start: number; end: number }): ReadStream {
+    return createReadStream(this.path(key), range);
   }
   async delete(key: string): Promise<void> {
     await unlink(this.path(key)).catch((error: NodeJS.ErrnoException) => {

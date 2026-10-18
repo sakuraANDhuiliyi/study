@@ -24,6 +24,8 @@ import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { Lesson } from './src/Lesson';
+import { clearLessonTransfers } from './src/lesson-files';
 import { clearAssignmentTransfers } from './src/assignment-files';
 import { LiveRoom, type Admission } from './src/LiveRoom';
 import { permissionPrompts } from './src/permission-lifecycle';
@@ -65,10 +67,10 @@ type Course = {
   progressPercent: number;
   totalLessons: number;
   completedLessons: number;
-  chapters?: { id: string; title: string; lessons: Lesson[] }[];
+  chapters?: { id: string; title: string; lessons: CourseLesson[] }[];
   progress?: { completed: number; total: number; percent: number };
 };
-type Lesson = {
+type CourseLesson = {
   id: string;
   title: string;
   content: string;
@@ -123,6 +125,7 @@ function Application() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     clearAssignmentTransfers();
+    clearLessonTransfers();
   }, [user?.id, client?.origin]);
   const [error, setError] = useState('');
   const [server, setServer] = useState(defaultOrigin),
@@ -558,7 +561,6 @@ function CourseDetail({
 }) {
   const q = useResource<Course>(client, '/courses/' + encodeURIComponent(id));
   const [lessonId, setLessonId] = useState('');
-  const [busy, setBusy] = useState(false);
   const c = q.data;
   const all = c?.chapters?.flatMap((x) => x.lessons) || [],
     lesson = all.find((x) => x.id === lessonId);
@@ -587,44 +589,21 @@ function CourseDetail({
             />
           )}
           <Button title="查看课程直播" secondary onPress={() => navigate({ name: 'live', courseId: id })} />
+          {lesson &&
+            (user.role === 'STUDENT' ? (
+              <Lesson key={lesson.id} client={client} id={lesson.id} onSaved={q.reload} />
+            ) : (
+              <View style={s.card}>
+                <Text style={s.sectionTitle}>{lesson.title}</Text>
+                <Text style={s.body}>{plainText(lesson.content)}</Text>
+              </View>
+            ))}
           {lesson && (
-            <View style={s.card}>
-              <Text style={s.sectionTitle}>{lesson.title}</Text>
-              <Text selectable style={s.lessonText}>
-                {plainText(lesson.content) || '本课时暂无文字内容。'}
-              </Text>
-              {lesson.type !== 'TEXT' && (
-                <Text style={s.small}>
-                  视频和附件可在手机网页中查看；手机 App 完整课件阅读会在后续版本补充。
-                </Text>
-              )}
-              {user.role === 'STUDENT' && (
-                <Button
-                  title={busy ? '正在保存…' : lesson.progress?.completed ? '取消完成标记' : '我已完成学习'}
-                  disabled={busy}
-                  onPress={() => {
-                    setBusy(true);
-                    void client
-                      .request(
-                        `/lessons/${encodeURIComponent(lesson.id)}/progress`,
-                        {
-                          completed: !lesson.progress?.completed,
-                          positionSeconds: lesson.progress?.positionSeconds || 0,
-                        },
-                        'PUT',
-                      )
-                      .then(q.reload)
-                      .catch((e) => Alert.alert('保存失败', e.message))
-                      .finally(() => setBusy(false));
-                  }}
-                />
-              )}
-              <Button
-                title="在手机网页查看完整课程"
-                secondary
-                onPress={() => void Linking.openURL(client.origin + '/courses/' + encodeURIComponent(id))}
-              />
-            </View>
+            <Button
+              title="在手机网页查看完整课程"
+              secondary
+              onPress={() => void Linking.openURL(client.origin + '/courses/' + encodeURIComponent(id))}
+            />
           )}
           {c.chapters?.map((ch) => (
             <View key={ch.id} style={s.card}>

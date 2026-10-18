@@ -232,6 +232,8 @@ export function CourseDetail() {
   const [memberPage, setMemberPage] = useState(1);
   const members = useData(`/courses/${id}/members?page=${memberPage}&pageSize=20`, teacher);
   const positions = useRef<Record<string, number>>({});
+  const progressWrites = useRef<Record<string, boolean>>({});
+  const [progressSaving, setProgressSaving] = useState(false);
   const [lessonParams, setLessonParams] = useSearchParams();
   const [dialog, setDialog] = useState<string>();
   const [chapterId, setChapterId] = useState('');
@@ -506,17 +508,33 @@ export function CourseDetail() {
                                     positions.current[lesson.id] = Math.floor(video.currentTime);
                                     if (
                                       !teacher &&
+                                      !video.paused &&
+                                      !video.seeking &&
                                       Math.floor(video.currentTime) % 30 === 0 &&
+                                      !progressWrites.current[lesson.id] &&
                                       Number(video.dataset.savedSecond) !== Math.floor(video.currentTime)
                                     ) {
+                                      progressWrites.current[lesson.id] = true;
+                                      setProgressSaving(true);
                                       video.dataset.savedSecond = String(Math.floor(video.currentTime));
                                       api(`/lessons/${lesson.id}/progress`, {
                                         method: 'PUT',
                                         body: JSON.stringify({
                                           positionSeconds: Math.floor(video.currentTime),
                                           completed: !!lesson.progress?.completed,
+                                          expectedUpdatedAt: lesson.progress?.updatedAt ?? null,
                                         }),
-                                      }).catch(() => {});
+                                      })
+                                        .then(() => query.refetch())
+                                        .catch((e) => {
+                                          video.pause();
+                                          message.error(e.message);
+                                          void query.refetch();
+                                        })
+                                        .finally(() => {
+                                          progressWrites.current[lesson.id] = false;
+                                          setProgressSaving(false);
+                                        });
                                     }
                                   }}
                                 />
@@ -570,7 +588,7 @@ export function CourseDetail() {
                                 <Button
                                   type="primary"
                                   loading={action.isPending}
-                                  disabled={teacher}
+                                  disabled={teacher || progressSaving}
                                   title={teacher ? '教师预览课时，不记录个人学习进度' : undefined}
                                   onClick={() =>
                                     action.mutate({
@@ -578,6 +596,7 @@ export function CourseDetail() {
                                       method: 'PUT',
                                       body: {
                                         completed: !lesson.progress?.completed,
+                                        expectedUpdatedAt: lesson.progress?.updatedAt ?? null,
                                         positionSeconds:
                                           positions.current[lesson.id] ??
                                           lesson.progress?.positionSeconds ??

@@ -16,6 +16,7 @@ import {
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { saveLessonProgress } from './lesson-progress';
 import { PrismaService } from '../common/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
@@ -395,19 +396,7 @@ export class CoursesController {
     @Param('id') id: string,
     @Body() body: unknown,
   ) {
-    this.auth.require(a, 'learning.use');
-    const l = await this.db.lesson.findUnique({ where: { id } });
-    if (!l) throw new NotFoundException();
-    await this.auth.course(a, l.courseId);
-    if (l.opensAt && l.opensAt > new Date()) throw new ForbiddenException('课时尚未开放');
-    const d = z
-      .object({ completed: z.boolean(), positionSeconds: z.number().int().min(0).max(86400).default(0) })
-      .parse(body);
-    return this.db.learningProgress.upsert({
-      where: { userId_lessonId: { userId: a.id, lessonId: id } },
-      create: { userId: a.id, lessonId: id, courseId: l.courseId, ...d },
-      update: d,
-    });
+    return saveLessonProgress(this.db, a, id, body);
   }
   @Get('courses/:id/members') async members(
     @CurrentActor() a: Actor,

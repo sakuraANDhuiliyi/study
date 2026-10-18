@@ -1340,7 +1340,7 @@ export class CommunicationService {
     }
   }
 
-  async download(actor: Actor, id: string) {
+  async download(actor: Actor, id: string, range?: { start: number; end: number }) {
     const attachment = await this.db.attachment.findFirst({
       where: { id, organizationId: actor.organizationId },
     });
@@ -1415,7 +1415,7 @@ export class CommunicationService {
       }
     }
     return {
-      stream: this.storage.get(attachment.storageKey),
+      stream: this.storage.get(attachment.storageKey, range),
       name: attachment.originalName,
       mime: attachment.mime,
       size: attachment.size,

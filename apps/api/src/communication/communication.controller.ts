@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  Headers,
   Body,
   Controller,
   Delete,
@@ -18,6 +20,7 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { type Response } from 'express';
 import { z } from 'zod';
+import { byteRange } from './byte-range';
 import { AuthGuard, CurrentActor, type Actor } from '../auth/auth.guard';
 import { CommunicationService } from './communication.service';
 import { UploadAdmissionInterceptor } from './upload-admission.interceptor';
@@ -273,18 +276,36 @@ export class AttachmentsController {
     @CurrentActor() actor: Actor,
     @Param('id') id: string,
     @Res({ passthrough: true }) response: Response,
+    @Headers('range') requestedRange?: string,
   ) {
-    const file = await this.service.download(actor, id);
+    let file = await this.service.download(actor, id);
     if (!file.mime.startsWith('image/') && !['application/pdf', 'video/mp4'].includes(file.mime)) {
       file.stream.destroy();
       throw new BadRequestException('此文件类型不支持在线预览，请下载后查看');
+    }
+    let range: ReturnType<typeof byteRange> = null;
+    if (file.mime === 'video/mp4') {
+      response.setHeader('Accept-Ranges', 'bytes');
+      try {
+        range = byteRange(requestedRange, file.size);
+      } catch {
+        file.stream.destroy();
+        response.setHeader('Content-Range', `bytes */${file.size}`);
+        throw new HttpException('请求的视频范围无效', 416);
+      }
+      if (range) {
+        file.stream.destroy();
+        file = await this.service.download(actor, id, range);
+        response.status(206);
+        response.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.size}`);
+      }
     }
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
     return new StreamableFile(file.stream, {
       type: file.mime,
-      length: file.size,
+      length: range ? range.end - range.start + 1 : file.size,
       disposition: `inline; filename="preview"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
     });
   }

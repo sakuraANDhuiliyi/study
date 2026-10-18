@@ -86,10 +86,13 @@ npm run build:local --prefix apps/mobile
 ```bash
 export MOBILE_TEST_SERIAL=emulator-5580
 export DOTENV_CONFIG_PATH=.data/review.env
+# JAVA_HOME 指向 JDK 17；ANDROID_HOME 指向含 Android 36 和 build-tools 36.0.0 的 SDK。
 node --env-file=.data/review.env --import tsx scripts/verify-mobile-device.ts
 ```
 
 此流程只清空 `cn.huiliyi.study.preview` 的测试数据，不清理其他应用；通过独立随机数据库、API 和媒体服务验证安装、原生登录、课程进度、重启恢复、双向真实 RTP、教师审批、收回权限、后台退出和注销重登。测试结束删除自身数据库、进程和 adb reverse；结果在 `.data/mobile-device-verification/`。测试不访问真实 AI 或收费判题服务。
+
+设备验收会从 `tests/android/HierarchyDump.java` 编译只读界面探针，读取实际 Android 无障碍节点。它避免系统默认转储命令等待持续动画而超时，不模拟页面、点击结果或服务器响应，也不进入 App 安装包。每次读取先删除上次转储，防止把陈旧页面当成当前结果；测试结束清理探针及转储。验收记录保存探针摘要。课程视频、资料、暂停续播和跨设备进度冲突也纳入此流程。
 
 模拟源不能证明真实手机的声学回声抑制、蓝牙适配、弱网/TURN、厂商后台限制或实际摄像头效果。上线前仍应使用两台真机/电脑配耳机，分别验证 Wi-Fi、蜂窝网络、拒绝和重新授权设备、教师撤权、断网重连及后台回收。
 

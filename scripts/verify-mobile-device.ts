@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { chromium, expect } from '@playwright/test';
+import { prepareMobileHierarchy } from './mobile-hierarchy';
 import { createLiveFixture, liveWait } from '../tests/live.fixture';
 import { attachLogin, installMedia, inbound } from '../tests/live-browser.fixture';
 const serial = process.env.MOBILE_TEST_SERIAL || '';
@@ -25,7 +26,23 @@ const run = (...args: string[]) =>
     timeout: 45000,
     maxBuffer: 4 * 1024 * 1024,
   });
+const displayHeight = Number(run('shell', 'wm', 'size').match(/\d+x(\d+)/)?.[1]);
+assert.ok(displayHeight > 600, 'Cannot determine owned emulator viewport');
+function contentVisible(n: Record<string, string>, bottomMargin: number) {
+  const b = n.bounds?.match(/\d+/g)?.map(Number);
+  if (!b || b.length !== 4 || b[2] <= b[0] || b[3] <= b[1]) return false;
+  const center = (b[1] + b[3]) / 2;
+  return center > 75 && center < displayHeight - bottomMargin;
+}
 assert.match(run('shell', 'getprop', 'ro.kernel.qemu'), /1/, 'Only disposable Android emulator accepted');
+const hierarchyJar = prepareMobileHierarchy(
+  resolve(process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || ''),
+  output,
+);
+const hierarchyHash = createHash('sha256').update(readFileSync(hierarchyJar)).digest('hex');
+const deviceJar = '/data/local/tmp/zhixue-verification-hierarchy.jar';
+const deviceXml = '/data/local/tmp/zhixue-review.xml';
+run('push', hierarchyJar, deviceJar);
 const info = run('shell', 'dumpsys', 'package', pkg);
 if (info.includes('Package [')) assert.ok(info.includes(pkg));
 function decode(s: string) {
@@ -37,8 +54,28 @@ function decode(s: string) {
     .replace(/&gt;/g, '>');
 }
 function nodes() {
-  run('shell', 'uiautomator', 'dump', '/sdcard/zhixue-review.xml');
-  const xml = run('shell', 'cat', '/sdcard/zhixue-review.xml');
+  run('shell', 'rm', '-f', deviceXml);
+  const dumped = run(
+    'shell',
+    'env',
+    'CLASSPATH=/system/framework/android.test.runner.jar:/system/framework/android.test.base.jar:/system/framework/uiautomator.jar:' +
+      deviceJar,
+    'app_process',
+    '/system/bin',
+    'com.android.commands.uiautomator.Launcher',
+    'runtest',
+    '-c',
+    'cn.huiliyi.verification.HierarchyDump',
+    '-e',
+    'jars',
+    deviceJar,
+  );
+  if (
+    !dumped.includes('OK (1 test)') ||
+    /shortMsg=|aborted|NoClassDefFoundError|NO_ACTIVE_WINDOW/.test(dumped)
+  )
+    return [];
+  const xml = run('shell', 'cat', deviceXml);
   return [...xml.matchAll(/<node\b([^>]+)>?/g)].map((m) =>
     Object.fromEntries([...m[1].matchAll(/([\w-]+)="([^"]*)"/g)].map((a) => [a[1], decode(a[2])])),
   );
@@ -106,10 +143,15 @@ function screenshot(name: string) {
   const data = execFileSync(adb, ['-s', serial, 'exec-out', 'screencap', '-p'], { timeout: 15000 });
   writeFileSync(resolve(output, name + '.png'), data);
 }
-async function scroll(label: string) {
+async function scroll(label: string, completedLabel?: string) {
   for (const direction of ['down', 'up'])
     for (let i = 0; i < 8; i++) {
-      const n = nodes().find((n) => match(n, label) && n.enabled !== 'false');
+      const current = nodes();
+      if (completedLabel && current.some((n) => match(n, completedLabel))) return;
+      const hasTabs = current.some((n) => match(n, '首页')) && current.some((n) => match(n, '直播'));
+      const n = current.find(
+        (n) => match(n, label) && n.enabled !== 'false' && contentVisible(n, hasTabs ? 300 : 120),
+      );
       if (n) {
         tap(n);
         await liveWait(400);
@@ -147,6 +189,43 @@ async function main() {
         chapterId: chapter.id,
         title: '手机学习验收课时',
         content: '<p>手机学习与网站同步。</p>',
+      },
+    });
+    const uploadCourse = async (name: string, bytes: Uint8Array, mime: string) => {
+      const form = new FormData();
+      form.append('courseId', f.course.id);
+      form.append('file', new Blob([new Uint8Array(bytes)], { type: mime }), name);
+      const response = await fetch(f.origin + '/api/attachments', {
+        method: 'POST',
+        headers: {
+          cookie: f.clients.teacher.cookie,
+          'x-csrf-token': f.clients.teacher.csrf,
+          origin: f.origin,
+        },
+        body: form,
+      });
+      assert.equal(response.status, 201);
+      return response.json();
+    };
+    const videoFile = await uploadCourse(
+      'mobile-course.mp4',
+      readFileSync('tests/fixtures/mobile-course.mp4'),
+      'video/mp4',
+    );
+    const material = await uploadCourse(
+      'native-course-notes.txt',
+      new TextEncoder().encode('Native course material fixture'),
+      'text/plain',
+    );
+    const videoLesson = await f.db.lesson.create({
+      data: {
+        courseId: f.course.id,
+        chapterId: chapter.id,
+        title: 'Android-native-video',
+        type: 'VIDEO',
+        attachmentId: videoFile.id,
+        attachmentIds: [material.id],
+        sortOrder: 1,
       },
     });
     const live = (
@@ -199,6 +278,9 @@ async function main() {
     );
     run('install', '-r', apk);
     run('shell', 'pm', 'clear', pkg);
+    run('shell', 'input', 'keyevent', '224');
+    run('shell', 'wm', 'dismiss-keyguard');
+    run('shell', 'cmd', 'statusbar', 'collapse');
     run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
     await type('账号', f.users.student.username);
     await type('密码', f.password);
@@ -219,6 +301,70 @@ async function main() {
       'Native progress was not persisted',
     );
     passed('course content and real cross-device progress');
+    await scroll(videoLesson.title);
+    await scroll('加载课程视频');
+    await scroll('播放视频');
+    await liveWait(5500);
+    await scroll('暂停视频');
+    const watched = await poll(
+      () =>
+        f.db.learningProgress.findUnique({
+          where: { userId_lessonId: { userId: f.users.student.id, lessonId: videoLesson.id } },
+        }),
+      (p) => !!p && p.positionSeconds >= 4,
+      'Video pause did not persist actual playback',
+    );
+    assert.equal(watched!.completed, false);
+    screenshot('android-course-video');
+    passed('private H264 course video decodes natively and pause persists the real playback position');
+    let moved = false;
+    for (let attempt = 0; attempt < 3 && !moved; attempt++) {
+      const latest = await f.db.learningProgress.findUniqueOrThrow({
+        where: { userId_lessonId: { userId: f.users.student.id, lessonId: videoLesson.id } },
+      });
+      const result = await f.call(
+        f.clients.student,
+        '/lessons/' + videoLesson.id + '/progress',
+        'PUT',
+        {
+          completed: false,
+          positionSeconds: 30,
+          expectedUpdatedAt: latest.updatedAt.toISOString(),
+        },
+        [200, 409],
+      );
+      moved = result.status === 200;
+    }
+    assert.ok(moved, 'Website fixture could not establish the new resume position');
+    // A scheduled native save may detect the conflict before the explicit button tap.
+    await scroll('保存当前学习位置', '学习进度已在其他设备更新，请重新加载后继续。');
+    await find('学习进度已在其他设备更新，请重新加载后继续。');
+    await scroll('重新加载课时');
+    await scroll('加载课程视频');
+    await find('播放位置：30 秒');
+    passed(
+      'cross-device video conflict cannot overwrite a newer web position and reload resumes at 30 seconds',
+    );
+    await scroll('播放视频');
+    run('shell', 'input', 'keyevent', '3');
+    await liveWait(1800);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('播放视频');
+    passed('backgrounding pauses native playback without automatically restarting audio');
+    await scroll('下载资料：native-course-notes.txt');
+    await poll(
+      nodes,
+      (ns) =>
+        ns.some(
+          (n) =>
+            n.text === '打开或保存课程资料' ||
+            n.text === 'Bluetooth' ||
+            n['resource-id'] === 'android:id/chooser_header',
+        ),
+      'Native course material chooser missing',
+    );
+    run('shell', 'input', 'keyevent', '4');
+    passed('authorized course materials use the explicit Android file chooser');
     await scroll('查看课程直播');
     await find('Android 互动验收');
     assert.equal(
@@ -767,6 +913,9 @@ async function main() {
 
     const report = {
       apkSha256,
+      hierarchyProbeSha256: hierarchyHash,
+      hierarchy:
+        'Actual Android accessibility hierarchy without waiting for animations; no UI state or server response mocked',
       passed: checks.length,
       failed: 0,
       skipped: 0,
@@ -792,6 +941,9 @@ async function main() {
       try {
         run('reverse', '--remove', key);
       } catch {}
+    try {
+      run('shell', 'rm', '-f', deviceJar, deviceXml);
+    } catch {}
     await f.cleanup();
   }
 }

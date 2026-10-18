@@ -2,7 +2,7 @@
   "expo": {
     "name": "知学",
     "slug": "zhixue-mobile",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "cn.huiliyi.study",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": ["CAMERA", "RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS", "BLUETOOTH_CONNECT"],
       "allowBackup": false,
       "blockedPermissions": [
@@ -33,6 +33,7 @@
     "scheme": "zhixue",
     "plugins": [
       "expo-router",
+      ["expo-video", { "supportsBackgroundPlayback": false, "supportsPictureInPicture": false }],
       "expo-secure-store",
       "@livekit/react-native-expo-plugin",
       [
