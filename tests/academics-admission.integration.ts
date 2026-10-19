@@ -190,9 +190,25 @@ test('PostgreSQL预占：跨服务实例并发、失败计费、IP共享锁和�
           reservedUntil: new Date(Date.now() - 172000000),
         })),
       });
-      await assert.rejects(services[0].evaluate(actor, 'circuit-lab', bad, ip), BadRequestException);
+      // Exercise the real cleanup SQL with a nested-loop plan, including pooled service transactions.
+      const planned = new Proxy(db, {
+        get(target, key) {
+          if (key === '$transaction')
+            return (work: (tx: any) => Promise<unknown>) =>
+              target.$transaction(async (tx) => {
+                await tx.$executeRaw`SET LOCAL enable_hashjoin = off`;
+                await tx.$executeRaw`SET LOCAL enable_mergejoin = off`;
+                await tx.$executeRaw`SET LOCAL enable_material = off`;
+                return work(tx);
+              });
+          const value = Reflect.get(target, key);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      });
+      const cleanup = new AcademicsService(planned, new AuthService(planned));
+      await assert.rejects(cleanup.evaluate(actor, 'circuit-lab', bad, ip), BadRequestException);
       assert.equal(await db.academicsEvaluationAttempt.count({ where: { userId: actor.id } }), 501);
-      await assert.rejects(services[1].evaluate(actor, 'circuit-lab', bad, ip), BadRequestException);
+      await assert.rejects(cleanup.evaluate(actor, 'circuit-lab', bad, ip), BadRequestException);
       assert.equal(await db.academicsEvaluationAttempt.count({ where: { userId: actor.id } }), 2);
     });
   } finally {

@@ -4,6 +4,7 @@ import {
   Alert,
   AppState,
   BackHandler,
+  Keyboard,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -24,6 +25,7 @@ import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { Inbox } from './src/Inbox';
 import { Reviews, Review } from './src/Reviews';
 import { Exams, Exam, ExamAnswer } from './src/Exams';
 import { Lesson } from './src/Lesson';
@@ -107,7 +109,16 @@ type Member = {
 };
 type Route =
   | {
-      name: 'home' | 'courses' | 'live' | 'me' | 'planner' | 'assignments' | 'exams' | 'appeals';
+      name:
+        | 'home'
+        | 'courses'
+        | 'live'
+        | 'me'
+        | 'planner'
+        | 'assignments'
+        | 'exams'
+        | 'appeals'
+        | 'notifications';
       courseId?: string;
     }
   | { name: 'course'; id: string }
@@ -314,6 +325,10 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
     (name === 'live' && route.name === 'classroom');
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (Keyboard.isVisible()) {
+        Keyboard.dismiss();
+        return true;
+      }
       if (route.name === 'review') {
         setRoute({ name: 'appeals' });
         return true;
@@ -353,7 +368,9 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 ? '我的考试'
                 : route.name === 'planner'
                   ? '学习计划'
-                  : '我的空间';
+                  : route.name === 'notifications'
+                    ? '学习通知'
+                    : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
@@ -424,6 +441,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             openReview={(id) => setRoute({ name: 'review', id })}
           />
         )}
+        {route.name === 'notifications' && <Inbox client={client} open={setRoute} />}
         {route.name === 'appeals' && (
           <Reviews client={client} open={(id) => setRoute({ name: 'review', id })} />
         )}
@@ -472,7 +490,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 }}
               />
             </View>
-            <Text style={s.small}>知学 Android · 预览版 0.5.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
+            <Text style={s.small}>知学 Android · 预览版 0.6.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
           </ScrollView>
         )}
       </View>
@@ -583,6 +601,14 @@ function Home({
           caption="申请进度与成绩变更"
           icon="↺"
           onPress={() => navigate({ name: 'appeals' })}
+        />
+      )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="学习通知"
+          caption="未读提醒与学习动态"
+          icon="♧"
+          onPress={() => navigate({ name: 'notifications' })}
         />
       )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />

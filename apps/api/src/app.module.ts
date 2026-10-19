@@ -4,6 +4,7 @@ import { AuthService } from './auth/auth.service';
 import { Actor, AuthGuard, CurrentActor } from './auth/auth.guard';
 import { LoginService } from './auth/login.service';
 import { MobileLessonsController } from './mobile/mobile-lessons.controller';
+import { MobileInboxController } from './mobile/mobile-inbox.controller';
 import { MobileExamsController } from './mobile/mobile-exams.controller';
 import { MobileAssignmentsController } from './mobile/mobile-assignments.controller';
 import { MobileAuthController } from './mobile/mobile-auth.controller';
@@ -134,6 +135,7 @@ class CatalogController {
     MobileAuthController,
     MobileAssignmentsController,
     MobileExamsController,
+    MobileInboxController,
     MobileLessonsController,
     CoursesController,
     LiveController,

@@ -109,7 +109,14 @@ function tap(n: Record<string, string>) {
 }
 async function dismissKeyboard() {
   if (/\bmInputShown=true\b/.test(run('shell', 'dumpsys', 'input_method'))) {
+    // A visible keyboard consumes Back; the App must not navigate or open an unsaved-leave dialog.
     run('shell', 'input', 'keyevent', '4');
+    await poll(
+      () => run('shell', 'dumpsys', 'input_method'),
+      (value) => !/\bmInputShown=true\b/.test(value),
+      'Android keyboard did not dismiss',
+      5000,
+    );
     await liveWait(300);
   }
 }
@@ -137,9 +144,8 @@ async function type(label: string, value: string) {
     const actual = await find(label);
     const correct = actual.password === 'true' ? actual.text.length === value.length : actual.text === value;
     if (!correct) continue;
-    // BACK dismisses a visible IME, but navigates away when the IME never opened.
-    const ime = run('shell', 'dumpsys', 'input_method');
-    if (/\bmInputShown=true\b/.test(ime)) run('shell', 'input', 'keyevent', '4');
+    // Dismiss the verified IME without dispatching application navigation.
+    await dismissKeyboard();
     await liveWait(400);
     return;
   }
@@ -150,11 +156,11 @@ function screenshot(name: string) {
   const data = execFileSync(adb, ['-s', serial, 'exec-out', 'screencap', '-p'], { timeout: 15000 });
   writeFileSync(resolve(output, name + '.png'), data);
 }
-async function scroll(label: string, completedLabel?: string) {
+async function scroll(label: string, completedLabel?: string, attempts = 8) {
   // A restored focused field can reopen the IME; page controls must be unobscured.
   await dismissKeyboard();
   for (const direction of ['down', 'up'])
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < attempts; i++) {
       const current = nodes();
       if (completedLabel && current.some((n) => match(n, completedLabel))) return;
       const hasTabs = current.some((n) => match(n, '首页')) && current.some((n) => match(n, '直播'));
@@ -979,6 +985,146 @@ async function main() {
     passed('native review hides effective score, resolution and grade changes when publication is withdrawn');
     await f.db.examAttempt.update({ where: { id: attempt.id }, data: { releaseStatus: 'released' } });
 
+    const inboxScroll = (label: string) => scroll(label, undefined, 20);
+    // App inbox uses real persisted notices; sensitive historical text must never reach native presentation.
+    await f.db.notification.deleteMany({ where: { userId: f.users.student.id } });
+    const inboxNotes: { id: string }[] = [];
+    const inboxTime = Date.now();
+    for (let i = 0; i < 12; i++)
+      inboxNotes.push(
+        await f.db.notification.create({
+          data: {
+            organizationId: f.organization.id,
+            userId: f.users.student.id,
+            type: i === 0 ? 'grade' : i === 1 ? 'assignment' : i === 2 ? 'MEMBERSHIP' : 'exam',
+            title: 'INBOX-PRIVATE-SCORE-999999',
+            body: 'INBOX-PRIVATE-RESOLUTION',
+            link:
+              i === 0
+                ? '/attempts/' + attempt.id
+                : i === 1
+                  ? '/assignments/' + assignment.id
+                  : i === 2
+                    ? '/courses/' + f.course.id
+                    : '/exams/' + exam.id,
+            eventKey: 'device-inbox-' + i,
+            createdAt: new Date(inboxTime - i * 1000),
+          },
+        }),
+      );
+    await f.db.notification.create({
+      data: {
+        organizationId: f.organization.id,
+        userId: f.users.student2.id,
+        type: 'exam',
+        title: 'OTHER-STUDENT-NOTICE',
+        body: '',
+        link: '/exams/' + exam.id,
+        eventKey: 'other-device-inbox',
+      },
+    });
+    await click('首页');
+    await inboxScroll('学习通知');
+    await find('我的学习通知');
+    await find('未读 12 条通知');
+    assert.ok(!nodes().some((n) => /INBOX-PRIVATE|OTHER-STUDENT-NOTICE/.test(n.text || '')));
+    screenshot('android-inbox');
+    passed(
+      'native inbox shows own safe summaries and unread count without stored private bodies or grade snapshots',
+    );
+    await inboxScroll('查看第 1 条通知内容');
+    await find('复核已处理');
+    assert.equal(
+      (await f.db.notification.findUniqueOrThrow({ where: { id: inboxNotes[0].id } })).readAt,
+      null,
+    );
+    await click('首页');
+    await inboxScroll('学习通知');
+    await inboxScroll('标记第 1 条为已读');
+    await poll(
+      () => f.db.notification.findUniqueOrThrow({ where: { id: inboxNotes[0].id } }),
+      (n) => !!n.readAt,
+      'Native single read was not persisted',
+    );
+    const webNotices = (await f.call(f.clients.student, '/notifications?pageSize=20')).body;
+    assert.ok(webNotices.items.find((n: any) => n.id === inboxNotes[0].id).readAt);
+    passed(
+      'native notification opens exact authorized review without silent read and explicit read synchronizes with website',
+    );
+    await inboxScroll('仅未读通知');
+    await find('未读 11 条通知');
+    await inboxScroll('本页未读标记已读');
+    await click('取消');
+    assert.equal(await f.db.notification.count({ where: { userId: f.users.student.id, readAt: null } }), 11);
+    await inboxScroll('本页未读标记已读');
+    await find('确认本页已读');
+    const newestNotice = await f.db.notification.create({
+      data: {
+        organizationId: f.organization.id,
+        userId: f.users.student.id,
+        type: 'exam',
+        title: 'New-after-confirmation-opened',
+        body: '',
+        link: '/exams/' + exam.id,
+        eventKey: 'device-new-arrival',
+      },
+    });
+    await click('确认本页已读');
+    await find('未读 2 条通知');
+    assert.equal(
+      (await f.db.notification.findUniqueOrThrow({ where: { id: newestNotice.id } })).readAt,
+      null,
+    );
+    passed(
+      'native visible-page read confirmation preserves cancellation and new notifications received after the snapshot',
+    );
+    run('shell', 'am', 'force-stop', pkg);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+    await inboxScroll('学习通知');
+    await find('未读 2 条通知');
+    await inboxScroll('下一页通知');
+    await inboxScroll('第 2 页通知');
+    await inboxScroll('上一页通知');
+    await inboxScroll('成绩提醒');
+    await find('共 1 条通知');
+    passed(
+      'native inbox read receipts survive process restart and type filtering and pagination stay on server data',
+    );
+    await inboxScroll('课程提醒');
+    await find('共 1 条通知');
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: false },
+    });
+    await inboxScroll('查看第 1 条通知内容');
+    await inboxScroll('当前没有此课程的访问资格。请刷新核对后重试。');
+    assert.equal(
+      (await f.db.notification.findUniqueOrThrow({ where: { id: inboxNotes[2].id } })).readAt === null,
+      false,
+    );
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: true },
+    });
+    await inboxScroll('查看第 1 条通知内容');
+    await find(f.course.title);
+    passed(
+      'native notification target rechecks revoked enrollment and only navigates after restored authorization',
+    );
+    await click('首页');
+    await inboxScroll('学习通知');
+    await inboxScroll('作业提醒');
+    await find('共 1 条通知');
+    await inboxScroll('查看第 1 条通知内容');
+    await find(assignment.title);
+    await click('首页');
+    await inboxScroll('学习通知');
+    await inboxScroll('考试提醒');
+    await inboxScroll('查看第 1 条通知内容');
+    await find(exam.title);
+    passed('native learning reminders open real assignment and exam pages through typed internal navigation');
+
     await click('首页');
     const seqIds: string[] = [];
     for (let i = 0; i < 2; i++) {
@@ -1116,7 +1262,7 @@ async function main() {
     const alert = nodes().find((n) => n['resource-id'] === 'android:id/button1');
     assert.ok(alert);
     tap(alert);
-    await find('已连接');
+    await scroll('已连接');
     passed('OS camera permission denial preserves classroom viewing');
     await scroll('开启摄像头');
     await permission(true);

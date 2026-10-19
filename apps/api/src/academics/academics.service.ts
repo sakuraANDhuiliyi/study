@@ -221,11 +221,13 @@ export class AcademicsService {
       if (day >= 200 || minute >= 20 || ipMinute >= academicIpMinuteLimit())
         throw new HttpException('练习过于频繁，请稍后再试', 429);
       // Incremental indexed cleanup bounds work per request, including after a long idle period.
+      // Freeze the selected batch so a different DELETE join plan cannot re-evaluate the limit.
       await tx.$executeRaw`
-        DELETE FROM "AcademicsEvaluationAttempt" WHERE "id" IN (
+        WITH expired AS MATERIALIZED (
           SELECT "id" FROM "AcademicsEvaluationAttempt" WHERE "createdAt" <= ${dayStart}
-          ORDER BY "createdAt" LIMIT 1000 FOR UPDATE SKIP LOCKED
+          ORDER BY "createdAt", "id" LIMIT 1000 FOR UPDATE SKIP LOCKED
         )
+        DELETE FROM "AcademicsEvaluationAttempt" WHERE "id" IN (SELECT "id" FROM expired)
       `;
       return tx.academicsEvaluationAttempt.create({
         data: { ...where, ipHash, createdAt: now, reservedUntil: new Date(now.getTime() + 300000) },
