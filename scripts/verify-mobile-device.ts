@@ -1126,6 +1126,132 @@ async function main() {
     passed('native learning reminders open real assignment and exam pages through typed internal navigation');
 
     await click('首页');
+    const notesScroll = (label: string) => scroll(label, undefined, 20);
+    await notesScroll('学习笔记');
+    await find('我的私人学习笔记');
+    await find('共 0 条笔记');
+    await click('课程');
+    await scroll(f.course.title);
+    await scroll(lesson.title);
+    await scroll('本课时私人笔记');
+    await find('私人课时笔记');
+    await scroll('私人笔记内容');
+    await type('私人笔记内容', 'Native-note-first');
+    await click('首页');
+    await find('离开私人笔记？');
+    await click('继续编辑');
+    assert.equal((await find('私人笔记内容')).text, 'Native-note-first');
+    assert.equal(await f.db.lessonNote.count({ where: { userId: f.users.student.id } }), 0);
+    passed(
+      'native lesson note entry and unsaved leave confirmation preserve private text without silent writes',
+    );
+    await notesScroll('置顶此笔记');
+    await notesScroll('保存私人笔记');
+    await notesScroll('私人笔记已保存');
+    let note = (await f.call(f.clients.student, '/lessons/' + lesson.id + '/note')).body.note;
+    assert.equal(note.body, 'Native-note-first');
+    assert.equal(note.pinned, true);
+    await notesScroll('笔记内容');
+    screenshot('android-notes');
+    passed('native private note create and pin persist in the shared website database');
+    await type('私人笔记内容', 'Native-unsaved-conflict');
+    await f.call(f.clients.student, '/lessons/' + lesson.id + '/note', 'PUT', {
+      body: 'Website-note-new',
+      pinned: false,
+      revision: note.revision,
+      noteId: note.id,
+    });
+    await notesScroll('保存私人笔记');
+    await notesScroll('笔记已在其他页面更新，请先载入最新版本；当前输入尚未覆盖');
+    await notesScroll('笔记内容');
+    assert.equal((await find('私人笔记内容')).text, 'Native-unsaved-conflict');
+    assert.equal((await find('私人笔记内容')).enabled, 'false');
+    await notesScroll('载入最新笔记');
+    await find('用最新笔记替换当前输入？');
+    await click('保留输入');
+    await notesScroll('笔记内容');
+    assert.equal((await find('私人笔记内容')).text, 'Native-unsaved-conflict');
+    await notesScroll('载入最新笔记');
+    await click('确认载入最新');
+    await notesScroll('笔记内容');
+    assert.equal((await find('私人笔记内容')).text, 'Website-note-new');
+    passed(
+      'native note CAS conflict keeps unsaved text and explicit latest-load confirmation controls replacement',
+    );
+    await type('私人笔记内容', 'Native-note-final');
+    await notesScroll('保存私人笔记');
+    await notesScroll('私人笔记已保存');
+    note = (await f.call(f.clients.student, '/lessons/' + lesson.id + '/note')).body.note;
+    assert.equal(note.body, 'Native-note-final');
+    assert.equal(note.revision, 3);
+    await click('首页');
+    await notesScroll('学习笔记');
+    await type('搜索笔记', 'Native-note-final');
+    await notesScroll('搜索学习笔记');
+    await find('共 1 条笔记');
+    await notesScroll('仅置顶笔记');
+    await find('共 0 条笔记');
+    await notesScroll('全部笔记');
+    await find('共 1 条笔记');
+    passed('native note explicit search and pinned filters use current server content and counts');
+    run('shell', 'am', 'force-stop', pkg);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('你好，学生甲');
+    await notesScroll('学习笔记');
+    await notesScroll('编辑笔记：' + lesson.title);
+    await notesScroll('笔记内容');
+    assert.equal((await find('私人笔记内容')).text, 'Native-note-final');
+    await notesScroll('删除私人笔记');
+    await click('取消');
+    assert.ok(await f.db.lessonNote.findUnique({ where: { id: note.id } }));
+    await notesScroll('删除私人笔记');
+    await click('确认删除笔记');
+    await notesScroll('私人笔记已删除');
+    assert.equal(await f.db.lessonNote.findUnique({ where: { id: note.id } }), null);
+    passed('native notes survive process restart and confirmed deletion is scoped to the owned note');
+    await click('首页');
+    for (let i = 0; i < 11; i++) {
+      const extra = await f.db.lesson.create({
+        data: { courseId: f.course.id, chapterId: chapter.id, title: 'Paging-note-' + i, sortOrder: i + 10 },
+      });
+      await f.call(f.clients.student, '/lessons/' + extra.id + '/note', 'PUT', {
+        body: 'Paging-native-' + i,
+        pinned: i === 0,
+        revision: 0,
+      });
+    }
+    await notesScroll('学习笔记');
+    await find('共 11 条笔记');
+    await notesScroll('下一页笔记');
+    await notesScroll('第 2 页笔记');
+    await notesScroll('上一页笔记');
+    await notesScroll('仅置顶笔记');
+    await find('共 1 条笔记');
+    await notesScroll('编辑笔记：Paging-note-0');
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: false },
+    });
+    await notesScroll('核对服务器笔记');
+    await notesScroll('当前没有此课程的访问资格');
+    assert.equal(
+      (
+        await f.db.lessonNote.findFirstOrThrow({
+          where: { userId: f.users.student.id, body: 'Paging-native-0' },
+        })
+      ).revision,
+      1,
+    );
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: true },
+    });
+    await notesScroll('载入最新笔记');
+    passed(
+      'native note pagination and course revocation recheck server authority without deleting private records',
+    );
+
+    await click('首页');
     const seqIds: string[] = [];
     for (let i = 0; i < 2; i++) {
       const q = (

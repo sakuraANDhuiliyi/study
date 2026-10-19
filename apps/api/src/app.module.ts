@@ -32,6 +32,8 @@ import { UploadAdmissionInterceptor } from './communication/upload-admission.int
 import { PlannerController } from './planner/planner.controller';
 import { LearningActionsController } from './planner/actions.controller';
 import { LearningActionsService } from './planner/actions.service';
+import { NotesService } from './notes/notes.service';
+import { MobileNotesController } from './mobile/mobile-notes.controller';
 import { NotesController } from './notes/notes.controller';
 import { AiStudyController } from './ai-study/ai-study.controller';
 import { AiStudyService } from './ai-study/ai-study.service';
@@ -148,6 +150,7 @@ class CatalogController {
     PlannerController,
     LearningActionsController,
     NotesController,
+    MobileNotesController,
     AiStudyController,
     AiAuthoringController,
     AlgorithmsController,
@@ -163,6 +166,7 @@ class CatalogController {
     AlgorithmForumController,
   ],
   providers: [
+    NotesService,
     PrismaService,
     AuthService,
     LoginService,
