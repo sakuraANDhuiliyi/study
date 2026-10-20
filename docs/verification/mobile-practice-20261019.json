@@ -1,7 +1,7 @@
 {
   "feature": "Android native autonomous practice: six question types, immutable first answers, controlled feedback, resumable progress, private history and idempotent creation",
   "baseCommit": "1fe73f4f89908a6e9d9a2a35b6548dcf2238b93a",
-  "recordedAt": "2026-10-20T08:32:48.146096+00:00",
+  "recordedAt": "2026-10-20T09:16:21.085724+00:00",
   "sourceSha256": {
     "apps/api/src/app.module.ts": "962cdab18030ee9bb628cb6797e056a09ad214b5f410f40fb1f1e66210208535",
     "apps/api/src/assessment/practice.service.ts": "7803f98fb6ad9b7b8a2e901044254aeff0cd93ff94d5786276f4fca5cd795c3a",
@@ -21,7 +21,8 @@
     "tests/mobile-practice.integration.ts": "434c23afab4972901a54fd7ea8c1053ea2a69c0a8411143d9340500768defc0a",
     "tests/mobile-practice.unit.test.ts": "e9dbd25d824f70b2bfc6ba7df12e13d0c664aead1e8c431dabff5d4ffec39ffd",
     "scripts/mobile-hierarchy.ts": "d1a9f284e9370510d19e9841638d968e496ef610979d34941df0bb9828108a04",
-    "tests/android/HierarchyDump.java": "13177b6a1c2e15da00ec9d6a30b149a33473e989551326c1c5592190c117d19e"
+    "tests/android/HierarchyDump.java": "13177b6a1c2e15da00ec9d6a30b149a33473e989551326c1c5592190c117d19e",
+    "tests/live-browser.integration.ts": "368458e041ee506b9d9175484e24dcb20c627c354202494f2eb58f7976db1580"
   },
   "fullVerification": {
     "profile": "full",
@@ -32,8 +33,8 @@
       "java"
     ],
     "fullReferenceCoverage": true,
-    "startedAt": "2026-10-19T12:42:22.766Z",
-    "finishedAt": "2026-10-19T13:03:28.209Z",
+    "startedAt": "2026-10-20T09:00:02.264Z",
+    "finishedAt": "2026-10-20T09:15:29.875Z",
     "passed": true
   },
   "testTotals": {
@@ -46,37 +47,37 @@
     {
       "id": "generate",
       "status": "passed",
-      "durationMs": 757,
+      "durationMs": 619,
       "summary": {}
     },
     {
       "id": "migrate",
       "status": "passed",
-      "durationMs": 453,
+      "durationMs": 326,
       "summary": {}
     },
     {
       "id": "seed",
       "status": "passed",
-      "durationMs": 1390,
+      "durationMs": 1337,
       "summary": {}
     },
     {
       "id": "typecheck",
       "status": "passed",
-      "durationMs": 10288,
+      "durationMs": 6077,
       "summary": {}
     },
     {
       "id": "lint",
       "status": "passed",
-      "durationMs": 3388,
+      "durationMs": 3135,
       "summary": {}
     },
     {
       "id": "unit",
       "status": "passed",
-      "durationMs": 18733,
+      "durationMs": 19222,
       "summary": {
         "tests": 580,
         "pass": 580,
@@ -89,13 +90,13 @@
     {
       "id": "build",
       "status": "passed",
-      "durationMs": 37150,
+      "durationMs": 25105,
       "summary": {}
     },
     {
       "id": "audit",
       "status": "passed",
-      "durationMs": 1864,
+      "durationMs": 1122,
       "summary": {
         "info": 0,
         "low": 0,
@@ -108,7 +109,7 @@
     {
       "id": "mobile-build",
       "status": "passed",
-      "durationMs": 18842,
+      "durationMs": 29881,
       "summary": {
         "checks": 5,
         "tests": 4,
@@ -123,9 +124,9 @@
             "info": 0,
             "low": 0,
             "moderate": 0,
-            "high": 50,
+            "high": 20,
             "critical": 0,
-            "total": 50
+            "total": 20
           },
           "backportedAdvisories": [
             "GHSA-vfj7-8cjw-p6xm",
@@ -139,13 +140,13 @@
     {
       "id": "livekit-runtime",
       "status": "passed",
-      "durationMs": 60,
+      "durationMs": 96,
       "summary": {}
     },
     {
       "id": "integration:android-protocol",
       "status": "passed",
-      "durationMs": 1521,
+      "durationMs": 1059,
       "summary": {
         "tests": 7,
         "pass": 7,
@@ -158,7 +159,7 @@
     {
       "id": "trusted-references",
       "status": "passed",
-      "durationMs": 71367,
+      "durationMs": 49177,
       "summary": {
         "programsPassed": 176,
         "casesPassed": 1280,
@@ -174,7 +175,7 @@
     {
       "id": "creative-expression-browser",
       "status": "passed",
-      "durationMs": 10432,
+      "durationMs": 9250,
       "summary": {
         "checksPassed": 10,
         "expressionsPassed": 32,
@@ -185,12 +186,12 @@
     {
       "id": "servers",
       "status": "passed",
-      "durationMs": 1455
+      "durationMs": 1854
     },
     {
       "id": "e2e",
       "status": "passed",
-      "durationMs": 9431,
+      "durationMs": 9531,
       "summary": {
         "tests": 12,
         "pass": 12,
@@ -203,7 +204,7 @@
     {
       "id": "integration:academic-goals.integration.ts",
       "status": "passed",
-      "durationMs": 5101,
+      "durationMs": 5063,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -216,7 +217,7 @@
     {
       "id": "integration:academic-records-export.integration.ts",
       "status": "passed",
-      "durationMs": 8083,
+      "durationMs": 7724,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -229,7 +230,7 @@
     {
       "id": "integration:academics-admission.integration.ts",
       "status": "passed",
-      "durationMs": 732,
+      "durationMs": 636,
       "summary": {
         "tests": 6,
         "pass": 6,
@@ -242,7 +243,7 @@
     {
       "id": "integration:academics.integration.ts",
       "status": "passed",
-      "durationMs": 6965,
+      "durationMs": 5346,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -255,7 +256,7 @@
     {
       "id": "integration:accounts.integration.ts",
       "status": "passed",
-      "durationMs": 4826,
+      "durationMs": 4719,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -268,7 +269,7 @@
     {
       "id": "integration:admin-audit.integration.ts",
       "status": "passed",
-      "durationMs": 7046,
+      "durationMs": 5931,
       "summary": {
         "tests": 16,
         "pass": 16,
@@ -281,7 +282,7 @@
     {
       "id": "integration:admin-jobs.integration.ts",
       "status": "passed",
-      "durationMs": 5489,
+      "durationMs": 5099,
       "summary": {
         "tests": 12,
         "pass": 12,
@@ -294,7 +295,7 @@
     {
       "id": "integration:ai-authoring.integration.ts",
       "status": "passed",
-      "durationMs": 4288,
+      "durationMs": 4309,
       "summary": {
         "tests": 13,
         "pass": 13,
@@ -307,7 +308,7 @@
     {
       "id": "integration:ai-study.integration.ts",
       "status": "passed",
-      "durationMs": 4345,
+      "durationMs": 4247,
       "summary": {
         "tests": 13,
         "pass": 13,
@@ -320,7 +321,7 @@
     {
       "id": "integration:algorithm-forum.integration.ts",
       "status": "passed",
-      "durationMs": 1354,
+      "durationMs": 1349,
       "summary": {
         "tests": 13,
         "pass": 13,
@@ -333,7 +334,7 @@
     {
       "id": "integration:algorithm-history-filters.integration.ts",
       "status": "passed",
-      "durationMs": 5777,
+      "durationMs": 5240,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -346,7 +347,7 @@
     {
       "id": "integration:algorithm-training-plans.integration.ts",
       "status": "passed",
-      "durationMs": 4893,
+      "durationMs": 4894,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -359,7 +360,7 @@
     {
       "id": "integration:algorithms.integration.ts",
       "status": "passed",
-      "durationMs": 4631,
+      "durationMs": 4655,
       "summary": {
         "tests": 14,
         "pass": 14,
@@ -372,7 +373,7 @@
     {
       "id": "integration:analytics.security.integration.ts",
       "status": "passed",
-      "durationMs": 384,
+      "durationMs": 378,
       "summary": {
         "tests": 2,
         "pass": 2,
@@ -385,7 +386,7 @@
     {
       "id": "integration:assessment-composition.integration.ts",
       "status": "passed",
-      "durationMs": 225,
+      "durationMs": 240,
       "summary": {
         "tests": 4,
         "pass": 4,
@@ -398,7 +399,7 @@
     {
       "id": "integration:assessment.integration.ts",
       "status": "passed",
-      "durationMs": 5944,
+      "durationMs": 5455,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -411,7 +412,7 @@
     {
       "id": "integration:assessment.security.integration.ts",
       "status": "passed",
-      "durationMs": 1236,
+      "durationMs": 1241,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -424,7 +425,7 @@
     {
       "id": "integration:auth-fixes.integration.ts",
       "status": "passed",
-      "durationMs": 982,
+      "durationMs": 984,
       "summary": {
         "tests": 3,
         "pass": 3,
@@ -437,7 +438,7 @@
     {
       "id": "integration:auth.security.integration.ts",
       "status": "passed",
-      "durationMs": 903,
+      "durationMs": 926,
       "summary": {
         "tests": 4,
         "pass": 4,
@@ -450,7 +451,7 @@
     {
       "id": "integration:communication.integration.ts",
       "status": "passed",
-      "durationMs": 15849,
+      "durationMs": 15885,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -463,7 +464,7 @@
     {
       "id": "integration:communication.security.integration.ts",
       "status": "passed",
-      "durationMs": 698,
+      "durationMs": 732,
       "summary": {
         "tests": 5,
         "pass": 5,
@@ -476,7 +477,7 @@
     {
       "id": "integration:confusion-matrix.integration.ts",
       "status": "passed",
-      "durationMs": 6676,
+      "durationMs": 6145,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -489,7 +490,7 @@
     {
       "id": "integration:creative.integration.ts",
       "status": "passed",
-      "durationMs": 6863,
+      "durationMs": 6890,
       "summary": {
         "tests": 17,
         "pass": 17,
@@ -502,7 +503,7 @@
     {
       "id": "integration:digital-logic.integration.ts",
       "status": "passed",
-      "durationMs": 4726,
+      "durationMs": 4727,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -515,7 +516,7 @@
     {
       "id": "integration:exam-insights.integration.ts",
       "status": "passed",
-      "durationMs": 652,
+      "durationMs": 675,
       "summary": {
         "tests": 12,
         "pass": 12,
@@ -528,7 +529,7 @@
     {
       "id": "integration:learning-action-filters.integration.ts",
       "status": "passed",
-      "durationMs": 5744,
+      "durationMs": 5704,
       "summary": {
         "tests": 14,
         "pass": 14,
@@ -541,7 +542,7 @@
     {
       "id": "integration:learning-actions.integration.ts",
       "status": "passed",
-      "durationMs": 4800,
+      "durationMs": 4821,
       "summary": {
         "tests": 14,
         "pass": 14,
@@ -554,7 +555,7 @@
     {
       "id": "integration:learning-overview.integration.ts",
       "status": "passed",
-      "durationMs": 6089,
+      "durationMs": 6067,
       "summary": {
         "tests": 17,
         "pass": 17,
@@ -567,7 +568,7 @@
     {
       "id": "integration:live-browser.integration.ts",
       "status": "passed",
-      "durationMs": 80857,
+      "durationMs": 65151,
       "summary": {
         "tests": 4,
         "pass": 4,
@@ -580,7 +581,7 @@
     {
       "id": "integration:live.integration.ts",
       "status": "passed",
-      "durationMs": 11758,
+      "durationMs": 11204,
       "summary": {
         "tests": 18,
         "pass": 18,
@@ -593,7 +594,7 @@
     {
       "id": "integration:minimum-spanning-tree.integration.ts",
       "status": "passed",
-      "durationMs": 5380,
+      "durationMs": 5127,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -606,7 +607,7 @@
     {
       "id": "integration:mobile-assignment-browser.integration.ts",
       "status": "passed",
-      "durationMs": 6030,
+      "durationMs": 4842,
       "summary": {
         "tests": 1,
         "pass": 1,
@@ -619,7 +620,7 @@
     {
       "id": "integration:mobile-assignments.integration.ts",
       "status": "passed",
-      "durationMs": 4447,
+      "durationMs": 4245,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -632,7 +633,7 @@
     {
       "id": "integration:mobile-exams.integration.ts",
       "status": "passed",
-      "durationMs": 7145,
+      "durationMs": 6348,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -645,7 +646,7 @@
     {
       "id": "integration:mobile-inbox.integration.ts",
       "status": "passed",
-      "durationMs": 5317,
+      "durationMs": 4590,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -658,7 +659,7 @@
     {
       "id": "integration:mobile-lessons.integration.ts",
       "status": "passed",
-      "durationMs": 5486,
+      "durationMs": 4975,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -671,7 +672,7 @@
     {
       "id": "integration:mobile-notes.integration.ts",
       "status": "passed",
-      "durationMs": 6471,
+      "durationMs": 4916,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -684,7 +685,7 @@
     {
       "id": "integration:mobile-planner.integration.ts",
       "status": "passed",
-      "durationMs": 4069,
+      "durationMs": 3829,
       "summary": {
         "tests": 7,
         "pass": 7,
@@ -697,7 +698,7 @@
     {
       "id": "integration:mobile-practice.integration.ts",
       "status": "passed",
-      "durationMs": 6145,
+      "durationMs": 4922,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -710,7 +711,7 @@
     {
       "id": "integration:mobile-reviews.integration.ts",
       "status": "passed",
-      "durationMs": 6855,
+      "durationMs": 6053,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -723,7 +724,7 @@
     {
       "id": "integration:mobile.integration.ts",
       "status": "passed",
-      "durationMs": 15231,
+      "durationMs": 15071,
       "summary": {
         "tests": 8,
         "pass": 8,
@@ -736,7 +737,7 @@
     {
       "id": "integration:notes.integration.ts",
       "status": "passed",
-      "durationMs": 624,
+      "durationMs": 584,
       "summary": {
         "tests": 11,
         "pass": 11,
@@ -749,7 +750,7 @@
     {
       "id": "integration:planner.integration.ts",
       "status": "passed",
-      "durationMs": 412,
+      "durationMs": 403,
       "summary": {
         "tests": 5,
         "pass": 5,
@@ -762,7 +763,7 @@
     {
       "id": "integration:population-genetics.integration.ts",
       "status": "passed",
-      "durationMs": 6324,
+      "durationMs": 5523,
       "summary": {
         "tests": 9,
         "pass": 9,
@@ -775,7 +776,7 @@
     {
       "id": "integration:programming.integration.ts",
       "status": "passed",
-      "durationMs": 6767,
+      "durationMs": 6721,
       "summary": {
         "tests": 18,
         "pass": 18,
@@ -788,7 +789,7 @@
     {
       "id": "integration:simpson-paradox.integration.ts",
       "status": "passed",
-      "durationMs": 6767,
+      "durationMs": 6501,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -801,7 +802,7 @@
     {
       "id": "integration:upload-security.integration.ts",
       "status": "passed",
-      "durationMs": 4910,
+      "durationMs": 4848,
       "summary": {
         "tests": 10,
         "pass": 10,
@@ -814,7 +815,7 @@
     {
       "id": "integration:worker-policy.integration.ts",
       "status": "passed",
-      "durationMs": 21301,
+      "durationMs": 21165,
       "summary": {
         "tests": 6,
         "pass": 6,
@@ -827,28 +828,28 @@
     {
       "id": "clean-start",
       "status": "passed",
-      "durationMs": 7974,
+      "durationMs": 7363,
       "summary": {}
     },
     {
       "id": "performance",
       "status": "passed",
-      "durationMs": 247,
+      "durationMs": 215,
       "summary": {
         "requests": 100,
         "errors": 0,
         "concurrency": 10,
         "latencyMs": {
-          "p50": 13,
-          "p95": 33,
-          "max": 36
+          "p50": 10,
+          "p95": 25,
+          "max": 29
         }
       }
     },
     {
       "id": "browser",
       "status": "passed",
-      "durationMs": 732414,
+      "durationMs": 455088,
       "summary": {
         "total": 397,
         "passed": 397,
@@ -1003,7 +1004,7 @@
     "mobileLint": "passed",
     "mobileTypecheck": "passed",
     "deviceHarnessTypecheck": "passed",
-    "verificationSequence": "Default full1465 checks passed on final product sources; only Android acceptance infrastructure was corrected afterward (explicit leave dialog, stable real bounds and native scroll actions). Dedicated Android7 and full Android66 reran on the same frozen APK, and the revised harness typecheck passed.",
+    "verificationSequence": "Default full1465 checks reran after all Android/browser acceptance infrastructure corrections. Product sources and both APKs remained unchanged throughout. Final native scroll driver passed supplemental Android21, practice7 and full Android66, with no failure/skip.",
     "aaptManifest": "both final APKs versionName=0.8.0 versionCode=8"
   },
   "apks": [
@@ -1068,6 +1069,7 @@
     "Inherited mobile build advisories remain with fingerprinted backports; no unmitigated findings accepted"
   ],
   "resolvedDuringAcceptance": [
+    "First remote CI passed1463/1465 but WebKit missed the ended heading while media was already closed. Shared Query polling intentionally suspends in background tabs. The browser test now independently verifies server ENDED and the teacher ended page, then brings the student page to the foreground before the unchanged student ended/disabled assertions; it neither forces reload nor overrides query state, and records actual page visibility on failure. Default full acceptance reran after this harness-only change.",
     "A final driver diagnosis found coordinate overscroll could trigger pull-to-refresh and clear the expected draft-conflict message. Long-page traversal now uses actual native accessibility scroll actions, without touch overscroll or simulated state, while retaining stable-bound single taps and every original business assertion",
     "After host restart, real review PostgreSQL was unavailable; restarted the existing isolated cluster without resetting data before rerunning Android validation",
     "A subsequent full Android run missed the unpublished assignment feedback button during layout movement; the driver now requires stable real accessibility bounds before issuing one tap, with an additional full assignment journey and complete Android rerun",

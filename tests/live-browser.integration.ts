@@ -199,6 +199,15 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
           await expect(studentPage.getByLabel('课堂发言', { exact: true })).toBeEnabled({ timeout: 10000 });
           await teacherPage.getByRole('button', { name: '结束课堂', exact: true }).click();
           await teacherPage.getByRole('button', { name: '确认结束', exact: true }).click();
+          await expect
+            .poll(async () => (await f.db.liveClass.findUnique({ where: { id: liveId } }))?.status)
+            .toBe('ENDED');
+          await expect(teacherPage.getByRole('heading', { name: '本场课堂已结束', exact: true })).toBeVisible(
+            { timeout: 10000 },
+          );
+          // Background tabs deliberately suspend Query polling. Inspect the student's visible
+          // classroom after switching back, without forcing a reload or changing its query state.
+          await studentPage.bringToFront();
           await expect(studentPage.getByRole('heading', { name: '本场课堂已结束', exact: true })).toBeVisible(
             { timeout: 10000 },
           );
@@ -211,6 +220,9 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
           ] as const) {
             if (page && !page.isClosed()) {
               try {
+                console.error(
+                  `${name} ${role} page lifecycle: ${JSON.stringify(await page.evaluate(() => ({ visibility: document.visibilityState, focused: document.hasFocus() })))}`,
+                );
                 console.error(`${name} ${role} media: ${JSON.stringify(await mediaDiagnostics(page))}`);
               } catch {
                 console.error(`${name} ${role} media diagnostics unavailable`);
