@@ -173,6 +173,8 @@ model AssignmentException {
 }
 
 model PracticeSession {
+  mobileCreateKey String? @db.VarChar(100)
+  mobileCreateHash String? @db.VarChar(64)
   id             String @id @default(cuid())
   organizationId String
   courseId       String
@@ -186,6 +188,7 @@ model PracticeSession {
   completedAt    DateTime? @db.Timestamptz(3)
   answers        PracticeAnswer[]
   @@index([userId, createdAt])
+  @@unique([userId, mobileCreateKey])
 }
 
 model PracticeAnswer {

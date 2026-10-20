@@ -33,6 +33,7 @@ import { PlannerController } from './planner/planner.controller';
 import { LearningActionsController } from './planner/actions.controller';
 import { LearningActionsService } from './planner/actions.service';
 import { NotesService } from './notes/notes.service';
+import { MobilePracticeController } from './mobile/mobile-practice.controller';
 import { MobileNotesController } from './mobile/mobile-notes.controller';
 import { NotesController } from './notes/notes.controller';
 import { AiStudyController } from './ai-study/ai-study.controller';
@@ -151,6 +152,7 @@ class CatalogController {
     LearningActionsController,
     NotesController,
     MobileNotesController,
+    MobilePracticeController,
     AiStudyController,
     AiAuthoringController,
     AlgorithmsController,

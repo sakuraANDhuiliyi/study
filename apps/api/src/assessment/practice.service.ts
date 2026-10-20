@@ -4,7 +4,12 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { AuthService } from '../auth/auth.service';
+import { AuditService } from '../common/audit.service';
+import { PrismaService } from '../common/prisma.service';
 import { z } from 'zod';
 import { Actor } from '../auth/auth.guard';
 import { AssessmentContext } from './assessment-context';
@@ -20,9 +25,124 @@ export class PracticeService {
     private readonly selection: QuestionSelectionService,
   ) {}
 
-  async createPractice(actor: Actor, input: z.infer<typeof schema.practiceSchema>) {
+  private async scoped<T>(
+    actor: Actor,
+    key: string,
+    run: (service: PracticeService, current: Actor) => Promise<T>,
+  ) {
+    return this.context.db.$transaction(async (tx) => {
+      await this.context.lock(tx, key);
+      const db = tx as PrismaService,
+        auth = new AuthService(db);
+      const current = actor.sessionId
+        ? await (actor.clientType === 'MOBILE'
+            ? auth.resolveMobileSessionId(actor.sessionId)
+            : auth.resolveSessionId(actor.sessionId))
+        : null;
+      if (
+        !current ||
+        current.id !== actor.id ||
+        current.organizationId !== actor.organizationId ||
+        current.role !== actor.role ||
+        current.clientType !== actor.clientType
+      )
+        throw new UnauthorizedException('会话或身份已变化，请重新登录');
+      auth.require(current, 'learning.use');
+      await auth.checkFeature(current, '/api/practice');
+      const context = new AssessmentContext(db, auth, new AuditService(db));
+      return run(new PracticeService(context, new QuestionSelectionService(context)), current);
+    });
+  }
+  createPractice(actor: Actor, input: z.infer<typeof schema.practiceSchema>, mobileKey?: string) {
+    return this.scoped(actor, 'practice-create:' + actor.id, (s, a) => s.createInside(a, input, mobileKey));
+  }
+  practices(actor: Actor, query: z.infer<typeof schema.listSchema>) {
+    return this.scoped(actor, 'practice-list:' + actor.id, (s, a) => s.listInside(a, query));
+  }
+  practice(actor: Actor, id: string) {
+    return this.scoped(actor, 'practice:' + id, (s, a) => s.readInside(a, id));
+  }
+  savePracticeProgress(actor: Actor, id: string, input: z.infer<typeof schema.practiceProgressSchema>) {
+    return this.scoped(actor, 'practice:' + id, (s, a) => s.progressInside(a, id, input));
+  }
+  answerPractice(actor: Actor, id: string, input: z.infer<typeof schema.answerSchema>) {
+    return this.scoped(actor, 'practice:' + id, (s, a) => s.answerInside(a, id, input));
+  }
+
+  mobileCreate(actor: Actor, input: z.infer<typeof schema.practiceSchema>, key: string) {
+    return this.scoped(actor, 'practice-create:' + actor.id, async (s, a) => {
+      const d = await s.createInside(a, input, key);
+      return s.mobileInside(a, d.id);
+    });
+  }
+  mobileRead(actor: Actor, id: string) {
+    return this.scoped(actor, 'practice:' + id, (s, a) => s.mobileInside(a, id));
+  }
+  mobileAnswer(actor: Actor, id: string, input: z.infer<typeof schema.answerSchema>) {
+    return this.scoped(actor, 'practice:' + id, async (s, a) => {
+      await s.answerInside(a, id, input);
+      return s.mobileInside(a, id);
+    });
+  }
+  private async mobileInside(actor: Actor, id: string) {
+    const d = await this.readInside(actor, id);
+    const questions = d.items as Record<string, any>[];
+    const available = await this.context.db.question.findMany({
+      where: {
+        id: { in: questions.map((q) => q.questionId) },
+        organizationId: actor.organizationId,
+        courseId: d.courseId,
+        practiceEnabled: true,
+        active: true,
+      },
+      select: { id: true },
+    });
+    const allowed = new Set(
+      questions.filter((q) => available.some((row) => row.id === q.questionId)).map((q) => q.id),
+    );
+    const course = await this.context.scoped(actor, d.courseId);
+    return {
+      ...d,
+      courseTitle: course.title,
+      items: questions.map((q) =>
+        allowed.has(q.id)
+          ? { ...q, available: true }
+          : {
+              id: q.id,
+              type: q.type,
+              available: false,
+              stem: '该题已停止开放练习',
+              options: [],
+              children: [],
+              scoreCents: 0,
+            },
+      ),
+      answers: d.answers
+        .filter((a) => allowed.has(a.questionVersionId))
+        .map((a) => ({
+          questionVersionId: a.questionVersionId,
+          value: a.value,
+          scoreCents: a.scoreCents,
+          correct: a.correct,
+          answeredAt: a.answeredAt,
+        })),
+    };
+  }
+
+  private async createInside(actor: Actor, input: z.infer<typeof schema.practiceSchema>, mobileKey?: string) {
     this.context.require(actor, 'learning.use');
     await this.context.scoped(actor, input.courseId);
+    const requestHash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
+    if (mobileKey) {
+      const prior = await this.context.db.practiceSession.findUnique({
+        where: { userId_mobileCreateKey: { userId: actor.id, mobileCreateKey: mobileKey } },
+      });
+      if (prior) {
+        if (prior.organizationId !== actor.organizationId || prior.mobileCreateHash !== requestHash)
+          throw new ConflictException('创建标识已用于其他练习条件，请先核对最近练习');
+        return this.readInside(actor, prior.id);
+      }
+    }
     const matching = await this.selection.sampleVersions(actor, input.courseId, {
       ...input,
       count: input.count ?? 10,
@@ -40,18 +160,24 @@ export class PracticeService {
         courseId: input.courseId,
         userId: actor.id,
         snapshot: json(selected),
+        ...(mobileKey ? { mobileCreateKey: mobileKey, mobileCreateHash: requestHash } : {}),
       },
     });
-    return this.practice(actor, session.id);
+    return this.readInside(actor, session.id);
   }
 
-  async practices(actor: Actor, query: z.infer<typeof schema.listSchema>) {
+  private async listInside(actor: Actor, query: z.infer<typeof schema.listSchema>) {
     this.context.require(actor, 'learning.use');
     const ids = await this.context.auth.courseIds(actor);
     if (query.courseId) await this.context.scoped(actor, query.courseId);
     const p = paginate(query);
-    const where = { userId: actor.id, courseId: query.courseId ?? { in: ids } };
-    const [items, total] = await this.context.db.$transaction([
+    const where = {
+      organizationId: actor.organizationId,
+      userId: actor.id,
+      courseId: query.courseId ?? { in: ids },
+      ...(['active', 'completed'].includes(query.status || '') ? { status: query.status } : {}),
+    };
+    const [items, total] = await Promise.all([
       this.context.db.practiceSession.findMany({
         where,
         select: {
@@ -82,7 +208,7 @@ export class PracticeService {
     return session;
   }
 
-  async practice(actor: Actor, id: string) {
+  private async readInside(actor: Actor, id: string) {
     const session = await this.practiceAccess(actor, id);
     const snapshot = session.snapshot as unknown as QuestionData[];
     return {
@@ -106,7 +232,11 @@ export class PracticeService {
     };
   }
 
-  async savePracticeProgress(actor: Actor, id: string, input: z.infer<typeof schema.practiceProgressSchema>) {
+  private async progressInside(
+    actor: Actor,
+    id: string,
+    input: z.infer<typeof schema.practiceProgressSchema>,
+  ) {
     const session = await this.practiceAccess(actor, id);
     const questions = session.snapshot as unknown as QuestionData[];
     if (input.currentPosition >= questions.length) throw new BadRequestException('练习位置超出题目范围');
@@ -136,18 +266,24 @@ export class PracticeService {
     };
   }
 
-  async answerPractice(actor: Actor, id: string, input: z.infer<typeof schema.answerSchema>) {
+  private async answerInside(actor: Actor, id: string, input: z.infer<typeof schema.answerSchema>) {
     const session = await this.practiceAccess(actor, id);
     const questions = session.snapshot as unknown as QuestionData[];
     const question = questions.find((q) => q.id === input.questionVersionId);
     if (!question) throw new BadRequestException('题目不属于本次练习');
     this.context.validateAnswerValues([input], [question]);
     const current = await this.context.db.question.findUnique({ where: { id: question.questionId } });
-    if (!current?.practiceEnabled) throw new ForbiddenException('题目已停止开放练习');
+    if (
+      !current?.practiceEnabled ||
+      !current.active ||
+      current.organizationId !== actor.organizationId ||
+      current.courseId !== session.courseId
+    )
+      throw new ForbiddenException('题目已停止开放练习');
     const score = autoScore(question, input.value);
     const correct = score === null ? null : score === question.scoreCents;
-    const answer = await this.context.db.$transaction(async (tx) => {
-      await this.context.lock(tx, `practice:${id}`);
+    const answer = await (async () => {
+      const tx = this.context.db;
       const existing = await tx.practiceAnswer.findUnique({
         where: { sessionId_questionVersionId: { sessionId: id, questionVersionId: input.questionVersionId } },
       });
@@ -179,7 +315,7 @@ export class PracticeService {
           data: { status: 'completed', completedAt: new Date() },
         });
       return result;
-    });
+    })();
     const answers = await this.context.db.practiceAnswer.findMany({ where: { sessionId: id } });
     return {
       answer,

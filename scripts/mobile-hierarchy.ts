@@ -1,4 +1,4 @@
-/** Build a read-only hierarchy probe from source for the explicitly owned Android emulator. */
+/** Build a real hierarchy/scroll driver from source for the explicitly owned Android emulator. */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve, delimiter } from 'node:path';
@@ -38,6 +38,7 @@ export function prepareMobileHierarchy(sdk: string, output: string) {
     '--output',
     dex,
     join(classes, 'cn/huiliyi/verification/HierarchyDump.class'),
+    join(classes, 'cn/huiliyi/verification/HierarchyDump$ScrollNode.class'),
   ]);
   const jar = join(output, 'hierarchy', 'hierarchy.jar');
   invoke(join(java, 'bin', 'jar'), ['cf', jar, '-C', dex, 'classes.dex']);

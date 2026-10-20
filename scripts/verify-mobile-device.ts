@@ -53,7 +53,7 @@ function decode(s: string) {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>');
 }
-function nodes() {
+function nodes(scrollAction?: 'forward' | 'backward') {
   run('shell', 'rm', '-f', deviceXml);
   const dumped = run(
     'shell',
@@ -69,6 +69,7 @@ function nodes() {
     '-e',
     'jars',
     deviceJar,
+    ...(scrollAction ? ['-e', 'scroll', scrollAction] : []),
   );
   if (
     !dumped.includes('OK (1 test)') ||
@@ -168,20 +169,24 @@ async function scroll(label: string, completedLabel?: string, attempts = 8) {
         (n) => match(n, label) && n.enabled !== 'false' && contentVisible(n, hasTabs ? 300 : 120),
       );
       if (n) {
-        tap(n);
+        // Server refreshes and scroll momentum can move a visible control between snapshots.
+        // Wait for its real bounds to settle before issuing a single action.
+        await liveWait(300);
+        const stable = nodes().find(
+          (next) =>
+            match(next, label) &&
+            next.enabled !== 'false' &&
+            contentVisible(next, hasTabs ? 300 : 120) &&
+            next.bounds === n.bounds,
+        );
+        if (!stable) continue;
+        tap(stable);
         await liveWait(400);
         return;
       }
-      run(
-        'shell',
-        'input',
-        'swipe',
-        '500',
-        direction === 'down' ? '1800' : '650',
-        '500',
-        direction === 'down' ? '650' : '1800',
-        '400',
-      );
+      // Scroll the real native container without a touch overscroll that could trigger refresh
+      // and erase a transient conflict message while the test is trying to inspect it.
+      nodes(direction === 'down' ? 'forward' : 'backward');
       await liveWait(300);
     }
   throw new Error('Android scroll target missing: ' + label);
@@ -1252,6 +1257,170 @@ async function main() {
     );
 
     await click('首页');
+    const practiceScroll = (label: string) => scroll(label, undefined, 24);
+    const practiceTypes = ['single', 'multiple', 'boolean', 'blank', 'short', 'composite'];
+    for (const typeName of practiceTypes)
+      await f.call(f.clients.teacher, '/questions', 'POST', {
+        courseId: f.course.id,
+        type: typeName,
+        stem: '<p>NativePractice-' + typeName + '</p>',
+        scoreCents: 100,
+        practiceEnabled: true,
+        options: ['single', 'multiple'].includes(typeName)
+          ? [
+              { id: 'A', text: 'Alpha' },
+              { id: 'B', text: 'Beta' },
+            ]
+          : [],
+        answer:
+          typeName === 'multiple'
+            ? ['A', 'B']
+            : typeName === 'boolean'
+              ? false
+              : typeName === 'blank'
+                ? [['one']]
+                : typeName === 'composite'
+                  ? {}
+                  : 'A',
+        children:
+          typeName === 'composite'
+            ? [
+                {
+                  id: 'child',
+                  type: 'short',
+                  stem: 'Practice-child',
+                  answer: 'Practice-child-reference',
+                  scoreCents: 100,
+                },
+              ]
+            : [],
+        explanation: 'Practice-private-explanation',
+      });
+    await click('课程');
+    await scroll(f.course.title);
+    await practiceScroll('课程自主练习');
+    await find('自主练习中心');
+    await practiceScroll('练习题目数量');
+    await type('练习题目数量', '6');
+    await practiceScroll('开始本次练习');
+    await find('自主练习与复盘');
+    let practice = (await f.call(f.clients.student, '/practice?pageSize=1')).body.items[0];
+    let practiceDetail = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
+    assert.equal(practiceDetail.items.length, 6);
+    assert.equal(practiceDetail.answers.length, 0);
+    assert.ok(!JSON.stringify(nodes()).includes('Practice-private-explanation'));
+    passed(
+      'native course practice creates one real six-type snapshot without revealing unsubmitted references',
+    );
+    const fillPractice = async (index: number) => {
+      const item = practiceDetail.items[index],
+        label = '练习第' + (index + 1) + '题';
+      if (item.type === 'single') await practiceScroll(label + '：Beta');
+      if (item.type === 'multiple') {
+        await practiceScroll(label + '：Alpha');
+        await practiceScroll(label + '：Beta');
+      }
+      if (item.type === 'boolean') await practiceScroll(label + '：错误');
+      if (item.type === 'blank' || item.type === 'short') {
+        await practiceScroll(label + '答案');
+        await type(label + '答案', item.type === 'blank' ? 'one' : 'My-review');
+      }
+      if (item.type === 'composite') {
+        await practiceScroll(label + '-子题1答案');
+        await type(label + '-子题1答案', 'My-child-review');
+      }
+    };
+    await fillPractice(0);
+    await click('首页');
+    await find('离开自主练习？');
+    await click('继续练习');
+    assert.equal((await f.call(f.clients.student, '/practice/' + practice.id)).body.answers.length, 0);
+    await practiceScroll('提交本题练习');
+    await click('继续检查');
+    assert.equal((await f.call(f.clients.student, '/practice/' + practice.id)).body.answers.length, 0);
+    await practiceScroll('提交本题练习');
+    await click('确认提交练习答案');
+    await practiceScroll('本题首份答案已记录');
+    practiceDetail = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
+    assert.equal(practiceDetail.answers.length, 1);
+    await practiceScroll('参考答案');
+    passed(
+      'native practice protects unsent work and confirmation cancellation; first submission alone reveals feedback',
+    );
+    await practiceScroll('标记本题稍后复习');
+    await practiceScroll('练习位置与标记已保存');
+    await practiceScroll('下一道练习题');
+    await practiceScroll('练习第 2 / 6 题');
+    let savedPractice = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
+    assert.equal(savedPractice.currentPosition, 1);
+    assert.deepEqual(savedPractice.flags, [practiceDetail.items[0].id]);
+    run('shell', 'am', 'force-stop', pkg);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('你好，学生甲');
+    await practiceScroll('自主练习');
+    await practiceScroll('未完成练习');
+    await practiceScroll('打开第 1 次练习');
+    await practiceScroll('练习第 2 / 6 题');
+    passed(
+      'native practice position, review flag and immutable first answer survive process restart and resume from own history',
+    );
+    await f.call(f.clients.student, '/practice/' + practice.id + '/progress', 'PUT', {
+      revision: savedPractice.revision,
+      flags: [],
+      currentPosition: 0,
+    });
+    await practiceScroll('下一道练习题');
+    await practiceScroll('练习进度已在其他页面更新，请刷新后继续');
+    await practiceScroll('载入服务器练习');
+    await click('保留当前输入');
+    await practiceScroll('载入服务器练习');
+    await click('确认载入练习');
+    await practiceScroll('练习第 1 / 6 题');
+    passed(
+      'native practice progress CAS blocks stale website overwrites and requires explicit server reload',
+    );
+    for (let i = 1; i < 6; i++) {
+      await practiceScroll('下一道练习题');
+      await practiceScroll('练习第 ' + (i + 1) + ' / 6 题');
+      await fillPractice(i);
+      await practiceScroll('提交本题练习');
+      await click('确认提交练习答案');
+      await practiceScroll('本题首份答案已记录');
+    }
+    practiceDetail = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
+    assert.equal(practiceDetail.status, 'completed');
+    assert.equal(practiceDetail.report.answered, 6);
+    assert.equal(practiceDetail.report.objectivelyScored, 4);
+    assert.equal(practiceDetail.report.correct, 3);
+    await practiceScroll('查看本次练习报告');
+    await practiceScroll('本次练习报告');
+    await practiceScroll('客观题答对 3 / 4');
+    screenshot('android-practice');
+    passed(
+      'native all six practice controls complete the shared session and subjective answers stay outside objective accuracy',
+    );
+    await click('首页');
+    await practiceScroll('自主练习');
+    await practiceScroll('已完成练习');
+    await practiceScroll('共 1 次练习');
+    await practiceScroll('打开第 1 次练习');
+    await practiceScroll('载入服务器练习');
+    await f.db.systemSetting.upsert({
+      where: { organizationId_key: { organizationId: f.organization.id, key: 'features' } },
+      create: { organizationId: f.organization.id, key: 'features', value: { practice: false } },
+      update: { value: { practice: false } },
+    });
+    await practiceScroll('载入服务器练习');
+    await practiceScroll('机构已关闭此功能');
+    await f.db.systemSetting.deleteMany({ where: { organizationId: f.organization.id, key: 'features' } });
+    passed(
+      'native practice history filters completed sessions and rechecks organization feature withdrawal without altering answers',
+    );
+
+    await click('首页');
+    await find('离开自主练习？');
+    await click('放弃并离开练习');
+    await find('你好，学生甲');
     const seqIds: string[] = [];
     for (let i = 0; i < 2; i++) {
       const q = (
