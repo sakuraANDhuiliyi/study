@@ -168,12 +168,32 @@ async function fixture(page: Page, options: Options = {}) {
     requests,
     projects,
     release,
-    waitReached: () =>
-      expect
-        .poll(() => heldRequestObserved, {
-          message: `Expected the held ${options.hold} API request to start`,
-        })
-        .toBeTruthy(),
+    waitReached: async () => {
+      try {
+        await expect
+          .poll(() => heldRequestObserved, {
+            message: `Expected the held ${options.hold} API request to start`,
+          })
+          .toBeTruthy();
+      } catch (error) {
+        // This fixture serves synthetic responses only. Record paths and visible control state,
+        // never request bodies, cookies or CSRF headers, when an action fails to start.
+        const ui = await page.evaluate(() => ({
+          path: location.pathname,
+          visibility: document.visibilityState,
+          duplicateName: document.querySelector<HTMLInputElement>('#programming-duplicate-title')?.value,
+          dialogs: document.querySelectorAll('[role="dialog"]').length,
+          notices: [...document.querySelectorAll('.ant-message-notice')].map((n) => n.textContent),
+          buttons: [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].map((b) => ({
+            text: b.textContent,
+            disabled: b.disabled,
+          })),
+        }));
+        throw new Error(
+          `${(error as Error).message}\nSynthetic request paths: ${JSON.stringify(requests.map(({ method, path }) => ({ method, path })))}\nVisible fixture state: ${JSON.stringify(ui)}`,
+        );
+      }
+    },
   };
 }
 async function edit(page: Page, content: string) {
@@ -317,10 +337,23 @@ for (const action of ['duplicate', 'backup', 'save'] as const) {
     await page.getByRole('link', { name: /原项目.*打开工作区/ }).click();
     await expect(page.getByRole('heading', { name: '编程工作区', exact: true })).toBeVisible();
     if (action === 'save') await edit(page, '<h1>未保存的编辑</h1>');
+    else await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 15000 });
     await page
       .getByRole('button', { name: action === 'backup' ? 'JSON 备份' : '复制项目', exact: true })
       .click();
-    if (action !== 'backup') await page.getByRole('button', { name: '创建副本', exact: true }).click();
+    if (action !== 'backup') {
+      const dialog = page.getByRole('dialog', { name: '复制编程项目', exact: true });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByLabel('副本名称', { exact: true })).toHaveValue('原项目 副本');
+      await expect
+        .poll(() =>
+          dialog.evaluate(
+            (el) => el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+          ),
+        )
+        .toBe(0);
+      await dialog.getByRole('button', { name: '创建副本', exact: true }).click();
+    }
     await state.waitReached();
     await page.goBack({ waitUntil: 'commit' });
     await expect(page.getByRole('heading', { name: '编程工作室', exact: true })).toBeVisible();
