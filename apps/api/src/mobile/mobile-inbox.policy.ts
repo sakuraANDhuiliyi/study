@@ -1,5 +1,5 @@
 export type InboxKind = 'assignment' | 'exam' | 'grade' | 'course' | 'other';
-export type InboxTarget = { name: 'assignment' | 'exam' | 'review' | 'course'; id: string };
+export type InboxTarget = { name: 'assignment' | 'exam' | 'review' | 'course' | 'announcement'; id: string };
 export const inboxLabels: Record<InboxKind, string> = {
   assignment: '作业动态',
   exam: '考试动态',
@@ -12,7 +12,14 @@ export function inboxKind(type: string): InboxKind {
   return ['MEMBERSHIP', 'ANNOUNCEMENT'].includes(type) ? 'course' : 'other';
 }
 // Never forward stored URLs, event keys, message bodies or grade snapshots to the App.
-export function inboxTarget(type: string, link: string): InboxTarget | null {
+export function inboxTarget(type: string, link: string, eventKey?: string): InboxTarget | null {
+  if (
+    type === 'ANNOUNCEMENT' &&
+    (link === '/notifications' || /^\/courses\/[A-Za-z0-9_-]{1,100}$/.test(link))
+  ) {
+    const id = /^announcement:([A-Za-z0-9_-]{1,100})$/.exec(eventKey || '')?.[1];
+    if (id) return { name: 'announcement', id };
+  }
   const match = /^\/(assignments|exams|attempts|courses)\/([A-Za-z0-9_-]{1,100})$/.exec(link);
   if (!match) return null;
   const [, route, id] = match,

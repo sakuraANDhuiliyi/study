@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../common/prisma.service';
+import { readAnnouncement } from './mobile-announcements';
 import { inboxKind, inboxLabels, inboxTarget } from './mobile-inbox.policy';
 const idSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 const querySchema = z
@@ -22,6 +23,7 @@ const querySchema = z
     page: z.coerce.number().int().min(1).max(100000).default(1),
     pageSize: z.coerce.number().int().min(1).max(20).default(10),
     unread: z.enum(['true', 'false']).optional(),
+    announcements: z.literal('true').optional(),
     kind: z.enum(['assignment', 'exam', 'grade', 'course', 'other']).optional(),
   })
   .strict();
@@ -82,7 +84,7 @@ export class MobileInboxController {
           title: inboxLabels[inboxKind(n.type)],
           createdAt: n.createdAt,
           readAt: n.readAt,
-          canOpen: Boolean(inboxTarget(n.type, n.link)),
+          canOpen: Boolean(inboxTarget(n.type, n.link, q.announcements ? n.eventKey : undefined)),
         })),
         total: await tx.notification.count({ where }),
         unreadCount: await tx.notification.count({ where: { ...own, readAt: null } }),
@@ -113,15 +115,25 @@ export class MobileInboxController {
     });
   }
   @Get(':id/target')
-  async target(@CurrentActor() a: Actor, @Param('id') id: string) {
+  async target(@CurrentActor() a: Actor, @Param('id') id: string, @Query() input: unknown) {
     idSchema.parse(id);
+    const q = z
+      .object({ announcements: z.literal('true').optional() })
+      .strict()
+      .parse(input);
     return this.scoped(a, async (tx, auth, actor) => {
       const n = await tx.notification.findFirst({
         where: { id, organizationId: actor.organizationId, userId: actor.id },
       });
       if (!n) throw new NotFoundException('通知不存在或不属于本人');
-      const target = inboxTarget(n.type, n.link);
+      const target = inboxTarget(n.type, n.link, q.announcements ? n.eventKey : undefined);
       if (!target) throw new NotFoundException('此类通知详情尚未迁移，请在网站查看');
+      if (target.name === 'announcement') {
+        const row = await readAnnouncement(tx, auth, actor, target.id);
+        if (n.link !== (row.courseId ? '/courses/' + row.courseId : '/notifications'))
+          throw new NotFoundException('公告通知目标与当前记录不一致');
+        return target;
+      }
       let courseId: string;
       if (target.name === 'course') courseId = target.id;
       else if (target.name === 'assignment') {

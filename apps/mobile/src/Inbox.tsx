@@ -13,6 +13,7 @@ export function Inbox({ client, open }: { client: MobileClient; open(target: Inb
       new URLSearchParams({
         page: String(filter.page),
         pageSize: '10',
+        announcements: 'true',
         ...(filter.unread ? { unread: 'true' } : {}),
         ...(filter.kind ? { kind: filter.kind } : {}),
       }),

@@ -33,6 +33,7 @@ import { PlannerController } from './planner/planner.controller';
 import { LearningActionsController } from './planner/actions.controller';
 import { LearningActionsService } from './planner/actions.service';
 import { NotesService } from './notes/notes.service';
+import { MobileAnnouncementsController } from './mobile/mobile-announcements.controller';
 import { MobileCollectionsController } from './mobile/mobile-collections.controller';
 import { MobilePracticeController } from './mobile/mobile-practice.controller';
 import { MobileNotesController } from './mobile/mobile-notes.controller';
@@ -155,6 +156,7 @@ class CatalogController {
     MobileNotesController,
     MobilePracticeController,
     MobileCollectionsController,
+    MobileAnnouncementsController,
     AiStudyController,
     AiAuthoringController,
     AlgorithmsController,

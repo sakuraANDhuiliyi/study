@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { createSocket } from 'node:dgram';
@@ -310,5 +310,43 @@ export async function createLiveFixture() {
   } catch (error) {
     await cleanup();
     throw error;
+  }
+}
+
+/** Run the real notification worker only against an explicitly isolated fixture environment. */
+export function runFixtureJobs(env: NodeJS.ProcessEnv) {
+  const url = new URL(env.DATABASE_URL || '');
+  assert.ok(
+    ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) &&
+      /^\/live_review_[a-f0-9]+$/.test(url.pathname),
+  );
+  assert.equal(env.NODE_ENV, 'test');
+  assert.equal(env.DISABLE_JOBS, 'true');
+  try {
+    execFileSync(
+      process.execPath,
+      [
+        '-e',
+        `
+      const {NestFactory}=require('@nestjs/core');
+      const {AppModule}=require('./apps/api/dist/app.module.js');
+      const {JobsService}=require('./apps/api/dist/common/jobs.service.js');
+      const {PrismaService}=require('./apps/api/dist/common/prisma.service.js');
+      (async()=>{ const app=await NestFactory.createApplicationContext(AppModule,{logger:false});
+        try {
+          const db=app.get(PrismaService);
+          for(let i=0;i<10;i++){
+            await app.get(JobsService).run();
+            if(!await db.backgroundJob.count({where:{status:'PENDING',runAt:{lte:new Date()}}})) return;
+          }
+          throw new Error('Fixture queue did not drain');
+        } finally {await app.close();}
+      })().catch(()=>{console.error('Isolated worker failed');process.exitCode=1;});
+    `,
+      ],
+      { env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 45000 },
+    );
+  } catch {
+    throw new Error('Isolated fixture worker did not complete; provider logs withheld');
   }
 }

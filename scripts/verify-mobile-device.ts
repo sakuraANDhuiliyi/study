@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { chromium, expect } from '@playwright/test';
 import { prepareMobileHierarchy } from './mobile-hierarchy';
-import { createLiveFixture, liveWait } from '../tests/live.fixture';
+import { createLiveFixture, liveWait, runFixtureJobs } from '../tests/live.fixture';
 import { attachLogin, installMedia, inbound } from '../tests/live-browser.fixture';
 const serial = process.env.MOBILE_TEST_SERIAL || '';
 assert.ok(
@@ -1130,6 +1130,96 @@ async function main() {
     await find(exam.title);
     passed('native learning reminders open real assignment and exam pages through typed internal navigation');
 
+    await click('首页');
+    const announcementScroll = (label: string) => scroll(label, undefined, 20);
+    const announcementRows: any[] = [];
+    for (let i = 0; i < 12; i++)
+      announcementRows.push(
+        (
+          await f.call(f.clients.teacher, '/announcements', 'POST', {
+            courseId: f.course.id,
+            title: 'NativeBulletin-' + i,
+            content: '<p>Native-course-body-' + i + '</p>',
+          })
+        ).body,
+      );
+    const orgAnnouncement = (
+      await f.call(f.clients.admin, '/announcements', 'POST', {
+        title: 'NativeOrgAnnouncement',
+        content: '<p>Native-institution-body</p>',
+      })
+    ).body;
+    runFixtureJobs(f.env);
+    await announcementScroll('教学公告');
+    await announcementScroll('共 13 条公告，第 1 页');
+    await announcementScroll('机构公告');
+    await announcementScroll('共 1 条公告，第 1 页');
+    await announcementScroll('查看第 1 条公告');
+    await find('公告详情');
+    await find('Native-institution-body');
+    const orgNotice = await f.db.notification.findFirstOrThrow({
+      where: { userId: f.users.student.id, eventKey: 'announcement:' + orgAnnouncement.id },
+    });
+    assert.equal(orgNotice.readAt, null);
+    screenshot('android-announcement');
+    passed(
+      'native announcements show institution content from shared records without implicitly reading a notification',
+    );
+    await click('首页');
+    await click('课程');
+    await scroll(f.course.title);
+    await announcementScroll('查看课程公告');
+    await announcementScroll('共 12 条公告，第 1 页');
+    await type('搜索公告标题', 'NativeBulletin-0');
+    await announcementScroll('搜索公告');
+    await announcementScroll('共 1 条公告，第 1 页');
+    await announcementScroll('查看第 1 条公告');
+    await find('Native-course-body-0');
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: false },
+    });
+    await announcementScroll('刷新公告详情');
+    await find('当前没有此课程的访问资格');
+    assert.ok(!nodes().some((n) => (n.text || '').includes('Native-course-body-0')));
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: true },
+    });
+    await announcementScroll('刷新公告详情');
+    await find('Native-course-body-0');
+    passed(
+      'native course announcement title search and refreshed authorization hide withdrawn membership content',
+    );
+    await click('首页');
+    await announcementScroll('教学公告');
+    await announcementScroll('下一页公告');
+    await announcementScroll('共 13 条公告，第 2 页');
+    await announcementScroll('上一页公告');
+    await announcementScroll('共 13 条公告，第 1 页');
+    run('shell', 'am', 'force-stop', pkg);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+    await announcementScroll('教学公告');
+    await announcementScroll('课程公告');
+    await announcementScroll('共 12 条公告，第 1 页');
+    passed(
+      'native announcement list paginates and remains available after process restart with current server records',
+    );
+    await click('首页');
+    await inboxScroll('学习通知');
+    await inboxScroll('课程提醒');
+    await inboxScroll('查看第 1 条通知内容');
+    await find('公告详情');
+    await find('NativeOrgAnnouncement');
+    assert.equal((await f.db.notification.findUniqueOrThrow({ where: { id: orgNotice.id } })).readAt, null);
+    await f.db.announcement.delete({ where: { id: orgAnnouncement.id } });
+    await announcementScroll('刷新公告详情');
+    await find('公告不存在或已撤回');
+    assert.ok(!nodes().some((n) => (n.text || '').includes('Native-institution-body')));
+    passed(
+      'native announcement notification opens its exact current record and deletion hides stale content without silent read',
+    );
     await click('首页');
     const notesScroll = (label: string) => scroll(label, undefined, 20);
     await notesScroll('学习笔记');
