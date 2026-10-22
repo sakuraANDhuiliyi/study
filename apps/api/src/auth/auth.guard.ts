@@ -39,6 +39,9 @@ export function mobileRouteAllowed(path: string, method: string) {
   if (method === 'GET' && /^\/api\/mobile\/practice(?:\/[^/]+)?\/?$/.test(path)) return true;
   if (method === 'POST' && /^\/api\/mobile\/practice(?:\/[^/]+\/answer)?\/?$/.test(path)) return true;
   if (method === 'PUT' && /^\/api\/mobile\/practice\/[^/]+\/progress\/?$/.test(path)) return true;
+  if (method === 'GET' && /^\/api\/mobile\/collections\/(mistakes|favorites)\/?$/.test(path)) return true;
+  if (method === 'PUT' && /^\/api\/mobile\/collections\/(mistakes|favorites)\/[^/]+\/?$/.test(path))
+    return true;
   if (method === 'GET' && /^\/api\/mobile\/notes\/?$/.test(path)) return true;
   if (['GET', 'PUT', 'DELETE'].includes(method) && /^\/api\/mobile\/lessons\/[^/]+\/note\/?$/.test(path))
     return true;

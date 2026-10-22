@@ -25,6 +25,7 @@ import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { Collections } from './src/Collections';
 import { Practices, Practice } from './src/Practice';
 import { Notes, NoteEditor } from './src/Notes';
 import { Inbox } from './src/Inbox';
@@ -122,7 +123,8 @@ type Route =
         | 'appeals'
         | 'notifications'
         | 'notes'
-        | 'practice';
+        | 'practice'
+        | 'collections';
       courseId?: string;
     }
   | { name: 'course'; id: string }
@@ -329,7 +331,8 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             next.name === 'assignments' ||
             next.name === 'exams' ||
             next.name === 'notes' ||
-            next.name === 'practice') &&
+            next.name === 'practice' ||
+            next.name === 'collections') &&
           next.courseId
         ? { courseId: next.courseId }
         : {};
@@ -400,7 +403,9 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 ? '我的考试'
                 : route.name === 'planner'
                   ? '学习计划'
-                  : route.name === 'practice' || route.name === 'practiceSession'
+                  : route.name === 'practice' ||
+                      route.name === 'practiceSession' ||
+                      route.name === 'collections'
                     ? '自主练习'
                     : route.name === 'note' || route.name === 'notes'
                       ? '学习笔记'
@@ -497,6 +502,14 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             id={route.id}
             registerLeave={registerLeave}
             openReview={(id) => setRoute({ name: 'review', id })}
+          />
+        )}
+        {route.name === 'collections' && (
+          <Collections
+            client={client}
+            courseId={route.courseId}
+            registerLeave={registerLeave}
+            practice={(courseId) => setRoute({ name: 'practice', courseId })}
           />
         )}
         {route.name === 'practice' && (
@@ -702,6 +715,14 @@ function Home({
           onPress={() => navigate({ name: 'practice' })}
         />
       )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="错题与收藏"
+          caption="掌握状态与个人题目管理"
+          icon="☆"
+          onPress={() => navigate({ name: 'collections' })}
+        />
+      )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />
       <Query state={q} />
       {q.data?.items.map((course) => (
@@ -810,6 +831,9 @@ function CourseDetail({
             />
           )}
           <Button title="查看课程直播" secondary onPress={() => navigate({ name: 'live', courseId: id })} />
+          {user.role === 'STUDENT' && (
+            <Button title="课程错题与收藏" onPress={() => navigate({ name: 'collections', courseId: id })} />
+          )}
           {lesson && user.role === 'STUDENT' && (
             <Button title="本课时私人笔记" onPress={() => navigate({ name: 'note', id: lesson.id })} />
           )}

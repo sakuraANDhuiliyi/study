@@ -374,6 +374,10 @@ export class PracticeService {
   }
 
   async favorite(actor: Actor, id: string, favorite: boolean) {
+    return this.scoped(actor, 'collection:' + actor.id, (s, a) => s.favoriteInside(a, id, favorite));
+  }
+
+  private async favoriteInside(actor: Actor, id: string, favorite: boolean) {
     this.context.require(actor, 'learning.use');
     const q = await this.context.db.question.findFirst({
       where: { id, organizationId: actor.organizationId, practiceEnabled: true, active: true },
@@ -391,10 +395,126 @@ export class PracticeService {
   }
 
   async masterMistake(actor: Actor, id: string, mastered: boolean) {
+    return this.scoped(actor, 'collection:' + actor.id, (s, a) => s.masterInside(a, id, mastered));
+  }
+
+  private async masterInside(actor: Actor, id: string, mastered: boolean) {
     this.context.require(actor, 'learning.use');
     const mistake = await this.context.db.mistakeRecord.findFirst({ where: { id, userId: actor.id } });
     if (!mistake) throw new NotFoundException('错题记录不存在');
     await this.context.scoped(actor, mistake.courseId);
     return this.context.db.mistakeRecord.update({ where: { id }, data: { mastered } });
+  }
+
+  mobileCollection(
+    actor: Actor,
+    kind: 'mistakes' | 'favorites',
+    query: {
+      page: number;
+      pageSize: number;
+      courseId?: string;
+      mastered?: 'true' | 'false';
+    },
+  ) {
+    return this.scoped(actor, 'collection:' + actor.id, async (s, a) => {
+      const courses = await s.context.auth.courseIds(a);
+      if (query.courseId) await s.context.scoped(a, query.courseId);
+      const where = { userId: a.id, courseId: query.courseId ?? { in: courses } };
+      const window = { skip: (query.page - 1) * query.pageSize, take: query.pageSize };
+      const filter = { ...where, ...(query.mastered ? { mastered: query.mastered === 'true' } : {}) };
+      const rows =
+        kind === 'mistakes'
+          ? await s.context.db.mistakeRecord.findMany({
+              where: filter,
+              orderBy: [{ lastAnsweredAt: 'desc' }, { id: 'desc' }],
+              ...window,
+            })
+          : await s.context.db.questionFavorite.findMany({
+              where,
+              orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+              ...window,
+            });
+      const total =
+        kind === 'mistakes'
+          ? await s.context.db.mistakeRecord.count({ where: filter })
+          : await s.context.db.questionFavorite.count({ where });
+      const questions = await s.context.db.question.findMany({
+        where: {
+          id: { in: rows.map((r) => r.questionId) },
+          organizationId: a.organizationId,
+          courseId: { in: courses },
+          active: true,
+          practiceEnabled: true,
+        },
+        include: questionInclude,
+      });
+      const favorites = await s.context.db.questionFavorite.findMany({
+        where: { userId: a.id, questionId: { in: rows.map((r) => r.questionId) } },
+        select: { questionId: true, id: true },
+      });
+      return {
+        items: rows.map((r) => {
+          const q = questions.find((q) => q.id === r.questionId && q.courseId === r.courseId);
+          return {
+            id: r.id,
+            courseId: r.courseId,
+            questionId: r.questionId,
+            available: Boolean(q),
+            favorite: favorites.some((f) => f.questionId === r.questionId),
+            mastered: 'mastered' in r ? r.mastered : null,
+            token: 'mastered' in r ? s.collectionToken(r) : null,
+            favoriteId: favorites.find((f) => f.questionId === r.questionId)?.id ?? null,
+            wrongCount: 'wrongCount' in r ? r.wrongCount : null,
+            question: q ? publicQuestion(content(q.versions[0])) : null,
+          };
+        }),
+        total,
+        page: query.page,
+        pageSize: query.pageSize,
+      };
+    });
+  }
+
+  private collectionToken(row: { id: string; mastered: boolean; wrongCount: number; lastAnsweredAt: Date }) {
+    return createHash('sha256')
+      .update(JSON.stringify([row.id, row.mastered, row.wrongCount, row.lastAnsweredAt.toISOString()]))
+      .digest('hex');
+  }
+
+  mobileMaster(actor: Actor, id: string, mastered: boolean, expected: string) {
+    return this.scoped(actor, 'collection:' + actor.id, async (s, a) => {
+      const row = await s.context.db.mistakeRecord.findFirst({ where: { id, userId: a.id } });
+      if (!row) throw new NotFoundException('错题记录不存在');
+      await s.context.scoped(a, row.courseId);
+      if (s.collectionToken(row) !== expected) throw new ConflictException('错题状态已变化，请刷新后确认');
+      const result = await s.context.db.mistakeRecord.updateMany({
+        where: {
+          id,
+          userId: a.id,
+          mastered: row.mastered,
+          wrongCount: row.wrongCount,
+          lastAnsweredAt: row.lastAnsweredAt,
+        },
+        data: { mastered },
+      });
+      if (result.count !== 1) throw new ConflictException('作答记录已变化，请刷新后确认');
+      return { mastered };
+    });
+  }
+
+  mobileFavorite(actor: Actor, id: string, favorite: boolean, expected: string | null) {
+    return this.scoped(actor, 'collection:' + actor.id, async (s, a) => {
+      const row = await s.context.db.questionFavorite.findUnique({
+        where: { userId_questionId: { userId: a.id, questionId: id } },
+      });
+      if ((row?.id ?? null) !== expected) throw new ConflictException('收藏记录已变化，请刷新后确认');
+      if (!favorite && row) {
+        await s.context.scoped(a, row.courseId);
+        await s.context.db.questionFavorite.deleteMany({ where: { id: row.id, userId: a.id } });
+      } else {
+        await s.favoriteInside(a, id, favorite);
+      }
+      return { favorite };
+    });
   }
 }

@@ -1421,6 +1421,84 @@ async function main() {
     await find('离开自主练习？');
     await click('放弃并离开练习');
     await find('你好，学生甲');
+    // Dedicated disposable fixture records; never reset a real user's collections.
+    await f.db.mistakeRecord.deleteMany({ where: { userId: f.users.student.id } });
+    await f.db.questionFavorite.deleteMany({ where: { userId: f.users.student.id } });
+    for (let i = 0; i < 12; i++) {
+      const q = (
+        await f.call(f.clients.teacher, '/questions', 'POST', {
+          courseId: f.course.id,
+          type: 'single',
+          stem: 'NativeCollection-' + i,
+          scoreCents: 100,
+          practiceEnabled: true,
+          options: [
+            { id: 'A', text: 'Alpha' },
+            { id: 'B', text: 'Beta' },
+          ],
+          answer: 'A',
+          explanation: 'Collection-private-reference',
+        })
+      ).body;
+      await f.db.mistakeRecord.create({
+        data: { userId: f.users.student.id, courseId: f.course.id, questionId: q.id },
+      });
+    }
+    await practiceScroll('错题与收藏');
+    await find('错题本与收藏管理');
+    await practiceScroll('共 12 条记录，第 1 页');
+    assert.ok(!JSON.stringify(nodes()).includes('Collection-private-reference'));
+    await practiceScroll('标为已掌握');
+    await click('取消');
+    assert.equal(
+      await f.db.mistakeRecord.count({ where: { userId: f.users.student.id, mastered: true } }),
+      0,
+    );
+    await practiceScroll('标为已掌握');
+    await click('确认标为已掌握');
+    await practiceScroll('已掌握');
+    await practiceScroll('共 1 条记录，第 1 页');
+    passed('native collections keep references hidden and confirm mastery before sharing the website record');
+    const masteredRow = await f.db.mistakeRecord.findFirstOrThrow({
+      where: { userId: f.users.student.id, mastered: true },
+    });
+    await f.db.mistakeRecord.update({
+      where: { id: masteredRow.id },
+      data: { mastered: false, wrongCount: { increment: 1 }, lastAnsweredAt: new Date() },
+    });
+    await practiceScroll('重新标为未掌握');
+    await click('确认重新标为未掌握');
+    await practiceScroll('共 0 条记录，第 1 页');
+    assert.equal(
+      (await f.db.mistakeRecord.findUniqueOrThrow({ where: { id: masteredRow.id } })).wrongCount,
+      2,
+    );
+    passed('native stale mastery write refreshes after conflict without overwriting newer answer history');
+    await practiceScroll('未掌握');
+    await practiceScroll('共 12 条记录，第 1 页');
+    await practiceScroll('收藏题目');
+    await click('确认收藏题目');
+    await practiceScroll('我的收藏');
+    await practiceScroll('共 1 条记录，第 1 页');
+    const favoriteRow = await f.db.questionFavorite.findFirstOrThrow({
+      where: { userId: f.users.student.id },
+    });
+    await f.db.question.update({ where: { id: favoriteRow.questionId }, data: { practiceEnabled: false } });
+    await practiceScroll('刷新错题与收藏');
+    await practiceScroll('该题已停止开放练习，正文与参考内容不可见。');
+    await practiceScroll('取消收藏');
+    await click('确认取消收藏');
+    await practiceScroll('共 0 条记录，第 1 页');
+    passed(
+      'native favorites sync personal records and permit removal of a withdrawn question without exposing its stem',
+    );
+    await practiceScroll('我的错题');
+    await practiceScroll('下一页记录');
+    await practiceScroll('共 12 条记录，第 2 页');
+    screenshot('android-collections');
+    await click('首页');
+    await find('你好，学生甲');
+    passed('native collections paginate personal records and return to the native home');
     const seqIds: string[] = [];
     for (let i = 0; i < 2; i++) {
       const q = (
