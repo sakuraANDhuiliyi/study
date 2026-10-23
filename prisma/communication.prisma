@@ -13,10 +13,13 @@ model DiscussionPost {
   closed Boolean @default(false)
   solved Boolean @default(false)
   hidden Boolean @default(false)
+  mobileCreateKey String? @db.VarChar(100)
+  mobileCreateHash String? @db.VarChar(64)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   @@index([courseId,hidden,pinned,createdAt,id])
   @@index([organizationId,authorId,createdAt])
+  @@unique([authorId,mobileCreateKey])
 }
 
 model DiscussionReply {
@@ -28,8 +31,11 @@ model DiscussionReply {
   attachmentIds String[] @default([])
   quoteReplyId String?
   hidden Boolean @default(false)
+  mobileCreateKey String? @db.VarChar(100)
+  mobileCreateHash String? @db.VarChar(64)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   @@index([postId,hidden,createdAt,id])
+  @@unique([authorId,mobileCreateKey])
 }
 
 model Conversation {

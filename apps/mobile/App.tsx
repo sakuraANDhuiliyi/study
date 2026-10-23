@@ -29,6 +29,7 @@ import { Collections } from './src/Collections';
 import { Practices, Practice } from './src/Practice';
 import { Notes, NoteEditor } from './src/Notes';
 import { Announcements, Announcement } from './src/Announcements';
+import { Discussions, Discussion, NewDiscussion } from './src/Discussions';
 import { Inbox } from './src/Inbox';
 import { Reviews, Review } from './src/Reviews';
 import { Exams, Exam, ExamAnswer } from './src/Exams';
@@ -126,7 +127,9 @@ type Route =
         | 'notes'
         | 'practice'
         | 'collections'
-        | 'announcements';
+        | 'announcements'
+        | 'discussions'
+        | 'discussionNew';
       courseId?: string;
     }
   | { name: 'course'; id: string }
@@ -134,6 +137,7 @@ type Route =
   | { name: 'assignment'; id: string }
   | { name: 'note'; id: string }
   | { name: 'announcement'; id: string }
+  | { name: 'discussion'; id: string }
   | { name: 'practiceSession'; id: string }
   | { name: 'exam' | 'examAttempt' | 'review'; id: string };
 
@@ -302,25 +306,29 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
     const pathname =
       next.name === 'home'
         ? '/'
-        : next.name === 'announcement'
-          ? '/announcements/[id]'
-          : next.name === 'practiceSession'
-            ? '/practice/[id]'
-            : next.name === 'note'
-              ? '/notes/[id]'
-              : next.name === 'course'
-                ? '/courses/[id]'
-                : next.name === 'assignment'
-                  ? '/assignments/[id]'
-                  : next.name === 'exam'
-                    ? '/exams/[id]'
-                    : next.name === 'review'
-                      ? '/reviews/[id]'
-                      : next.name === 'examAttempt'
-                        ? '/exam-attempts/[id]'
-                        : next.name === 'classroom'
-                          ? '/live/[id]'
-                          : '/' + next.name;
+        : next.name === 'discussionNew'
+          ? '/discussions/new'
+          : next.name === 'discussion'
+            ? '/discussions/[id]'
+            : next.name === 'announcement'
+              ? '/announcements/[id]'
+              : next.name === 'practiceSession'
+                ? '/practice/[id]'
+                : next.name === 'note'
+                  ? '/notes/[id]'
+                  : next.name === 'course'
+                    ? '/courses/[id]'
+                    : next.name === 'assignment'
+                      ? '/assignments/[id]'
+                      : next.name === 'exam'
+                        ? '/exams/[id]'
+                        : next.name === 'review'
+                          ? '/reviews/[id]'
+                          : next.name === 'examAttempt'
+                            ? '/exam-attempts/[id]'
+                            : next.name === 'classroom'
+                              ? '/live/[id]'
+                              : '/' + next.name;
     const params = [
       'course',
       'classroom',
@@ -331,6 +339,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       'note',
       'practiceSession',
       'announcement',
+      'discussion',
     ].includes(next.name)
       ? { id: (next as { id: string }).id }
       : (next.name === 'live' ||
@@ -339,7 +348,9 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             next.name === 'notes' ||
             next.name === 'practice' ||
             next.name === 'collections' ||
-            next.name === 'announcements') &&
+            next.name === 'announcements' ||
+            next.name === 'discussions' ||
+            next.name === 'discussionNew') &&
           next.courseId
         ? { courseId: next.courseId }
         : {};
@@ -361,6 +372,10 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (Keyboard.isVisible()) {
         Keyboard.dismiss();
+        return true;
+      }
+      if (route.name === 'discussion' || route.name === 'discussionNew') {
+        setRoute({ name: 'discussions' });
         return true;
       }
       if (route.name === 'practiceSession') {
@@ -416,11 +431,15 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                     ? '自主练习'
                     : route.name === 'note' || route.name === 'notes'
                       ? '学习笔记'
-                      : route.name === 'announcements' || route.name === 'announcement'
-                        ? '教学公告'
-                        : route.name === 'notifications'
-                          ? '学习通知'
-                          : '我的空间';
+                      : route.name === 'discussions' ||
+                          route.name === 'discussion' ||
+                          route.name === 'discussionNew'
+                        ? '课程讨论'
+                        : route.name === 'announcements' || route.name === 'announcement'
+                          ? '教学公告'
+                          : route.name === 'notifications'
+                            ? '学习通知'
+                            : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
@@ -436,6 +455,8 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
               'note',
               'practiceSession',
               'announcement',
+              'discussion',
+              'discussionNew',
             ].includes(route.name)
               ? '返回列表'
               : '知学首页'
@@ -443,23 +464,25 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           onPress={() =>
             setRoute({
               name:
-                route.name === 'announcement'
-                  ? 'announcements'
-                  : route.name === 'course'
-                    ? 'courses'
-                    : route.name === 'classroom'
-                      ? 'live'
-                      : route.name === 'assignment'
-                        ? 'assignments'
-                        : route.name === 'exam' || route.name === 'examAttempt'
-                          ? 'exams'
-                          : route.name === 'practiceSession'
-                            ? 'practice'
-                            : route.name === 'note'
-                              ? 'notes'
-                              : route.name === 'review'
-                                ? 'appeals'
-                                : 'home',
+                route.name === 'discussion' || route.name === 'discussionNew'
+                  ? 'discussions'
+                  : route.name === 'announcement'
+                    ? 'announcements'
+                    : route.name === 'course'
+                      ? 'courses'
+                      : route.name === 'classroom'
+                        ? 'live'
+                        : route.name === 'assignment'
+                          ? 'assignments'
+                          : route.name === 'exam' || route.name === 'examAttempt'
+                            ? 'exams'
+                            : route.name === 'practiceSession'
+                              ? 'practice'
+                              : route.name === 'note'
+                                ? 'notes'
+                                : route.name === 'review'
+                                  ? 'appeals'
+                                  : 'home',
             })
           }
         >
@@ -474,6 +497,8 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
               'note',
               'practiceSession',
               'announcement',
+              'discussion',
+              'discussionNew',
             ].includes(route.name)
               ? '‹'
               : '知'}
@@ -550,6 +575,25 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           />
         )}
         {route.name === 'announcement' && <Announcement key={route.id} client={client} id={route.id} />}
+        {route.name === 'discussions' && (
+          <Discussions
+            client={client}
+            courseId={route.courseId}
+            open={(id) => setRoute({ name: 'discussion', id })}
+            create={() => setRoute({ name: 'discussionNew', courseId: route.courseId })}
+          />
+        )}
+        {route.name === 'discussionNew' && (
+          <NewDiscussion
+            client={client}
+            courseId={route.courseId}
+            registerLeave={registerLeave}
+            open={(id) => setRoute({ name: 'discussion', id })}
+          />
+        )}
+        {route.name === 'discussion' && (
+          <Discussion key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
+        )}
         {route.name === 'notifications' && <Inbox client={client} open={setRoute} />}
         {route.name === 'appeals' && (
           <Reviews client={client} open={(id) => setRoute({ name: 'review', id })} />
@@ -752,6 +796,14 @@ function Home({
           onPress={() => navigate({ name: 'announcements' })}
         />
       )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="课程讨论"
+          caption="交流问题与学习收获"
+          icon="♧"
+          onPress={() => navigate({ name: 'discussions' })}
+        />
+      )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />
       <Query state={q} />
       {q.data?.items.map((course) => (
@@ -864,6 +916,13 @@ function CourseDetail({
               title="查看课程公告"
               secondary
               onPress={() => navigate({ name: 'announcements', courseId: id })}
+            />
+          )}
+          {user.role === 'STUDENT' && (
+            <Button
+              title="查看课程讨论"
+              secondary
+              onPress={() => navigate({ name: 'discussions', courseId: id })}
             />
           )}
           <Button title="查看课程直播" secondary onPress={() => navigate({ name: 'live', courseId: id })} />

@@ -21,6 +21,8 @@ export interface Actor {
   clientType?: 'WEB' | 'MOBILE';
 }
 export function mobileRouteAllowed(path: string, method: string) {
+  if (method === 'GET' && /^\/api\/mobile\/discussions(?:\/[^/]+)?\/?$/.test(path)) return true;
+  if (method === 'POST' && /^\/api\/mobile\/discussions(?:\/[^/]+\/replies)?\/?$/.test(path)) return true;
   if (/^\/api\/mobile\/auth\/(me|logout)\/?$/.test(path)) return true;
   if (method === 'GET' && /^\/api\/mobile\/assignments(?:\/[^/]+(?:\/files\/[^/]+)?)?\/?$/.test(path))
     return true;

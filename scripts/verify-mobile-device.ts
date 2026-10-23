@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { createServer, type Server } from 'node:http';
 import { resolve } from 'node:path';
 import { chromium, expect } from '@playwright/test';
 import { prepareMobileHierarchy } from './mobile-hierarchy';
@@ -196,6 +197,7 @@ async function main() {
   const f = await createLiveFixture();
   const reverse: string[] = [];
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  let discussionProxy: Server | undefined;
   const checks: string[] = [];
   const passed = (name: string) => {
     checks.push(name);
@@ -1220,6 +1222,244 @@ async function main() {
     passed(
       'native announcement notification opens its exact current record and deletion hides stale content without silent read',
     );
+
+    await click('首页');
+    const discussionScroll = (label: string) => scroll(label, undefined, 24);
+    const topicRows: any[] = [];
+    for (let i = 0; i < 12; i++)
+      topicRows.push(
+        (
+          await f.call(f.clients.teacher, '/communication/posts', 'POST', {
+            courseId: f.course.id,
+            title: i === 0 ? 'NativeForumRoot' : 'NativeForum-' + i,
+            body: 'Forum-body-' + i,
+          })
+        ).body,
+      );
+    const forum = topicRows[0];
+    await f.call(f.clients.teacher, '/communication/posts/' + forum.id, 'PATCH', {
+      pinned: true,
+      featured: true,
+    });
+    const webReply = (
+      await f.call(f.clients.teacher, '/communication/posts/' + forum.id + '/replies', 'POST', {
+        body: 'Teacher-forum-answer',
+      })
+    ).body;
+    await click('课程');
+    await scroll(f.course.title);
+    await discussionScroll('查看课程讨论');
+    await discussionScroll('共 12 个话题，第 1 页');
+    await type('搜索讨论标题', 'NativeForumRoot');
+    await discussionScroll('搜索讨论');
+    await discussionScroll('共 1 个话题，第 1 页');
+    await discussionScroll('打开第 1 个话题');
+    await discussionScroll('Forum-body-0');
+    await discussionScroll('讨论回复正文');
+    await type('讨论回复正文', 'Native-forum-unsent');
+    await click('首页');
+    await find('离开讨论编辑？');
+    await click('继续编辑');
+    assert.equal(
+      await f.db.discussionReply.count({ where: { authorId: f.users.student.id, postId: forum.id } }),
+      0,
+    );
+    await discussionScroll('发布讨论回复');
+    await find('确认发布回复？');
+    await click('继续编辑');
+    assert.equal(
+      await f.db.discussionReply.count({ where: { authorId: f.users.student.id, postId: forum.id } }),
+      0,
+    );
+    passed(
+      'native course discussion search opens shared records and unsent/cancelled reply confirmations never publish',
+    );
+    await discussionScroll('引用第 1 条回复');
+    await discussionScroll('发布讨论回复');
+    await click('确认发布');
+    await discussionScroll('回复已发布，网站和手机使用同一条记录。');
+    const ownForumReply = await f.db.discussionReply.findFirstOrThrow({
+      where: { postId: forum.id, authorId: f.users.student.id },
+    });
+    assert.equal(ownForumReply.body, 'Native-forum-unsent');
+    assert.equal(ownForumReply.quoteReplyId, webReply.id);
+    assert.equal(
+      await f.db.discussionReply.count({ where: { postId: forum.id, authorId: f.users.student.id } }),
+      1,
+    );
+    await discussionScroll('刷新讨论详情');
+    await discussionScroll('Native-forum-unsent');
+    assert.equal(
+      (await f.call(f.clients.teacher, '/communication/posts/' + forum.id)).body.replies.filter(
+        (r: any) => r.id === ownForumReply.id,
+      ).length,
+      1,
+    );
+    screenshot('android-discussion');
+    passed(
+      'native quoted reply creates one real website reply with server receipt and current visible quote',
+    );
+
+    // Lose actual HTTP responses only after the fixture commits. Never mock API data or native state.
+    let dropForumWrites = true;
+    discussionProxy = createServer(async (request, response) => {
+      try {
+        const path = request.url || '';
+        if (!path.startsWith('/api/') || path.includes('://')) {
+          response.writeHead(404);
+          response.end();
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        for await (const chunk of request) {
+          const b = Buffer.from(chunk);
+          size += b.length;
+          if (size > 65536) throw new Error('Fixture body bound');
+          chunks.push(b);
+        }
+        const upstream = await fetch(f.origin + path, {
+          method: request.method,
+          redirect: 'error',
+          headers: {
+            ...(request.headers.authorization ? { authorization: request.headers.authorization } : {}),
+            'content-type': 'application/json',
+            accept: 'application/json',
+          },
+          ...(chunks.length ? { body: Buffer.concat(chunks).toString('utf8') } : {}),
+          signal: AbortSignal.timeout(20000),
+        });
+        const bytes = Buffer.from(await upstream.arrayBuffer());
+        if (
+          dropForumWrites &&
+          request.method === 'POST' &&
+          path === '/api/mobile/discussions/' + forum.id + '/replies'
+        ) {
+          response.destroy();
+          return;
+        }
+        response.writeHead(upstream.status, {
+          'content-type': upstream.headers.get('content-type') || 'application/json',
+          'cache-control': 'no-store',
+        });
+        response.end(bytes);
+      } catch {
+        response.destroy();
+      }
+    });
+    await new Promise<void>((done) => discussionProxy!.listen(0, '127.0.0.1', done));
+    const proxyPort = (discussionProxy.address() as { port: number }).port;
+    run('shell', 'am', 'force-stop', pkg);
+    run('reverse', 'tcp:3030', 'tcp:' + proxyPort);
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+    await discussionScroll('课程讨论');
+    await discussionScroll('打开第 1 个话题');
+    await discussionScroll('讨论回复正文');
+    await type('讨论回复正文', 'Native-forum-lost-response');
+    await discussionScroll('发布讨论回复');
+    await click('确认发布');
+    // Observe the uncertain state before explicitly tapping the receipt action.
+    await scroll('核对本次发布结果', '核对本次发布结果', 24);
+    assert.equal(
+      await f.db.discussionReply.count({
+        where: { postId: forum.id, authorId: f.users.student.id, body: 'Native-forum-lost-response' },
+      }),
+      1,
+    );
+    dropForumWrites = false;
+    await discussionScroll('核对本次发布结果');
+    await discussionScroll('回复已发布，网站和手机使用同一条记录。');
+    assert.equal(
+      await f.db.discussionReply.count({
+        where: { postId: forum.id, authorId: f.users.student.id, body: 'Native-forum-lost-response' },
+      }),
+      1,
+    );
+    passed(
+      'native lost-response state freezes a real committed reply and read-only receipt recovery never creates another record',
+    );
+    run('shell', 'am', 'force-stop', pkg);
+    run('reverse', 'tcp:3030', 'tcp:' + new URL(f.origin).port);
+    discussionProxy.closeAllConnections();
+    await new Promise<void>((done) => discussionProxy!.close(() => done()));
+    discussionProxy = undefined;
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+
+    await discussionScroll('课程讨论');
+    await discussionScroll('下一页话题');
+    await discussionScroll('共 12 个话题，第 2 页');
+    await discussionScroll('上一页话题');
+    await discussionScroll('仅看精华讨论');
+    await discussionScroll('共 1 个话题，第 1 页');
+    await discussionScroll('打开第 1 个话题');
+    await f.call(f.clients.teacher, '/communication/posts/' + forum.id, 'PATCH', { closed: true });
+    await discussionScroll('刷新讨论详情');
+    await discussionScroll('讨论已关闭');
+    await scroll('发布讨论回复', '发布讨论回复', 24);
+    assert.equal((await find('发布讨论回复')).enabled, 'false');
+    await f.call(f.clients.teacher, '/communication/posts/' + forum.id, 'PATCH', { closed: false });
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: false },
+    });
+    await discussionScroll('刷新讨论详情');
+    await find('当前没有此课程的访问资格');
+    assert.ok(!nodes().some((n) => (n.text || '').includes('Forum-body-0')));
+    await f.db.enrollment.update({
+      where: { courseId_userId: { courseId: f.course.id, userId: f.users.student.id } },
+      data: { active: true },
+    });
+    await discussionScroll('刷新讨论详情');
+    await discussionScroll('Forum-body-0');
+    passed(
+      'native discussion paging/filter survive restart and current closure or course revocation prevents replies and hides stale content',
+    );
+
+    await click('首页');
+    const globalDiscussionEntry = process.env.MOBILE_TEST_DISCUSSION_GLOBAL_ENTRY === 'true';
+    if (globalDiscussionEntry) await discussionScroll('课程讨论');
+    else {
+      await click('课程');
+      await scroll(f.course.title);
+      await discussionScroll('查看课程讨论');
+    }
+    await discussionScroll('发布文字话题');
+    await find('发布课程话题');
+    if (globalDiscussionEntry) {
+      await discussionScroll('选择课程：' + f.course.title);
+      await find('已选课程：' + f.course.title);
+    }
+    await discussionScroll('话题标题');
+    await type('话题标题', 'NativeStudentTopic');
+    await discussionScroll('话题正文');
+    await type('话题正文', 'Native-student-topic-body');
+    await click('首页');
+    await find('离开讨论编辑？');
+    await click('继续编辑');
+    await discussionScroll('提交新话题');
+    await find('确认发布话题？');
+    await click('继续编辑');
+    assert.equal(
+      await f.db.discussionPost.count({
+        where: { title: 'NativeStudentTopic', authorId: f.users.student.id },
+      }),
+      0,
+    );
+    await discussionScroll('提交新话题');
+    await click('确认发布');
+    await discussionScroll('NativeStudentTopic');
+    await discussionScroll('Native-student-topic-body');
+    assert.equal(
+      await f.db.discussionPost.count({
+        where: { title: 'NativeStudentTopic', authorId: f.users.student.id },
+      }),
+      1,
+    );
+    passed(
+      'native confirmed course topic publishing creates exactly one shared record and navigates without discarding a successful receipt',
+    );
     await click('首页');
     const notesScroll = (label: string) => scroll(label, undefined, 20);
     await notesScroll('学习笔记');
@@ -1871,6 +2111,10 @@ async function main() {
     );
     throw new Error(f.safe((error as Error).message));
   } finally {
+    if (discussionProxy) {
+      discussionProxy.closeAllConnections();
+      await new Promise<void>((done) => discussionProxy!.close(() => done()));
+    }
     await browser?.close().catch(() => undefined);
     try {
       run('shell', 'am', 'force-stop', pkg);

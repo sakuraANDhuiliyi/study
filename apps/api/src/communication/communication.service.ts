@@ -37,6 +37,12 @@ import type {
 } from './communication.schemas';
 
 const sameList = (a: string[], b: string[]) => JSON.stringify(a) === JSON.stringify(b);
+function publicDiscussion<T extends { mobileCreateKey: string | null; mobileCreateHash: string | null }>(
+  row: T,
+) {
+  const { mobileCreateKey: _key, mobileCreateHash: _hash, ...visible } = row;
+  return visible;
+}
 
 @Injectable()
 export class CommunicationService {
@@ -167,7 +173,7 @@ export class CommunicationService {
     const countMap = new Map(counts.map((item) => [item.postId, item._count._all]));
     return {
       items: items.map((post) => ({
-        ...post,
+        ...publicDiscussion(post),
         authorName: names.get(post.authorId) || '用户',
         replyCount: countMap.get(post.id) || 0,
       })),
@@ -213,7 +219,7 @@ export class CommunicationService {
         authorId: actor.id,
       },
     });
-    return { ...post, authorName: actor.name, replyCount: 0 };
+    return { ...publicDiscussion(post), authorName: actor.name, replyCount: 0 };
   }
 
   async getPost(actor: Actor, id: string, page = 1, pageSize = 30) {
@@ -246,11 +252,11 @@ export class CommunicationService {
     ]);
     const fileMap = new Map(files.map((file) => [file.id, file]));
     return {
-      ...post,
+      ...publicDiscussion(post),
       authorName: names.get(post.authorId),
       attachments: post.attachmentIds.map((file) => fileMap.get(file)).filter(Boolean),
       replies: replies.map((reply) => ({
-        ...reply,
+        ...publicDiscussion(reply),
         authorName: names.get(reply.authorId),
         attachments: reply.attachmentIds.map((file) => fileMap.get(file)).filter(Boolean),
         quote:
@@ -304,7 +310,7 @@ export class CommunicationService {
         `reply:${reply.id}`,
       );
     await this.gateway.invalidate([post.authorId]).catch(() => undefined);
-    return { ...reply, authorName: actor.name };
+    return { ...publicDiscussion(reply), authorName: actor.name };
   }
 
   async updatePost(actor: Actor, id: string, patch: PostUpdate) {
@@ -334,7 +340,7 @@ export class CommunicationService {
           },
         },
       });
-      return result;
+      return publicDiscussion(result);
     });
   }
 
