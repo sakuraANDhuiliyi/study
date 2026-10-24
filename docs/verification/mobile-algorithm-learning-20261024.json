@@ -1,0 +1,1107 @@
+{
+  "feature": "Native algorithm learning: catalog, statements, structured editorials and personal favorite/review/note revision control",
+  "baseCommit": "3d4f1dc765e57e125683636ab79027385dbca95f",
+  "recordedAt": "2026-10-24T14:52:22.425066+00:00",
+  "sourceSha256": {
+    "apps/api/src/academics/academics.schemas.ts": "c8edd90396e14a240a687d8dfc6fdd8b848134eb351eacef72750d61e38a4899",
+    "apps/api/src/academics/goals.schemas.ts": "18788dd13fb8c3dd8560088b7485891593c8a93661c6c1454baf031dfc7ecfc7",
+    "apps/api/src/ai-study/ai.config.ts": "cd967da2e38a5d797c055a3ac702313e4772136473812c62eab9acfc8b3b06d1",
+    "apps/api/src/ai-study/ai.gateway.ts": "c79ba636ad4f512df953c7c34bdbdc974c98d3e25ccb5fc91e3bebecc4e39ea0",
+    "apps/api/src/algorithms/algorithms.schemas.ts": "7f85dff376241dae36a889b6bf9af705108250df552d06671a50d7cf30520330",
+    "apps/api/src/algorithms/algorithms.service.ts": "a2f5bd5ef31762b1c038dd6a0f8db9102f23332a31ac0e5e7a8827f933fcac23",
+    "apps/api/src/algorithms/algorithms.student.ts": "3de62aab62748b99b2aef5eab8a067b90d0253a168f2b36b1f5a2568a9a0bb23",
+    "apps/api/src/algorithms/judge.config.schema.ts": "21dd93a9ee70498db400d7f5c74bef2069c57949ca9d54e1aaea1e4a28b6dacd",
+    "apps/api/src/algorithms/judge.config.ts": "6db56d4c21a6cc2764b92f39bca29a67ef537a0c2032d533ef0902fd60238058",
+    "apps/api/src/app.module.ts": "f8d9017604917c6828e70c7dead52ea8f99854dc9655c301e21f342dabd1fa4b",
+    "apps/api/src/assessment/assessment.schemas.ts": "3948347110d6cb62de054437c2683ad0c6f8d71a77c164aab07eaabc45c01a76",
+    "apps/api/src/auth/auth.guard.ts": "017bed254a9fc77a2bc39620db1a21316ec9c130782505658cfcb1ed5d558def",
+    "apps/api/src/common/openapi.ts": "be0c74625c8e60ad3472bf2f3fc762d64cb362ad7bcd0c26723fa0314f0b9dec",
+    "apps/api/src/common/sparse-partial.ts": "985dd0ecd5e57ce18d7f9980cbbb51dc54d991c1e1daaaa60b7b7d2507885e8f",
+    "apps/api/src/courses/courses.controller.ts": "08a0f5a671522dcbd40ddf53ea73f2c666f834cb506358edef5a30d6c267c6d9",
+    "apps/api/src/mobile/mobile-algorithms.controller.ts": "63c6b776d76492ccb0f1bf9ce54489d33a9728c937726c686bfd558f7d898ab2",
+    "apps/api/src/mobile/mobile-algorithms.schemas.ts": "e67d0e249db74c49a4862f7a4df94504c6009f2c86c437ea17555ab591998b1d",
+    "apps/api/src/planner/planner.schemas.ts": "b3d3fa7f1b727df5f12e6e224a793ec748f4687d9c91b4b55e7c1f7f528b6afd",
+    "apps/mobile/App.tsx": "05a7f8eafb185e7d7754c216bd74291fa301644d9d225e9e36abced982cd6a19",
+    "apps/mobile/app.json": "b7dd60c816d784db7bf93d85e044b07d9f68e8d44ebd915cf14bd5f174c84dbf",
+    "apps/mobile/package-lock.json": "c4f33438edff8dda6ebfcabb25cd8f2bfd2bb60c21b41f39db4b5481c6cec0ab",
+    "apps/mobile/package.json": "8aa0f375eb45b76e827eb8f671a6818d3c295e4ce8d1e1a890857395524c7320",
+    "apps/mobile/src/Algorithms.tsx": "0903280034834eb71d57e764c7b258d5fcdcf2a23f52dcd892f43343bb7f30f4",
+    "apps/mobile/src/algorithms-model.ts": "8b53bce4f4ac490c3fc6c090248049db009e3690942ccfbfdf9c8ec73b360632",
+    "apps/mobile/src/app/algorithm-editorials/[id].tsx": "011e1d6b602104fdf5172155a9c7cf35a774e7934a84b2a42a818a4348c0956b",
+    "apps/mobile/src/app/algorithms/[id].tsx": "ede03ec9764ab80cbea6051a57f81a015688308794aedf01009b0951c60e46f1",
+    "apps/mobile/src/app/algorithms/index.tsx": "9223fd487a2efbdffd108f1a0dc24f20850fb866acb32ce577f5025c026e19d7",
+    "apps/mobile/tests/build-security.test.cjs": "69bb7cc15b7c33ca06666755a612705cf75cfca05fed0b3882b9836fcb3f5434",
+    "docs/mobile-migration.md": "6640bc371b93563fb2f754dee04c1c9ebe356ca94f30b2b897f78408d4fe59a6",
+    "package-lock.json": "b9c176cade296faf7b243ca88b0c595a531b11f5bfdc7e7633bf1bc115114322",
+    "package.json": "f9c3112d22d0dfa9ffb0534bfc71595f4f27d1c7d108d2c14c93856f58ea0dd5",
+    "scripts/verify-iteration.mjs": "5a0bd2b8a079773ab25a0afd4401dd97179f144e1e84a96a9d978144bc9e7490",
+    "scripts/verify-mobile-device.ts": "7802ef35c969f13a59cb26a822a0b28a47bc124664eff7dc9a1bfc6bd21f4ea8",
+    "scripts/verify-mobile.mjs": "eef05f82529b895beb1c9cb5ba1662a1146339bb0e8575628ecf4b8a8a009cfc",
+    "tests/browser/academics-live.spec.ts": "d1e06b7425bdd71ff5bd965b7bdde07b75cf16a04ca12795302a183afc34a605",
+    "tests/mobile-algorithms.integration.ts": "b6e5f563f6856c6442b15c8bd7bf4933bff92c7fd3f9319588f8fbdc79ac7002",
+    "tests/mobile-algorithms.unit.test.ts": "db3b50f67f31aac334de1b5969248f5fd1d2af2cf84046af1fde7d0234d5c184",
+    "tests/validation-security.unit.test.ts": "4c5b13c65ba47112b7c80b22c8db6db107742df0c12b773fa958f5aef0ec840c",
+    "tests/verify-iteration.unit.test.ts": "9d5d3b6c9143f73b13ac8e5ff77145136c581c45e242c74c7eb5c24b4073f0fe",
+    "docs/mobile-android.md": "1897f9c6554971a23229df9e5acba9d35b2034d1efb110d144fa2a4624004096",
+    "tests/live-browser.integration.ts": "4d4aef6417b5df299ae6067845f0f98bc0fdd4a4c8d16b5fa3d8e01430aa3bb9"
+  },
+  "fullVerification": {
+    "profile": "full",
+    "requestedReferenceLanguages": ["python", "javascript", "cpp", "java"],
+    "fullReferenceCoverage": true,
+    "startedAt": "2026-10-24T14:08:06.818Z",
+    "finishedAt": "2026-10-24T14:27:15.389Z",
+    "passed": true
+  },
+  "fullReportLocal": ".data/iteration-NiwJed/report.json",
+  "testTotals": {
+    "tests": 1519,
+    "pass": 1519,
+    "fail": 0,
+    "skipped": 0
+  },
+  "stages": [
+    {
+      "id": "generate",
+      "status": "passed",
+      "durationMs": 650,
+      "summary": {}
+    },
+    {
+      "id": "migrate",
+      "status": "passed",
+      "durationMs": 339,
+      "summary": {}
+    },
+    {
+      "id": "seed",
+      "status": "passed",
+      "durationMs": 1507,
+      "summary": {}
+    },
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "durationMs": 7559,
+      "summary": {}
+    },
+    {
+      "id": "lint",
+      "status": "passed",
+      "durationMs": 4433,
+      "summary": {}
+    },
+    {
+      "id": "unit",
+      "status": "passed",
+      "durationMs": 22554,
+      "summary": {
+        "tests": 592,
+        "pass": 592,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "build",
+      "status": "passed",
+      "durationMs": 38786,
+      "summary": {}
+    },
+    {
+      "id": "audit",
+      "status": "passed",
+      "durationMs": 4579,
+      "summary": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    {
+      "id": "mobile-build",
+      "status": "passed",
+      "durationMs": 15619,
+      "summary": {
+        "checks": 5,
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0,
+        "bundle": true,
+        "audit": {
+          "rawVulnerabilities": {
+            "info": 0,
+            "low": 0,
+            "moderate": 0,
+            "high": 5,
+            "critical": 0,
+            "total": 5
+          },
+          "backportedAdvisories": ["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"],
+          "patchedFilesVerified": 6,
+          "unmitigated": []
+        }
+      }
+    },
+    {
+      "id": "livekit-runtime",
+      "status": "passed",
+      "durationMs": 68,
+      "summary": {}
+    },
+    {
+      "id": "integration:android-protocol",
+      "status": "passed",
+      "durationMs": 1942,
+      "summary": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "trusted-references",
+      "status": "passed",
+      "durationMs": 56557,
+      "summary": {
+        "programsPassed": 176,
+        "casesPassed": 1280,
+        "languages": ["python", "javascript", "cpp", "java"],
+        "failures": 0
+      }
+    },
+    {
+      "id": "creative-expression-browser",
+      "status": "passed",
+      "durationMs": 10303,
+      "summary": {
+        "checksPassed": 10,
+        "expressionsPassed": 32,
+        "externalRequests": 0,
+        "pageErrors": 0
+      }
+    },
+    {
+      "id": "servers",
+      "status": "passed",
+      "durationMs": 2054
+    },
+    {
+      "id": "e2e",
+      "status": "passed",
+      "durationMs": 9496,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academic-goals.integration.ts",
+      "status": "passed",
+      "durationMs": 5170,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academic-records-export.integration.ts",
+      "status": "passed",
+      "durationMs": 8689,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academics-admission.integration.ts",
+      "status": "passed",
+      "durationMs": 792,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:academics.integration.ts",
+      "status": "passed",
+      "durationMs": 5539,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:accounts.integration.ts",
+      "status": "passed",
+      "durationMs": 4835,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:admin-audit.integration.ts",
+      "status": "passed",
+      "durationMs": 6539,
+      "summary": {
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:admin-jobs.integration.ts",
+      "status": "passed",
+      "durationMs": 5438,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:ai-authoring.integration.ts",
+      "status": "passed",
+      "durationMs": 4433,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:ai-study.integration.ts",
+      "status": "passed",
+      "durationMs": 4396,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-forum.integration.ts",
+      "status": "passed",
+      "durationMs": 1395,
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-history-filters.integration.ts",
+      "status": "passed",
+      "durationMs": 5317,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithm-training-plans.integration.ts",
+      "status": "passed",
+      "durationMs": 4940,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:algorithms.integration.ts",
+      "status": "passed",
+      "durationMs": 4572,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:analytics.security.integration.ts",
+      "status": "passed",
+      "durationMs": 462,
+      "summary": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment-composition.integration.ts",
+      "status": "passed",
+      "durationMs": 231,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment.integration.ts",
+      "status": "passed",
+      "durationMs": 2420,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:assessment.security.integration.ts",
+      "status": "passed",
+      "durationMs": 1285,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:auth-fixes.integration.ts",
+      "status": "passed",
+      "durationMs": 1074,
+      "summary": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:auth.security.integration.ts",
+      "status": "passed",
+      "durationMs": 954,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:communication.integration.ts",
+      "status": "passed",
+      "durationMs": 15898,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:communication.security.integration.ts",
+      "status": "passed",
+      "durationMs": 783,
+      "summary": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:confusion-matrix.integration.ts",
+      "status": "passed",
+      "durationMs": 6449,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:creative.integration.ts",
+      "status": "passed",
+      "durationMs": 6991,
+      "summary": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:digital-logic.integration.ts",
+      "status": "passed",
+      "durationMs": 4946,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:exam-insights.integration.ts",
+      "status": "passed",
+      "durationMs": 766,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-action-filters.integration.ts",
+      "status": "passed",
+      "durationMs": 5994,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-actions.integration.ts",
+      "status": "passed",
+      "durationMs": 4977,
+      "summary": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:learning-overview.integration.ts",
+      "status": "passed",
+      "durationMs": 6477,
+      "summary": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:live-browser.integration.ts",
+      "status": "passed",
+      "durationMs": 81856,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:live.integration.ts",
+      "status": "passed",
+      "durationMs": 11586,
+      "summary": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:minimum-spanning-tree.integration.ts",
+      "status": "passed",
+      "durationMs": 5194,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-algorithms.integration.ts",
+      "status": "passed",
+      "durationMs": 5156,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-announcements.integration.ts",
+      "status": "passed",
+      "durationMs": 4834,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-assignment-browser.integration.ts",
+      "status": "passed",
+      "durationMs": 6611,
+      "summary": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-assignments.integration.ts",
+      "status": "passed",
+      "durationMs": 4527,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-collections.integration.ts",
+      "status": "passed",
+      "durationMs": 4384,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-discussions.integration.ts",
+      "status": "passed",
+      "durationMs": 5158,
+      "summary": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-exams.integration.ts",
+      "status": "passed",
+      "durationMs": 7588,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-inbox.integration.ts",
+      "status": "passed",
+      "durationMs": 5427,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-lessons.integration.ts",
+      "status": "passed",
+      "durationMs": 5803,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-notes.integration.ts",
+      "status": "passed",
+      "durationMs": 5663,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-planner.integration.ts",
+      "status": "passed",
+      "durationMs": 4108,
+      "summary": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-practice.integration.ts",
+      "status": "passed",
+      "durationMs": 6141,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile-reviews.integration.ts",
+      "status": "passed",
+      "durationMs": 7186,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:mobile.integration.ts",
+      "status": "passed",
+      "durationMs": 15350,
+      "summary": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:notes.integration.ts",
+      "status": "passed",
+      "durationMs": 629,
+      "summary": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:planner.integration.ts",
+      "status": "passed",
+      "durationMs": 417,
+      "summary": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:population-genetics.integration.ts",
+      "status": "passed",
+      "durationMs": 5603,
+      "summary": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:programming.integration.ts",
+      "status": "passed",
+      "durationMs": 6720,
+      "summary": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:simpson-paradox.integration.ts",
+      "status": "passed",
+      "durationMs": 6660,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:upload-security.integration.ts",
+      "status": "passed",
+      "durationMs": 5028,
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "integration:worker-policy.integration.ts",
+      "status": "passed",
+      "durationMs": 21548,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "clean-start",
+      "status": "passed",
+      "durationMs": 8091,
+      "summary": {}
+    },
+    {
+      "id": "performance",
+      "status": "passed",
+      "durationMs": 292,
+      "summary": {
+        "requests": 100,
+        "errors": 0,
+        "concurrency": 10,
+        "latencyMs": {
+          "p50": 15,
+          "p95": 42,
+          "max": 52
+        }
+      }
+    },
+    {
+      "id": "browser",
+      "status": "passed",
+      "durationMs": 608721,
+      "summary": {
+        "total": 401,
+        "passed": 401,
+        "skipped": 0,
+        "failedOrIncomplete": []
+      }
+    }
+  ],
+  "androidDevice": {
+    "apkSha256": "79d61cb5a3772a3215a9583fe1e1e0b0ae910d2cb7fee46bc375649d77da084f",
+    "hierarchyProbeSha256": "0361ea3b6a48e5f34d22e3774f1f7dc0336bf0cb2e11292a86745a6059fd55d5",
+    "hierarchy": "Actual Android accessibility hierarchy without waiting for animations; no UI state or server response mocked",
+    "passed": 85,
+    "failed": 0,
+    "skipped": 0,
+    "checks": [
+      "install, native login and learning home",
+      "course content and real cross-device progress",
+      "private H264 course video decodes natively and pause persists the real playback position",
+      "cross-device video conflict cannot overwrite a newer web position and reload resumes at 30 seconds",
+      "backgrounding pauses native playback without automatically restarting audio",
+      "authorized course materials use the explicit Android file chooser",
+      "course-to-live navigation decodes and preserves the course filter",
+      "secure session survives process restart",
+      "native personal plan creation is synchronized with website",
+      "website/native revision conflict preserves latest data and explicitly reloads",
+      "native completion and reopen persist on both devices",
+      "native confirmed deletion removes website task",
+      "native unsaved plan discard confirmation preserves editing and never submits silently",
+      "native overdue action completes with server revision and disappears from pending list",
+      "native course picker and personal source filter cannot combine incompatible filters",
+      "native six question controls preserve unsaved answers behind a leave confirmation",
+      "native all-type draft is persisted and readable on website",
+      "Android system picker uploads a scoped private attachment and download opens the OS chooser",
+      "cross-device revision conflict reload and explicit native formal submission",
+      "unpublished grading stays hidden and released feedback appears in native history",
+      "native history reuse creates a controlled immutable second version and enforces attempt limit",
+      "native exam starts one server-timed attempt and autosaves all six answer types, flags and position",
+      "native in-progress exam exit explains continuing timer and protects unsynced work",
+      "native exam restart and planner link resume saved answers and position without another attempt",
+      "native exam foreground rechecks server revision and requires explicit reload after website edits",
+      "native exam submission displays server receipt while unpublished grading and answer keys remain hidden",
+      "native released exam score, feedback and reference review follow teacher publication",
+      "native review protects unsent reason and explicit confirmation never submits on cancel",
+      "native review submits one first-reason application and shows the server receipt",
+      "native review list filters pending applications and links the exact own attempt",
+      "website teacher processing updates native public resolution, effective score and immutable grade history",
+      "native resolved review survives restart and response recovery after deadline cannot overwrite the reason",
+      "native review hides effective score, resolution and grade changes when publication is withdrawn",
+      "native inbox shows own safe summaries and unread count without stored private bodies or grade snapshots",
+      "native notification opens exact authorized review without silent read and explicit read synchronizes with website",
+      "native visible-page read confirmation preserves cancellation and new notifications received after the snapshot",
+      "native inbox read receipts survive process restart and type filtering and pagination stay on server data",
+      "native notification target rechecks revoked enrollment and only navigates after restored authorization",
+      "native learning reminders open real assignment and exam pages through typed internal navigation",
+      "native announcements show institution content from shared records without implicitly reading a notification",
+      "native course announcement title search and refreshed authorization hide withdrawn membership content",
+      "native announcement list paginates and remains available after process restart with current server records",
+      "native announcement notification opens its exact current record and deletion hides stale content without silent read",
+      "native course discussion search opens shared records and unsent/cancelled reply confirmations never publish",
+      "native quoted reply creates one real website reply with server receipt and current visible quote",
+      "native lost-response state freezes a real committed reply and read-only receipt recovery never creates another record",
+      "native discussion paging/filter survive restart and current closure or course revocation prevents replies and hides stale content",
+      "native confirmed course topic publishing creates exactly one shared record and navigates without discarding a successful receipt",
+      "native algorithm catalog searches, paginates and opens actual shared public statements without executing code",
+      "native algorithm editorials render all four real reference programs and unsaved or cancelled learning changes never write",
+      "native confirmed algorithm favorite, review status and private note synchronize one website record",
+      "native algorithm cross-device version conflict preserves unsaved notes until explicit server reload",
+      "native actual lost algorithm save response freezes writes and read-only reconciliation never duplicates a revision",
+      "native algorithm learning survives process restart and current feature withdrawal hides private state without deleting it",
+      "native lesson note entry and unsaved leave confirmation preserve private text without silent writes",
+      "native private note create and pin persist in the shared website database",
+      "native note CAS conflict keeps unsaved text and explicit latest-load confirmation controls replacement",
+      "native note explicit search and pinned filters use current server content and counts",
+      "native notes survive process restart and confirmed deletion is scoped to the owned note",
+      "native note pagination and course revocation recheck server authority without deleting private records",
+      "native course practice creates one real six-type snapshot without revealing unsubmitted references",
+      "native practice protects unsent work and confirmation cancellation; first submission alone reveals feedback",
+      "native practice position, review flag and immutable first answer survive process restart and resume from own history",
+      "native practice progress CAS blocks stale website overwrites and requires explicit server reload",
+      "native all six practice controls complete the shared session and subjective answers stay outside objective accuracy",
+      "native practice history filters completed sessions and rechecks organization feature withdrawal without altering answers",
+      "native collections keep references hidden and confirm mastery before sharing the website record",
+      "native stale mastery write refreshes after conflict without overwriting newer answer history",
+      "native favorites sync personal records and permit removal of a withdrawn question without exposing its stem",
+      "native collections paginate personal records and return to the native home",
+      "native sequential exams confirm irreversible navigation and disable backtracking",
+      "native exam returning from background observes server deadline and immutable timeout receipt",
+      "native WebRTC receives real audio and decodes video",
+      "native classroom chat persisted",
+      "OS camera permission denial preserves classroom viewing",
+      "teacher approval and native camera/microphone publish real RTP",
+      "teacher revocation enforces server media permissions",
+      "background stops capture and releases classroom",
+      "logout revokes device session",
+      "relogin after native logout",
+      "native scheduling prevents overlapping course broadcasts",
+      "native teacher starts scheduled class",
+      "native teacher enters hosted classroom",
+      "native teacher ends class and releases media",
+      "native teacher logout preserves website session"
+    ],
+    "apiAndMedia": "isolated real PostgreSQL and LiveKit",
+    "device": "Android 12 arm64 emulator; synthetic cameras, host microphone disabled"
+  },
+  "apks": [
+    {
+      "package": "cn.huiliyi.study.preview",
+      "signatureVerified": true,
+      "cleartextAllowed": false,
+      "backupAllowed": false,
+      "debuggable": false,
+      "bundled": true,
+      "sha256": "f6e9ed56ba863b72b4702fe0cdb80e96c75abf3b18a8dbc15273332d97393bf1",
+      "localPreview": false,
+      "signing": "public Android debug key; preview only",
+      "architecture": "arm64-v8a",
+      "filename": "zhixue-preview-arm64.apk",
+      "bytes": 57627002,
+      "version": "0.12.0",
+      "versionCode": 12
+    },
+    {
+      "package": "cn.huiliyi.study.preview",
+      "signatureVerified": true,
+      "cleartextAllowed": true,
+      "backupAllowed": false,
+      "debuggable": false,
+      "bundled": true,
+      "sha256": "79d61cb5a3772a3215a9583fe1e1e0b0ae910d2cb7fee46bc375649d77da084f",
+      "localPreview": true,
+      "signing": "public Android debug key; preview only",
+      "architecture": "arm64-v8a",
+      "filename": "zhixue-local-preview-arm64.apk",
+      "bytes": 57629270,
+      "version": "0.12.0",
+      "versionCode": 12
+    }
+  ],
+  "databaseMigrationRequired": null,
+  "rootAudit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "mobileAudit": {
+    "rawVulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 5,
+      "critical": 0,
+      "total": 5
+    },
+    "backportedAdvisories": ["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"],
+    "patchedFilesVerified": 6,
+    "unmitigated": []
+  },
+  "supplementalValidation": {
+    "algorithmApiAndModelAndValidation": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "mobileLint": "passed"
+  },
+  "permissionAndConcurrencyChecks": [
+    "MOBILE STUDENT and current learning/practice authorization only; no code execution, AI or generic algorithm route permitted",
+    "Native and website personal record updates use one advisory transaction lock and revision; queued revocation rechecked",
+    "Hidden tests, code drafts, account/organization internal identifiers never returned by native statements or editorial projections",
+    "Actual committed response loss freezes editing; recovery reads current fields and revision without replaying write",
+    "All previous course, video/file, planner, assessment, practice, collections, communication and real WebRTC native flows rerun"
+  ],
+  "resolvedDuringAcceptance": [
+    "Paused source retained unchanged and prior interrupted reports preserved",
+    "One JavaScript trusted reference timed out while the emulator was starting; same fixed reference passed direct reproduction, then default complete verification rerun without relaxed deadlines",
+    "Native Back consumes actual focused input as well as reported IME visibility; backgrounding blurs input so foreground cannot reopen an unrequested keyboard or trigger accidental exam navigation",
+    "WebKit live regression now waits for actual camera-on state before requesting microphone, avoiding overlapping device acquisition; all media RTP assertions retained",
+    "Earlier dependency security updates retain Zod4 PATCH omissions and default parsing; related contract regressions pass"
+  ],
+  "limits": [
+    "Native code editing/drafts/run-submit, algorithm AI, training plans and forum remain to migrate",
+    "Unsent notes stay in page memory; no new offline cache or operating-system push",
+    "No new migration this round; updated backend must be deployed before HTTPS APK uses algorithm routes",
+    "Local and remote accounts/databases remain separate",
+    "Android12 arm64 emulator with synthetic cameras and disabled host microphone; physical phone, Bluetooth, cellular and TURN checks separate",
+    "Public debug-key-signed preview APKs, no store/iOS release",
+    "Mobile inherited advisories have verified fingerprinted security backports; raw audit advisory count is not zero"
+  ],
+  "privacy": "No paid AI/Judge calls or remote production changes. Only scoped disposable PostgreSQL fixtures and trusted fixed reference programs. No keys, private environments or databases committed."
+}

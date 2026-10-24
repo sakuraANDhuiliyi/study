@@ -1,3 +1,4 @@
+import { sparsePartial } from '../common/sparse-partial';
 import { z } from 'zod';
 import sanitizeHtml from 'sanitize-html';
 import { cleanRichText } from '../common/utils';
@@ -51,7 +52,7 @@ const content = z.object({
       trim: z.boolean().default(true),
       collapseWhitespace: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
   scoreCents: cents.refine((value) => value > 0 && value <= 1000000, '每题分值须在 0.01 至 10000 分之间'),
   difficulty: z.number().int().min(1).max(5).default(2),
   knowledgePoints: z.array(text(100)).max(30).default([]),
@@ -67,9 +68,10 @@ export const questionSchema = content.extend({
     .max(30)
     .default([]),
 });
-export const questionPatchSchema = questionSchema
-  .partial()
-  .extend({ active: z.boolean().optional(), expectedVersion: z.number().int().min(1) });
+export const questionPatchSchema = sparsePartial(questionSchema).extend({
+  active: z.boolean().optional(),
+  expectedVersion: z.number().int().min(1),
+});
 
 export const paperSchema = z.object({
   courseId: id,
@@ -97,9 +99,10 @@ export const assignmentSchema = z.object({
   maxAttempts: z.number().int().min(1).max(20).default(1),
   attachmentIds: z.array(id).max(20).default([]),
 });
-export const assignmentPatchSchema = assignmentSchema
-  .partial()
-  .extend({ revision: z.number().int().min(0), reason: text(1000).optional() });
+export const assignmentPatchSchema = sparsePartial(assignmentSchema).extend({
+  revision: z.number().int().min(0),
+  reason: text(1000).optional(),
+});
 const answerLeaf = z.union([
   z.string().max(500000),
   z.boolean(),
@@ -183,7 +186,7 @@ export const examSchema = z.object({
   commentReleaseAt: date.nullable().optional(),
   appealDeadline: date.nullable().optional(),
 });
-export const examPatchSchema = examSchema.partial().extend({ revision: z.number().int().min(0) });
+export const examPatchSchema = sparsePartial(examSchema).extend({ revision: z.number().int().min(0) });
 export const saveSchema = z.object({
   revision: z.number().int().min(0),
   answers: z.array(answerSchema).max(200),

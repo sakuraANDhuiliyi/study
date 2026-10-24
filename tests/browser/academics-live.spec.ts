@@ -45,17 +45,32 @@ async function login(page: Page, username: string, password: string) {
 }
 
 async function chooseOption(page: Page, combobox: Locator, label: string) {
-  // Keyboard traversal also reaches options outside Ant Design's virtualized viewport.
-  await combobox.press('ArrowDown');
-  for (let count = 0; count < 150; count++) {
-    const active = page.locator(
-      '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option-active',
-    );
-    if ((await active.getAttribute('title')) === label) {
-      await combobox.press('Enter');
+  await expect(combobox).toBeEnabled();
+  await combobox.click();
+  await expect(combobox).toHaveAttribute('aria-expanded', 'true');
+  const dropdown = page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+  await expect(dropdown).toBeVisible();
+  const holder = dropdown.locator('.rc-virtual-list-holder');
+  await expect(holder).toBeVisible();
+  // Scroll the real rendered virtual list instead of racing keyboard state updates.
+  await holder.evaluate(async (el) => {
+    el.scrollTop = 0;
+    await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+  });
+  for (let count = 0; count < 200; count++) {
+    const option = dropdown.getByTitle(label, { exact: true });
+    if (await option.isVisible()) {
+      await option.click();
+      await expect(combobox).toHaveAttribute('aria-expanded', 'false');
       return;
     }
-    await combobox.press('ArrowDown');
+    const before = await holder.evaluate((el) => el.scrollTop);
+    await holder.evaluate(async (el) => {
+      el.scrollBy(0, Math.max(32, el.clientHeight - 32));
+      await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+    });
+    if ((await holder.evaluate((el) => el.scrollTop)) === before) break;
+    await expect.poll(() => holder.evaluate((el) => el.scrollTop)).toBeGreaterThan(before);
   }
   throw new Error(`Unable to select learning option: ${label}`);
 }

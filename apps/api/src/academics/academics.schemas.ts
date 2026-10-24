@@ -1,3 +1,4 @@
+import { sparsePartial } from '../common/sparse-partial';
 import { z } from 'zod';
 const text = (max: number, min = 0) =>
   z
@@ -14,7 +15,7 @@ export const academicPreferencesInput = z
   })
   .strict();
 export const academicEvaluationInput = z
-  .object({ title: text(160, 1).optional(), values: z.record(z.unknown()) })
+  .object({ title: text(160, 1).optional(), values: z.record(z.string(), z.unknown()) })
   .strict()
   .refine((v) => Object.keys(v.values).length <= 60, '输入字段过多');
 export const academicRecordQuery = z
@@ -44,8 +45,7 @@ export const academicRecordPatch = z
 export const academicSubjectCreate = z
   .object({ name: text(100, 1), description: text(4000).default('') })
   .strict();
-export const academicSubjectPatch = academicSubjectCreate
-  .partial()
+export const academicSubjectPatch = sparsePartial(academicSubjectCreate)
   .extend({ revision: z.number().int().min(0).max(2147483646), active: z.boolean().optional() })
   .strict()
   .refine(
@@ -55,8 +55,7 @@ export const academicSubjectPatch = academicSubjectCreate
 export const academicMajorCreate = academicSubjectCreate
   .extend({ subjectId: text(100, 1), moduleIds: z.array(text(100, 1)).min(1).max(60) })
   .strict();
-export const academicMajorPatch = academicMajorCreate
-  .partial()
+export const academicMajorPatch = sparsePartial(academicMajorCreate)
   .extend({ revision: z.number().int().min(0).max(2147483646), active: z.boolean().optional() })
   .strict()
   .refine(

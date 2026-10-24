@@ -331,8 +331,8 @@ test('machine summaries only retain allowlisted counters, never raw subprocess p
 test('native build gate rejects incomplete bundles and unmitigated dependency advisories', () => {
   const valid = {
     checks: 5,
-    tests: 4,
-    pass: 4,
+    tests: 5,
+    pass: 5,
     fail: 0,
     skipped: 0,
     cancelled: 0,
@@ -341,9 +341,16 @@ test('native build gate rejects incomplete bundles and unmitigated dependency ad
     audit: { unmitigated: [], patchedFilesVerified: 6 },
   };
   assert.equal(evaluateStageResult('mobile-build', { exitCode: 0 }, JSON.stringify(valid)).exitCode, 0);
+  assert.equal(
+    evaluateStageResult('mobile-build', { exitCode: 0 }, JSON.stringify({ ...valid, tests: 6, pass: 6 }))
+      .exitCode,
+    0,
+  );
   for (const change of [
     { bundle: false },
     { tests: 0 },
+    { tests: 4, pass: 4 },
+    { tests: 6, pass: 5 },
     { skipped: 1 },
     { audit: { unmitigated: ['unknown'], patchedFilesVerified: 6 } },
     { audit: { unmitigated: [], patchedFilesVerified: 0 } },

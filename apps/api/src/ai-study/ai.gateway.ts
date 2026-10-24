@@ -30,30 +30,22 @@ const invalidResponse = () => new BadGatewayException('AI服务未返回完整�
 
 // Use the same shape for the provider and for strict application-side validation.
 export function strictJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
-  const def = schema._def;
-  switch (def.typeName) {
-    case 'ZodEffects':
-      return strictJsonSchema(def.schema);
-    case 'ZodObject': {
-      const shape = def.shape();
-      return {
-        type: 'object',
-        properties: Object.fromEntries(
-          Object.entries(shape).map(([key, value]) => [key, strictJsonSchema(value as z.ZodTypeAny)]),
-        ),
-        required: Object.keys(shape),
-        additionalProperties: false,
-      };
-    }
-    case 'ZodArray':
-      return { type: 'array', items: strictJsonSchema(def.type) };
-    case 'ZodEnum':
-      return { type: 'string', enum: def.values };
-    case 'ZodString':
-      return { type: 'string' };
-    default:
-      throw new Error('Unsupported AI result schema');
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
+    return {
+      type: 'object',
+      properties: Object.fromEntries(
+        Object.entries(shape).map(([key, value]) => [key, strictJsonSchema(value as z.ZodType)]),
+      ),
+      required: Object.keys(shape),
+      additionalProperties: false,
+    };
   }
+  if (schema instanceof z.ZodArray)
+    return { type: 'array', items: strictJsonSchema(schema.element as z.ZodType) };
+  if (schema instanceof z.ZodEnum) return { type: 'string', enum: Object.values(schema.enum) };
+  if (schema instanceof z.ZodString) return { type: 'string' };
+  throw new Error('Unsupported AI result schema');
 }
 
 /** Bounded, single-attempt request. Server-configured endpoints are never taken from browser input. */

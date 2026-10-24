@@ -36,7 +36,7 @@ const model = z
   .regex(/^[a-zA-Z0-9._:/-]+$/);
 const configSchema = z
   .object({
-    judge0: judgeConfigurationSchema.default({}),
+    judge0: judgeConfigurationSchema.prefault({}),
     ai: z
       .object({
         enabled: z.boolean().default(true),
@@ -49,7 +49,7 @@ const configSchema = z
         maxOutputTokens: z.number().int().min(512).max(24000).default(6000),
       })
       .strict()
-      .default({}),
+      .prefault({}),
     webSearch: z
       .object({
         enabled: z.boolean().default(true),
@@ -70,10 +70,10 @@ const configSchema = z
         tavily: z
           .object({ baseUrl: apiUrl.default('https://api.tavily.com'), apiKey: secret })
           .strict()
-          .default({}),
+          .prefault({}),
       })
       .strict()
-      .default({}),
+      .prefault({}),
     limits: z
       .object({
         dailyRequests: z.number().int().min(1).max(200).default(20),
@@ -81,7 +81,7 @@ const configSchema = z
         downloadTimeoutMs: z.number().int().min(1000).max(60000).default(15000),
       })
       .strict()
-      .default({}),
+      .prefault({}),
   })
   .strict()
   .superRefine((config, context) => {

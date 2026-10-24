@@ -25,6 +25,7 @@ import { MobileClient, serverOrigin, type MobileUser } from './src/client';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
+import { Algorithms, Algorithm, AlgorithmSolution } from './src/Algorithms';
 import { Collections } from './src/Collections';
 import { Practices, Practice } from './src/Practice';
 import { Notes, NoteEditor } from './src/Notes';
@@ -127,6 +128,7 @@ type Route =
         | 'notes'
         | 'practice'
         | 'collections'
+        | 'algorithms'
         | 'announcements'
         | 'discussions'
         | 'discussionNew';
@@ -138,6 +140,7 @@ type Route =
   | { name: 'note'; id: string }
   | { name: 'announcement'; id: string }
   | { name: 'discussion'; id: string }
+  | { name: 'algorithm' | 'algorithmSolution'; id: string }
   | { name: 'practiceSession'; id: string }
   | { name: 'exam' | 'examAttempt' | 'review'; id: string };
 
@@ -304,31 +307,35 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
   };
   const moveRoute = (next: Route) => {
     const pathname =
-      next.name === 'home'
-        ? '/'
-        : next.name === 'discussionNew'
-          ? '/discussions/new'
-          : next.name === 'discussion'
-            ? '/discussions/[id]'
-            : next.name === 'announcement'
-              ? '/announcements/[id]'
-              : next.name === 'practiceSession'
-                ? '/practice/[id]'
-                : next.name === 'note'
-                  ? '/notes/[id]'
-                  : next.name === 'course'
-                    ? '/courses/[id]'
-                    : next.name === 'assignment'
-                      ? '/assignments/[id]'
-                      : next.name === 'exam'
-                        ? '/exams/[id]'
-                        : next.name === 'review'
-                          ? '/reviews/[id]'
-                          : next.name === 'examAttempt'
-                            ? '/exam-attempts/[id]'
-                            : next.name === 'classroom'
-                              ? '/live/[id]'
-                              : '/' + next.name;
+      next.name === 'algorithm'
+        ? '/algorithms/[id]'
+        : next.name === 'algorithmSolution'
+          ? '/algorithm-editorials/[id]'
+          : next.name === 'home'
+            ? '/'
+            : next.name === 'discussionNew'
+              ? '/discussions/new'
+              : next.name === 'discussion'
+                ? '/discussions/[id]'
+                : next.name === 'announcement'
+                  ? '/announcements/[id]'
+                  : next.name === 'practiceSession'
+                    ? '/practice/[id]'
+                    : next.name === 'note'
+                      ? '/notes/[id]'
+                      : next.name === 'course'
+                        ? '/courses/[id]'
+                        : next.name === 'assignment'
+                          ? '/assignments/[id]'
+                          : next.name === 'exam'
+                            ? '/exams/[id]'
+                            : next.name === 'review'
+                              ? '/reviews/[id]'
+                              : next.name === 'examAttempt'
+                                ? '/exam-attempts/[id]'
+                                : next.name === 'classroom'
+                                  ? '/live/[id]'
+                                  : '/' + next.name;
     const params = [
       'course',
       'classroom',
@@ -340,6 +347,8 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       'practiceSession',
       'announcement',
       'discussion',
+      'algorithm',
+      'algorithmSolution',
     ].includes(next.name)
       ? { id: (next as { id: string }).id }
       : (next.name === 'live' ||
@@ -369,9 +378,27 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       )) ||
     (name === 'live' && route.name === 'classroom');
   useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (Keyboard.isVisible()) {
+    const lifecycle = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        TextInput.State.currentlyFocusedInput()?.blur();
         Keyboard.dismiss();
+      }
+    });
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Keyboard visibility is the last reported native event. Focus can return
+      // before that event after foregrounding, so consume Back for either state.
+      const focused = TextInput.State.currentlyFocusedInput();
+      if (Keyboard.isVisible() || focused) {
+        focused?.blur();
+        Keyboard.dismiss();
+        return true;
+      }
+      if (route.name === 'algorithmSolution') {
+        setRoute({ name: 'algorithm', id: route.id });
+        return true;
+      }
+      if (route.name === 'algorithm') {
+        setRoute({ name: 'algorithms' });
         return true;
       }
       if (route.name === 'discussion' || route.name === 'discussionNew') {
@@ -408,7 +435,10 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       }
       return false;
     });
-    return () => subscription.remove();
+    return () => {
+      lifecycle.remove();
+      subscription.remove();
+    };
   }, [route]);
   const heading =
     route.name === 'home'
@@ -435,11 +465,13 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                           route.name === 'discussion' ||
                           route.name === 'discussionNew'
                         ? '课程讨论'
-                        : route.name === 'announcements' || route.name === 'announcement'
-                          ? '教学公告'
-                          : route.name === 'notifications'
-                            ? '学习通知'
-                            : '我的空间';
+                        : ['algorithms', 'algorithm', 'algorithmSolution'].includes(route.name)
+                          ? '算法学习'
+                          : route.name === 'announcements' || route.name === 'announcement'
+                            ? '教学公告'
+                            : route.name === 'notifications'
+                              ? '学习通知'
+                              : '我的空间';
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
@@ -457,33 +489,39 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
               'announcement',
               'discussion',
               'discussionNew',
+              'algorithm',
+              'algorithmSolution',
             ].includes(route.name)
               ? '返回列表'
               : '知学首页'
           }
           onPress={() =>
-            setRoute({
-              name:
-                route.name === 'discussion' || route.name === 'discussionNew'
-                  ? 'discussions'
-                  : route.name === 'announcement'
-                    ? 'announcements'
-                    : route.name === 'course'
-                      ? 'courses'
-                      : route.name === 'classroom'
-                        ? 'live'
-                        : route.name === 'assignment'
-                          ? 'assignments'
-                          : route.name === 'exam' || route.name === 'examAttempt'
-                            ? 'exams'
-                            : route.name === 'practiceSession'
-                              ? 'practice'
-                              : route.name === 'note'
-                                ? 'notes'
-                                : route.name === 'review'
-                                  ? 'appeals'
-                                  : 'home',
-            })
+            route.name === 'algorithmSolution'
+              ? setRoute({ name: 'algorithm', id: route.id })
+              : setRoute({
+                  name:
+                    route.name === 'algorithm'
+                      ? 'algorithms'
+                      : route.name === 'discussion' || route.name === 'discussionNew'
+                        ? 'discussions'
+                        : route.name === 'announcement'
+                          ? 'announcements'
+                          : route.name === 'course'
+                            ? 'courses'
+                            : route.name === 'classroom'
+                              ? 'live'
+                              : route.name === 'assignment'
+                                ? 'assignments'
+                                : route.name === 'exam' || route.name === 'examAttempt'
+                                  ? 'exams'
+                                  : route.name === 'practiceSession'
+                                    ? 'practice'
+                                    : route.name === 'note'
+                                      ? 'notes'
+                                      : route.name === 'review'
+                                        ? 'appeals'
+                                        : 'home',
+                })
           }
         >
           <Text style={s.headerLogo}>
@@ -499,6 +537,8 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
               'announcement',
               'discussion',
               'discussionNew',
+              'algorithm',
+              'algorithmSolution',
             ].includes(route.name)
               ? '‹'
               : '知'}
@@ -593,6 +633,27 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
         )}
         {route.name === 'discussion' && (
           <Discussion key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
+        )}
+        {route.name === 'algorithms' && (
+          <Algorithms client={client} open={(id) => setRoute({ name: 'algorithm', id })} />
+        )}
+        {route.name === 'algorithm' && (
+          <Algorithm
+            key={route.id}
+            client={client}
+            id={route.id}
+            registerLeave={registerLeave}
+            open={(id) => setRoute({ name: 'algorithm', id })}
+            editorial={(id) => setRoute({ name: 'algorithmSolution', id })}
+          />
+        )}
+        {route.name === 'algorithmSolution' && (
+          <AlgorithmSolution
+            key={route.id}
+            client={client}
+            id={route.id}
+            open={(id) => setRoute({ name: 'algorithm', id })}
+          />
         )}
         {route.name === 'notifications' && <Inbox client={client} open={setRoute} />}
         {route.name === 'appeals' && (
@@ -802,6 +863,14 @@ function Home({
           caption="交流问题与学习收获"
           icon="♧"
           onPress={() => navigate({ name: 'discussions' })}
+        />
+      )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="算法学习"
+          caption="题目题解与私人复习记录"
+          icon="⌘"
+          onPress={() => navigate({ name: 'algorithms' })}
         />
       )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />

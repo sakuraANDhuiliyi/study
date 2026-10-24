@@ -1,3 +1,4 @@
+import { sparsePartial } from '../common/sparse-partial';
 import { z } from 'zod';
 
 const text = (max: number) =>
@@ -26,9 +27,7 @@ export const academicGoalCreate = z
     dueDate: academicGoalDate.nullable().optional(),
   })
   .strict();
-export const academicGoalPatch = academicGoalCreate
-  .omit({ moduleId: true })
-  .partial()
+export const academicGoalPatch = sparsePartial(academicGoalCreate.omit({ moduleId: true }))
   .extend({
     revision,
     archived: z.boolean().optional(),

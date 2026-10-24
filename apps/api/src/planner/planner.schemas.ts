@@ -1,3 +1,4 @@
+import { sparsePartial } from '../common/sparse-partial';
 import { z } from 'zod';
 import { dateString } from '../common/utils';
 const date = dateString.refine((value) => {
@@ -31,8 +32,7 @@ export const taskInput = z
     dueAt: date,
   })
   .strict();
-export const taskPatch = taskInput
-  .partial()
+export const taskPatch = sparsePartial(taskInput)
   .extend({
     revision: z.number().int().nonnegative().max(2147483646),
     completed: z.boolean().optional(),

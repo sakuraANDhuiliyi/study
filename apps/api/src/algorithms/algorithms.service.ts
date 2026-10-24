@@ -11,7 +11,6 @@ import {
   Prisma,
   type AlgorithmAnalysis,
   type AlgorithmSubmission,
-  type AlgorithmLearningState,
   type AlgorithmDraft,
 } from '@prisma/client';
 import type { z } from 'zod';
@@ -21,6 +20,15 @@ import { PrismaService } from '../common/prisma.service';
 import { AlgorithmAiGateway } from './algorithm-ai.gateway';
 import { algorithmProblems, getAlgorithmProblem, type AlgorithmProblem } from './algorithms.catalog';
 import { algorithmPlans } from './algorithms.learning';
+import {
+  algorithmLearningDto,
+  algorithmSummaries,
+  algorithmPage,
+  saveAlgorithmLearning,
+  type AlgorithmProblemSummary,
+} from './algorithms.student';
+export { algorithmLearningDto } from './algorithms.student';
+export type { AlgorithmProblemSummary } from './algorithms.student';
 import { getAlgorithmEditorial } from './algorithms.editorials';
 import {
   type AlgorithmAnalysisInput,
@@ -50,16 +58,6 @@ const statuses = new Set([
   'system_error',
 ]);
 
-export type AlgorithmProblemSummary = {
-  id: string;
-  number: number;
-  title: string;
-  difficulty: AlgorithmProblem['difficulty'];
-  tags: string[];
-  status: 'todo' | 'attempted' | 'solved';
-  favorite: boolean;
-  reviewStatus: string;
-};
 type ActivityDay = { date: string; submissions: number; accepted: number; solved: number };
 const DAY_MS = 86400000;
 export const algorithmDate = (now: Date) => new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10);
@@ -81,16 +79,6 @@ export function algorithmActivity(days: ActivityDay[], now: Date) {
     offset--;
   }
   return { activity, streak, dayNumber: Math.floor(dayTime / DAY_MS) };
-}
-
-export function algorithmLearningDto(state: AlgorithmLearningState | null) {
-  return {
-    favorite: state?.favorite ?? false,
-    reviewStatus: state?.reviewStatus ?? 'none',
-    note: state?.note ?? '',
-    revision: state?.revision ?? 0,
-    updatedAt: state?.updatedAt ?? null,
-  };
 }
 
 export function algorithmDraftDto(draft: AlgorithmDraft | null) {
@@ -220,47 +208,14 @@ export class AlgorithmsService {
         select: { problemId: true, favorite: true, reviewStatus: true },
       }),
     ]);
-    const attempted = new Set(submitted.map((s) => s.problemId));
-    const solved = new Set(submitted.filter((s) => s.status === 'accepted').map((s) => s.problemId));
-    const states = new Map(learning.map((state) => [state.problemId, state]));
-    return algorithmProblems.map((problem) => ({
-      id: problem.id,
-      number: problem.number,
-      title: problem.title,
-      difficulty: problem.difficulty,
-      tags: problem.tags,
-      status: solved.has(problem.id) ? 'solved' : attempted.has(problem.id) ? 'attempted' : 'todo',
-      favorite: states.get(problem.id)?.favorite ?? false,
-      reviewStatus: states.get(problem.id)?.reviewStatus ?? 'none',
-    }));
+    return algorithmSummaries(submitted, learning);
   }
   async list(actor: Actor, query: z.infer<typeof algorithmProblemQuery>) {
     await this.access(actor);
     await this.recoverPending(actor);
-    const items = await this.summaries(actor);
-    const term = query.q.trim().toLocaleLowerCase();
-    const filtered = items.filter(
-      (p) =>
-        (!term || `${p.number} ${p.title} ${p.tags.join(' ')}`.toLocaleLowerCase().includes(term)) &&
-        (!query.difficulty || p.difficulty === query.difficulty) &&
-        (!query.tag || p.tags.includes(query.tag)) &&
-        (!query.status || p.status === query.status) &&
-        (query.favorite === undefined || p.favorite === (query.favorite === 'true')) &&
-        (!query.review || p.reviewStatus === query.review),
-    );
-    return {
-      items: filtered.slice((query.page - 1) * query.pageSize, query.page * query.pageSize),
-      total: filtered.length,
-      page: query.page,
-      pageSize: query.pageSize,
-      stats: {
-        total: items.length,
-        attempted: items.filter((p) => p.status !== 'todo').length,
-        solved: items.filter((p) => p.status === 'solved').length,
-      },
-      tags: [...new Set(algorithmProblems.flatMap((p) => p.tags))].sort(),
-    };
+    return algorithmPage(await this.summaries(actor), query);
   }
+
   async problem(actor: Actor, id: string) {
     await this.access(actor);
     const problem = this.catalog(id);
@@ -292,26 +247,18 @@ export class AlgorithmsService {
     this.catalog(problemId);
     return this.db.$transaction(async (tx) => {
       await this.lock(tx, actor);
-      const where = { ...this.scope(actor), problemId };
-      const current = await tx.algorithmLearningState.findFirst({ where });
-      if ((current?.revision ?? 0) !== input.revision)
-        throw new ConflictException('学习记录已在其他页面更新，请刷新记录后再保存');
-      // Omitted fields are preserved; explicit empty notes, false favorites and none clear their values.
-      const patch = {
-        ...(input.favorite === undefined ? {} : { favorite: input.favorite }),
-        ...(input.reviewStatus === undefined ? {} : { reviewStatus: input.reviewStatus }),
-        ...(input.note === undefined ? {} : { note: input.note }),
-      };
-      if (!current)
-        return algorithmLearningDto(
-          await tx.algorithmLearningState.create({ data: { ...where, ...patch, revision: 1 } }),
-        );
-      const updated = await tx.algorithmLearningState.updateMany({
-        where: { ...where, revision: input.revision },
-        data: { ...patch, revision: { increment: 1 } },
-      });
-      if (updated.count !== 1) throw new ConflictException('学习记录已更新，请刷新后再保存');
-      return algorithmLearningDto(await tx.algorithmLearningState.findFirstOrThrow({ where }));
+      const auth = new AuthService(tx as PrismaService);
+      const fresh = actor.sessionId ? await auth.resolveSessionId(actor.sessionId) : null;
+      if (
+        !fresh ||
+        fresh.id !== actor.id ||
+        fresh.organizationId !== actor.organizationId ||
+        fresh.role !== 'STUDENT'
+      )
+        throw new ForbiddenException('当前学习会话已失效');
+      auth.require(fresh, 'learning.use');
+      await auth.checkFeature(fresh, '/api/algorithms');
+      return saveAlgorithmLearning(tx, fresh, problemId, input);
     });
   }
   async editorial(actor: Actor, problemId: string) {

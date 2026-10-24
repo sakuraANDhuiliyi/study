@@ -47,13 +47,16 @@ run('push', hierarchyJar, deviceJar);
 const info = run('shell', 'dumpsys', 'package', pkg);
 if (info.includes('Package [')) assert.ok(info.includes(pkg));
 function decode(s: string) {
-  return s
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+  const named: Record<string, string> = { quot: '"', apos: "'", amp: '&', lt: '<', gt: '>' };
+  // Decode XML attributes in one pass: a literal &amp;#10; must remain &#10;.
+  return s.replace(/&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|quot|apos|amp|lt|gt);/g, (raw, entity: string) => {
+    if (!entity.startsWith('#')) return named[entity];
+    const hex = /^#[xX]/.test(entity);
+    const point = Number.parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10);
+    return Number.isInteger(point) && point >= 0 && point <= 0x10ffff ? String.fromCodePoint(point) : raw;
+  });
 }
+
 function nodes(scrollAction?: 'forward' | 'backward') {
   run('shell', 'rm', '-f', deviceXml);
   const dumped = run(
@@ -1459,6 +1462,211 @@ async function main() {
     );
     passed(
       'native confirmed course topic publishing creates exactly one shared record and navigates without discarding a successful receipt',
+    );
+    await click('首页');
+    // Native algorithm learning and review. No judge or AI endpoint is called.
+    const algorithmScroll = (label: string) => scroll(label, undefined, 28);
+    const algorithmObserve = async (label: string) => {
+      await dismissKeyboard();
+      for (const direction of ['forward', 'backward'] as const)
+        for (let i = 0; i < 28; i++) {
+          if (nodes().some((n) => match(n, label) && contentVisible(n, 300))) return;
+          nodes(direction);
+          await liveWait(300);
+        }
+      throw new Error('Android observation missing: ' + label);
+    };
+
+    const algorithmProblem = 'sum-of-two';
+    const algorithmBase = '/algorithms/problems/' + algorithmProblem;
+    await click('首页');
+    await algorithmScroll('算法学习');
+    await find('算法学习与复习');
+    const algorithmTotal = (await f.call(f.clients.student, '/algorithms/problems')).body.total;
+    await algorithmScroll(`共 ${algorithmTotal} 道算法题，第 1 页`);
+    await algorithmScroll('下一页算法题');
+    await algorithmScroll(`共 ${algorithmTotal} 道算法题，第 2 页`);
+    await algorithmScroll('搜索算法题');
+    await type('搜索算法题', '1');
+    await algorithmScroll('搜索算法题库');
+    await algorithmScroll('打开第 1 道算法题');
+    await find('算法题目与学习记录');
+    await algorithmScroll('数据范围');
+    passed(
+      'native algorithm catalog searches, paginates and opens actual shared public statements without executing code',
+    );
+    await algorithmScroll('阅读算法题解');
+    await find('算法题解与复盘');
+    await algorithmScroll('阅读指引');
+    await algorithmScroll('解题提示');
+    await algorithmScroll('样例推演');
+    await algorithmScroll('边界条件与常见错误');
+    const algorithmEditorial = (await f.call(f.clients.student, algorithmBase + '/editorial')).body.editorial;
+    for (const [language, label] of [
+      ['cpp', 'C++'],
+      ['python', 'Python'],
+      ['javascript', 'JavaScript'],
+      ['java', 'Java'],
+    ]) {
+      await algorithmScroll('查看' + label + '参考代码');
+      await algorithmScroll('算法参考代码');
+      assert.equal((await find('算法参考代码')).text, algorithmEditorial.referenceCode[language]);
+    }
+    await algorithmScroll('返回算法题目');
+    await algorithmScroll('算法私人笔记');
+    await type('算法私人笔记', 'Native-algorithm-first');
+    await click('首页');
+    await find('离开算法学习？');
+    await click('继续编辑');
+    assert.equal((await find('算法私人笔记')).text, 'Native-algorithm-first');
+    assert.equal(
+      await f.db.algorithmLearningState.count({
+        where: { userId: f.users.student.id, problemId: algorithmProblem },
+      }),
+      0,
+    );
+    await algorithmScroll('收藏算法题');
+    await algorithmScroll('标记待复习');
+    await algorithmScroll('保存算法学习记录');
+    await find('保存算法学习记录？');
+    await click('继续编辑');
+    assert.equal(
+      await f.db.algorithmLearningState.count({
+        where: { userId: f.users.student.id, problemId: algorithmProblem },
+      }),
+      0,
+    );
+    passed(
+      'native algorithm editorials render all four real reference programs and unsaved or cancelled learning changes never write',
+    );
+    await algorithmScroll('保存算法学习记录');
+    await click('确认保存学习记录');
+    await algorithmScroll('算法学习记录已保存');
+    let algorithmState = (await f.call(f.clients.student, algorithmBase + '/learning')).body;
+    assert.equal(algorithmState.note, 'Native-algorithm-first');
+    assert.equal(algorithmState.favorite, true);
+    assert.equal(algorithmState.reviewStatus, 'review');
+    assert.equal(algorithmState.revision, 1);
+    screenshot('android-algorithm-learning');
+    passed(
+      'native confirmed algorithm favorite, review status and private note synchronize one website record',
+    );
+    await algorithmScroll('算法私人笔记');
+    await type('算法私人笔记', 'Native-algorithm-unsaved');
+    await f.call(f.clients.student, algorithmBase + '/learning', 'PATCH', {
+      revision: algorithmState.revision,
+      note: 'Website-algorithm-new',
+      favorite: false,
+      reviewStatus: 'none',
+    });
+    await algorithmScroll('刷新算法题目');
+    await algorithmScroll('加载服务器学习记录');
+    await find('加载服务器学习记录？');
+    await click('继续编辑');
+    await algorithmObserve('算法私人笔记');
+    assert.equal((await find('算法私人笔记')).text, 'Native-algorithm-unsaved');
+    await algorithmScroll('加载服务器学习记录');
+    await click('舍弃并加载');
+    await algorithmScroll('算法私人笔记');
+    assert.equal((await find('算法私人笔记')).text, 'Website-algorithm-new');
+    passed(
+      'native algorithm cross-device version conflict preserves unsaved notes until explicit server reload',
+    );
+    let dropAlgorithmWrites = true;
+    discussionProxy = createServer(async (request, response) => {
+      try {
+        const path = request.url || '';
+        if (!path.startsWith('/api/') || path.includes('://')) {
+          response.writeHead(404);
+          response.end();
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        for await (const chunk of request) {
+          const b = Buffer.from(chunk);
+          size += b.length;
+          if (size > 65536) throw new Error('Fixture body bound');
+          chunks.push(b);
+        }
+        const upstream = await fetch(f.origin + path, {
+          method: request.method,
+          redirect: 'error',
+          headers: {
+            accept: 'application/json',
+            ...(request.headers.authorization ? { authorization: request.headers.authorization } : {}),
+            ...(request.headers['content-type'] ? { 'content-type': request.headers['content-type'] } : {}),
+          },
+          ...(chunks.length ? { body: Buffer.concat(chunks) } : {}),
+        });
+        const body = Buffer.from(await upstream.arrayBuffer());
+        if (
+          dropAlgorithmWrites &&
+          request.method === 'PATCH' &&
+          path === '/api/mobile/algorithms/problems/' + algorithmProblem + '/learning'
+        ) {
+          request.socket.destroy();
+          return;
+        }
+        response.writeHead(upstream.status, {
+          'content-type': upstream.headers.get('content-type') || 'application/json',
+        });
+        response.end(body);
+      } catch {
+        if (!response.destroyed) {
+          response.writeHead(502);
+          response.end();
+        }
+      }
+    });
+    await new Promise<void>((done) => discussionProxy!.listen(0, '127.0.0.1', done));
+    run('reverse', 'tcp:3030', 'tcp:' + String((discussionProxy.address() as { port: number }).port));
+    await algorithmScroll('算法私人笔记');
+    await type('算法私人笔记', 'Native-algorithm-recovered');
+    await algorithmScroll('收藏算法题');
+    await algorithmScroll('标记已掌握');
+    algorithmState = (await f.call(f.clients.student, algorithmBase + '/learning')).body;
+    await algorithmScroll('保存算法学习记录');
+    await click('确认保存学习记录');
+    await algorithmScroll('核对算法保存结果');
+    dropAlgorithmWrites = false;
+    await algorithmScroll('已核对：算法学习记录已保存，没有重复写入。');
+    const algorithmRecovered = (await f.call(f.clients.student, algorithmBase + '/learning')).body;
+    assert.equal(algorithmRecovered.note, 'Native-algorithm-recovered');
+    assert.equal(algorithmRecovered.revision, algorithmState.revision + 1);
+    assert.equal(algorithmRecovered.favorite, true);
+    assert.equal(algorithmRecovered.reviewStatus, 'mastered');
+    passed(
+      'native actual lost algorithm save response freezes writes and read-only reconciliation never duplicates a revision',
+    );
+    run('shell', 'am', 'force-stop', pkg);
+    run('reverse', 'tcp:3030', 'tcp:' + new URL(f.origin).port);
+    discussionProxy.closeAllConnections();
+    await new Promise<void>((done) => discussionProxy!.close(() => done()));
+    discussionProxy = undefined;
+    run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+    await find('学习工作台');
+    await algorithmScroll('算法学习');
+    await algorithmScroll('仅看算法收藏');
+    await algorithmScroll('已掌握');
+    await algorithmScroll('共 1 道算法题，第 1 页');
+    await algorithmScroll('打开第 1 道算法题');
+    await algorithmScroll('算法私人笔记');
+    assert.equal((await find('算法私人笔记')).text, 'Native-algorithm-recovered');
+    await f.db.systemSetting.upsert({
+      where: { organizationId_key: { organizationId: f.organization.id, key: 'features' } },
+      create: { organizationId: f.organization.id, key: 'features', value: { practice: false } },
+      update: { value: { practice: false } },
+    });
+    await algorithmScroll('刷新算法题目');
+    await find('机构已关闭此功能');
+    assert.ok(!nodes().some((n) => (n.text || '').includes('Native-algorithm-recovered')));
+    await f.db.systemSetting.deleteMany({ where: { organizationId: f.organization.id, key: 'features' } });
+    await algorithmScroll('刷新算法题目');
+    await algorithmScroll('算法私人笔记');
+    assert.equal((await find('算法私人笔记')).text, 'Native-algorithm-recovered');
+    passed(
+      'native algorithm learning survives process restart and current feature withdrawal hides private state without deleting it',
     );
     await click('首页');
     const notesScroll = (label: string) => scroll(label, undefined, 20);

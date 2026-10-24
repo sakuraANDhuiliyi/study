@@ -34,6 +34,7 @@ import { LearningActionsController } from './planner/actions.controller';
 import { LearningActionsService } from './planner/actions.service';
 import { NotesService } from './notes/notes.service';
 import { MobileAnnouncementsController } from './mobile/mobile-announcements.controller';
+import { MobileAlgorithmsController } from './mobile/mobile-algorithms.controller';
 import { MobileDiscussionsController } from './mobile/mobile-discussions.controller';
 import { MobileCollectionsController } from './mobile/mobile-collections.controller';
 import { MobilePracticeController } from './mobile/mobile-practice.controller';
@@ -159,6 +160,7 @@ class CatalogController {
     MobileCollectionsController,
     MobileAnnouncementsController,
     MobileDiscussionsController,
+    MobileAlgorithmsController,
     AiStudyController,
     AiAuthoringController,
     AlgorithmsController,

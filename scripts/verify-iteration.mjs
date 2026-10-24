@@ -467,8 +467,9 @@ export function evaluateStageResult(id, result, output) {
     !(
       summary.checks === 5 &&
       summary.bundle &&
-      summary.tests === 4 &&
-      summary.pass === 4 &&
+      Number.isInteger(summary.tests) &&
+      summary.tests >= 5 &&
+      summary.pass === summary.tests &&
       summary.fail === 0 &&
       summary.skipped === 0 &&
       summary.cancelled === 0 &&

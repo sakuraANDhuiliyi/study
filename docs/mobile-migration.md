@@ -15,7 +15,7 @@ Android 与网站共用后台和数据库，但各自使用独立会话。下表
 | 通知、公告、讨论、私信                               | 学生原生通知、公告阅读与文字课程讨论已实现 | 讨论附件、举报治理、私信与推送待迁移                       |
 | 自主练习、逐题反馈与练习报告                         | 学生原生已实现，支持六类题型与进度恢复     | 错题/收藏原生管理见0.9.0；AI学习仍待迁移                   |
 | 错题本、掌握状态与收藏管理                           | 学生原生已实现，支持筛选、分页及状态核对   | 离线复习与AI学习仍待迁移                                   |
-| 算法题、运行提交、训练计划、论坛                     | 未原生迁移                                 | 手机代码编辑、作业状态恢复、可信判题与论坛权限             |
+| 算法题、运行提交、训练计划、论坛                     | 原生题库、题解与个人学习记录已实现         | 代码编辑、运行提交、训练计划、AI解析和论坛仍待迁移         |
 | 编程网站与 Android 生成、预览、下载                  | 未原生迁移                                 | 独立原生工作区与受控产物下载，不借用学生登录凭据访问生成器 |
 | 专业学习、实验、目标与记录导出                       | 未原生迁移                                 | 移动交互与记录一致性                                       |
 | 创意模块                                             | 未原生迁移                                 | 素材与内容权限、预览及适配                                 |
@@ -148,3 +148,17 @@ Android 与网站共用后台和数据库，但各自使用独立会话。下表
 本轮验收同时将根项目DOMPurify更新到3.4.17、sanitize-html更新到2.18.1，修复审计新报告的HTML清理漏洞。增加丢弃iframe的堆栈/嵌套上限回归，以及Chrome、Chromium、Firefox、WebKit上的影子DOM模板、脱离节点事件和XHTML动画链接回归；保留手机独立依赖图与已验证的安全回补。
 
 交互参考[Canvas Android查看讨论](https://community.instructure.com/en/kb/articles/661728-unknown)、[回复讨论](https://community.instructure.com/en/kb/articles/661730-unknown)和[创建讨论](https://community.instructure.com/en/kb/articles/661729-how-do-i-create-a-discussion-in-the-canvas-app-on-my-android-device)的课程入口、话题和回复流程，按本平台的纯文字、权限、幂等和事务规则实施。导航依据[Expo 56 Router](https://docs.expo.dev/versions/v56.0.0/sdk/router/)。[完整验收记录](verification/mobile-discussions-20261023.json)与[Android讨论截图](screenshots/mobile-android-discussion.png)记录实际范围。
+
+## 本轮：原生算法学习与复习（0.12.0 / versionCode 12）
+
+学生首页“算法学习”进入原生题库，支持题号/标题/知识点搜索、完整标签、难度、正式提交状态、收藏与复习状态筛选，每页10题。题目展示公开描述、输入输出格式、数据范围、样例与资源限制。题解按需进入独立页面，包含阅读指引、提示、思路、正确性、复杂度、样例推演、边界、易错点、四语言只读参考代码和相关题目。按掌握状态筛选与收藏适合手机碎片复习；流程参考[Anki官方浏览与筛选说明](https://docs.ankiweb.net/browsing.html)，具体算法内容和学习记录沿用本项目。
+
+收藏、待复习/已掌握标记及最多12000字符的私人纯文本笔记与网站使用同一记录和revision。保存前确认，跨端冲突保留当前输入，舍弃输入加载服务器版本前再次确认。结果不明时冻结写入，可只读核对当前字段与版本；不会自动重放保存。未保存内容仅在当前页面内存，进程退出不承诺恢复。收藏和标记掌握不改变正式判题通过状态，样例运行、自定义输入与他人提交也不计本人的通过数。
+
+原生接口仅允许学生MOBILE会话，在网站共用的个人算法事务锁后重新检查会话、账号、角色、学习权限和practice功能开关。读取不触发过期作业回收，不访问真实AI或判题服务；返回不包含隐藏用例、内部账号、机构标识或云端代码草稿。网站学习记录更新也在同一锁后重新核对权限。算法题库沿用网站的机构/个人账号学习规则，不要求额外选课。
+
+手机按[Expo 56 Router](https://docs.expo.dev/versions/v56.0.0/sdk/router/)提供原生导航，按[React Native 0.85 AppState](https://reactnative.dev/docs/0.85/appstate)在返回前台重新核对，并每30秒刷新当前题目/题解权限。当前读取失败后隐藏题目和私人记录。未增加依赖、离线缓存或浏览器凭据传递。
+
+无需新增数据库迁移，服务器需同步本轮新增手机接口。手机代码编辑、云端代码草稿、运行/提交判题、AI解析、训练计划与算法论坛仍在网站，不计为本轮完成。[本轮验收记录](verification/mobile-algorithm-learning-20261024.json)与[Android算法学习截图](screenshots/mobile-android-algorithm-learning.png)记录实际范围。
+
+本轮完整验收同时处理依赖审计新报告的拒绝服务漏洞：服务端升级到 Zod 4.6.7、multer 2.5.0、body-parser 2.4.0，手机构建工具中的 Zod 也限定为已修复版本。参考上游的[Zod集合上限公告](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)、[multer异步过滤公告](https://github.com/advisories/GHSA-q7qp-rjg7-q26m)和[压缩请求解析公告](https://github.com/advisories/GHSA-27r3-jxmh-p828)。按[Zod官方迁移指南](https://zod.dev/v4/changelog)保留配置默认值的解析，局部修改使用显式稀疏验证避免覆盖未传入字段；AI结果结构使用公共类型接口，OpenAPI使用官方JSON Schema转换。增加超大集合提前拒绝、局部修改保留字段、AI结构和Expo实际插件验证回归，不访问真实收费服务。

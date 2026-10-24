@@ -17,7 +17,10 @@ export const algorithmPagination = z
   .strict();
 // Preserve scalar pagination coercion while excluding array/object/boolean query values.
 const submissionPage = (maximum: number, fallback: number) =>
-  z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(1).max(maximum)).default(fallback);
+  z
+    .union([z.string(), z.number()])
+    .pipe(z.coerce.number<string | number>().int().min(1).max(maximum))
+    .default(fallback);
 export const algorithmSubmissionQuery = z
   .object({
     page: submissionPage(10000, 1),
@@ -64,7 +67,7 @@ export const algorithmLearningInput = z
 export type AlgorithmLearningInput = z.infer<typeof algorithmLearningInput>;
 const algorithmCodeInput = z.object({ language: algorithmLanguage, code }).strict();
 export const algorithmDraftInput = algorithmCodeInput.extend({
-  revision: z.number({ required_error: '草稿版本缺失，请刷新页面后再保存' }).int().min(0).max(2147483646),
+  revision: z.number({ error: '草稿版本缺失，请刷新页面后再保存' }).int().min(0).max(2147483646),
 });
 export type AlgorithmDraftInput = z.infer<typeof algorithmDraftInput>;
 export const algorithmSubmissionInput = algorithmCodeInput

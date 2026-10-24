@@ -5,6 +5,53 @@ const fs = require('node:fs'),
   Module = require('node:module');
 const { check } = require('../scripts/harden-build.cjs');
 
+test('Expo56 actual plugin and command validators work with the patched Zod4 override', () => {
+  const path = require('node:path');
+  const base = path.resolve(__dirname, '../node_modules/@expo/cli/build/src/start/server');
+  const { PluginSchema, DevToolsPluginOutputSchema } = require(path.join(base, 'DevToolsPlugin.schema.js'));
+  const { createMCPDevToolsExtensionSchema } = require(
+    path.join(base, 'createMCPDevToolsExtensionSchema.js'),
+  );
+  const plugin = PluginSchema.parse({
+    packageName: 'local-security-check',
+    packageRoot: '/local',
+    cliExtensions: {
+      description: 'Offline schema check',
+      entryPoint: 'entry.js',
+      commands: [
+        {
+          name: 'inspect',
+          title: 'Inspect',
+          environments: ['cli', 'mcp'],
+          parameters: [
+            { name: 'count', type: 'number' },
+            { name: 'confirmed', type: 'confirm' },
+            { name: 'label', type: 'text' },
+          ],
+        },
+      ],
+    },
+  });
+  const schema = createMCPDevToolsExtensionSchema(plugin);
+  assert.deepEqual(schema.parse({ command: 'inspect', count: 2, confirmed: false, label: 'Safe' }), {
+    command: 'inspect',
+    count: 2,
+    confirmed: false,
+    label: 'Safe',
+  });
+  for (const input of [
+    { command: 'unknown' },
+    { command: 'inspect', count: '2' },
+    { command: 'inspect', confirmed: 'true' },
+    { command: 'inspect', extra: true },
+  ])
+    assert.equal(schema.safeParse(input).success, false);
+  assert.deepEqual(DevToolsPluginOutputSchema.parse([{ type: 'text', text: 'Local only', level: 'info' }]), [
+    { type: 'text', text: 'Local only', level: 'info' },
+  ]);
+  assert.equal(DevToolsPluginOutputSchema.safeParse([{ type: 'audio', url: 'invalid' }]).success, false);
+});
+
 test('all installed build-security backports match reviewed file fingerprints', () => {
   const result = check();
   assert.equal(result.patchedFilesVerified, 6);

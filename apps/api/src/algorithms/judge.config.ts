@@ -1,3 +1,4 @@
+import { sparsePartial } from '../common/sparse-partial';
 import { readFileSync, statSync } from 'node:fs';
 import { aiConfigPath, parseAiConfiguration } from '../ai-study/ai.config';
 import { judgeConfigurationSchema, judgeLanguageIdsSchema } from './judge.config.schema';
@@ -41,7 +42,7 @@ export function readJudgeConfiguration(): JudgeConnectionConfig {
     const envLanguages = process.env.ALGORITHM_JUDGE_LANGUAGE_IDS;
     if (envLanguages && envLanguages.length > 1024) throw new Error();
     const languageOverrides =
-      envLanguages === undefined ? {} : judgeLanguageIdsSchema.partial().parse(JSON.parse(envLanguages));
+      envLanguages === undefined ? {} : sparsePartial(judgeLanguageIdsSchema).parse(JSON.parse(envLanguages));
     config = judgeConfigurationSchema.parse({
       ...yaml,
       enabled: envEnabled === undefined ? yaml.enabled : envEnabled === 'true',

@@ -94,6 +94,9 @@ test('直播课堂浏览器：Chromium、Firefox、WebKit真实双向媒体及�
           await teacherPage.evaluate('window.__liveDenyCapture = false');
           await studentPage.evaluate('window.__liveDenyPlayback = true');
           await teacherPage.getByRole('button', { name: '开启摄像头', exact: true }).click();
+          await expect(teacherPage.getByRole('button', { name: '关闭摄像头', exact: true })).toBeEnabled({
+            timeout: 20000,
+          });
           await teacherPage.getByRole('button', { name: '开启麦克风', exact: true }).click();
           await expect(teacherPage.getByRole('button', { name: '关闭麦克风', exact: true })).toBeEnabled();
           await expect.poll(() => inbound(studentPage!, 'video'), { timeout: 20000 }).toBeGreaterThan(0);

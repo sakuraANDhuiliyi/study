@@ -1,3 +1,4 @@
+import { sparsePartial } from './sparse-partial';
 import { z } from 'zod';
 import type { OpenAPIObject } from '@nestjs/swagger';
 import * as a from '../assessment/assessment.schemas';
@@ -33,62 +34,9 @@ import {
   algorithmLearningInput,
 } from '../algorithms/algorithms.schemas';
 function schema(value: z.ZodTypeAny): any {
-  const d = value._def as any;
-  if (['ZodEffects', 'ZodOptional', 'ZodNullable', 'ZodDefault', 'ZodCatch'].includes(d.typeName)) {
-    const base = schema(d.schema || d.innerType);
-    if (d.typeName === 'ZodNullable') base.nullable = true;
-    if (d.typeName === 'ZodDefault') base.default = d.defaultValue();
-    return base;
-  }
-  if (d.typeName === 'ZodObject') {
-    const shape = d.shape();
-    return {
-      type: 'object',
-      properties: Object.fromEntries(
-        Object.entries(shape).map(([key, v]) => [key, schema(v as z.ZodTypeAny)]),
-      ),
-      required: Object.entries(shape)
-        .filter(([, v]) => !(v as z.ZodTypeAny).isOptional())
-        .map(([k]) => k),
-      additionalProperties: d.unknownKeys === 'passthrough',
-    };
-  }
-  if (d.typeName === 'ZodString') {
-    const out: any = { type: 'string' };
-    for (const check of d.checks || []) {
-      if (check.kind === 'min') out.minLength = check.value;
-      if (check.kind === 'max') out.maxLength = check.value;
-      if (check.kind === 'datetime') out.format = 'date-time';
-      if (check.kind === 'url') out.format = 'uri';
-      if (check.kind === 'regex') out.pattern = check.regex.source;
-    }
-    return out;
-  }
-  if (d.typeName === 'ZodNumber') {
-    const out: any = { type: d.checks.some((c: any) => c.kind === 'int') ? 'integer' : 'number' };
-    for (const check of d.checks || []) {
-      if (check.kind === 'min') out.minimum = check.value;
-      if (check.kind === 'max') out.maximum = check.value;
-    }
-    return out;
-  }
-  if (d.typeName === 'ZodBoolean') return { type: 'boolean' };
-  if (d.typeName === 'ZodLiteral')
-    return {
-      type: typeof d.value === 'number' && Number.isInteger(d.value) ? 'integer' : typeof d.value,
-      enum: [d.value],
-    };
-  if (d.typeName === 'ZodRecord') return { type: 'object', additionalProperties: schema(d.valueType) };
-  if (d.typeName === 'ZodEnum') return { type: 'string', enum: d.values };
-  if (d.typeName === 'ZodArray')
-    return {
-      type: 'array',
-      items: schema(d.type),
-      ...(d.minLength ? { minItems: d.minLength.value } : {}),
-      ...(d.maxLength ? { maxItems: d.maxLength.value } : {}),
-    };
-  return {};
+  return z.toJSONSchema(value, { target: 'openapi-3.0', io: 'input', unrepresentable: 'any' });
 }
+
 export function enrichOpenAPI(doc: OpenAPIObject) {
   const map: [string, string, z.ZodTypeAny][] = [
     ['post', '/algorithms/training-plans', training.trainingPlanCreate],
@@ -182,9 +130,9 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     ['post', '/live/classes/{id}/hand', live.liveHand],
     ['post', '/live/classes/{id}/members/{memberId}', live.liveModeration],
     ['post', '/live/classes/{id}/messages', live.liveChat],
-    ['patch', '/courses/{id}', courseInput.partial()],
+    ['patch', '/courses/{id}', sparsePartial(courseInput)],
     ['post', '/chapters/{id}/lessons', lessonInput],
-    ['patch', '/lessons/{id}', lessonInput.partial()],
+    ['patch', '/lessons/{id}', sparsePartial(lessonInput)],
     ['post', '/courses/{id}/chapters', z.object({ title: z.string(), sortOrder: z.number().optional() })],
     [
       'put',
@@ -196,7 +144,9 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
     [
       'patch',
       '/admin/users/{id}',
-      newUser.omit({ username: true, password: true }).partial().extend({ active: z.boolean().optional() }),
+      sparsePartial(newUser.omit({ username: true, password: true })).extend({
+        active: z.boolean().optional(),
+      }),
     ],
     ['post', '/admin/users/import', z.object({ rows: z.array(newUser), commit: z.boolean().default(false) })],
     [
@@ -373,7 +323,7 @@ export function enrichOpenAPI(doc: OpenAPIObject) {
       ...Object.entries(querySchema.properties).map(([name, value]) => ({
         in: 'query' as const,
         name,
-        required: querySchema.required.includes(name),
+        required: querySchema.required?.includes(name) ?? false,
         schema: value as any,
         ...(name === 'scope'
           ? {

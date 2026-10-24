@@ -1,3 +1,4 @@
+import { sparsePartial } from '../common/sparse-partial';
 import {
   Controller,
   Get,
@@ -249,7 +250,7 @@ export class CoursesController {
     @Body() body: unknown,
   ) {
     const before = await this.auth.course(a, id, true);
-    const d = courseInput.partial().parse(body);
+    const d = sparsePartial(courseInput).parse(body);
     await this.term(a, d.termId);
     if (d.teacherId && d.teacherId !== before.teacherId) {
       this.auth.require(a, 'course.admin');
@@ -383,7 +384,7 @@ export class CoursesController {
     const l = await this.db.lesson.findUnique({ where: { id } });
     if (!l) throw new NotFoundException();
     await this.auth.course(a, l.courseId, true);
-    const d = lessonInput.partial().parse(body);
+    const d = sparsePartial(lessonInput).parse(body);
     await this.checkAttachment(a, l.courseId, d.attachmentId);
     if (d.relatedTasks) await this.lessonTasks(l.courseId, d.relatedTasks);
     return this.db.lesson.update({

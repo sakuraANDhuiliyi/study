@@ -43,7 +43,7 @@ export const judgeConfigurationSchema = z
       .default(''),
     timeoutMs: z.number().int().min(100).max(60_000).default(45_000),
     pollMs: z.number().int().min(10).max(2000).default(250),
-    languageIds: judgeLanguageIdsSchema.default({}),
+    languageIds: judgeLanguageIdsSchema.prefault({}),
   })
   .strict();
 

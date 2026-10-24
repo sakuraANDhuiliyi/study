@@ -1,11 +1,12 @@
 /** Native dependency graph stays separate from the website's React version. */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 const root = fileURLToPath(new URL('../apps/mobile/', import.meta.url));
 const output = resolve(root, '.data/verification');
 mkdirSync(output, { recursive: true });
+rmSync(resolve(output, 'report.json'), { force: true });
 const env = {
   ...process.env,
   CI: '1',
@@ -37,8 +38,8 @@ const audit = JSON.parse(readFileSync(resolve(root, '.data/dependency-audit.json
 const metadata = JSON.parse(readFileSync(resolve(root, '.data/export-android/metadata.json'), 'utf8'));
 const bundle = metadata.fileMetadata?.android?.bundle;
 if (
-  count('tests') !== 4 ||
-  count('pass') !== 4 ||
+  count('tests') < 5 ||
+  count('pass') !== count('tests') ||
   count('fail') ||
   count('skipped') ||
   count('cancelled') ||
