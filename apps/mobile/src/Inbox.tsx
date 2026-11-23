@@ -1,3 +1,4 @@
+import { RemoteStudyPush } from './RemoteStudyPush';
 import React, { useRef, useState } from 'react';
 import { Alert, FlatList, RefreshControl, Text, View } from 'react-native';
 import type { MobileClient } from './client';
@@ -19,6 +20,7 @@ export function Inbox({ client, open }: { client: MobileClient; open(target: Inb
       }),
     30000,
   );
+  const [showPushSettings, setShowPushSettings] = useState(false);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const flight = useRef(false);
@@ -53,6 +55,12 @@ export function Inbox({ client, open }: { client: MobileClient; open(target: Inb
             这里只展示提醒摘要。打开对应功能后，按当前权限查看最新内容和成绩；其他通知详情请在网站查看。
           </Text>
           <Text style={a.notice}>未读 {q.error ? '—' : (q.data?.unreadCount ?? '—')} 条通知</Text>
+          <AButton
+            secondary
+            title={showPushSettings ? '收起系统通知设置' : '系统通知设置'}
+            onPress={() => setShowPushSettings(!showPushSettings)}
+          />
+          {showPushSettings && <RemoteStudyPush client={client} />}
           <View style={a.row}>
             <AButton
               title="全部通知"

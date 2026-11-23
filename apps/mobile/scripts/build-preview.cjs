@@ -25,7 +25,13 @@ const env = {
 for (const key of Object.keys(env))
   if (
     key.startsWith('EXPO_PUBLIC_') &&
-    !['EXPO_PUBLIC_ALLOW_LOCAL_HTTP', 'EXPO_PUBLIC_API_ORIGIN', 'EXPO_PUBLIC_PREVIEW_BUILD'].includes(key)
+    ![
+      'EXPO_PUBLIC_ALLOW_LOCAL_HTTP',
+      'EXPO_PUBLIC_API_ORIGIN',
+      'EXPO_PUBLIC_PREVIEW_BUILD',
+      'EXPO_PUBLIC_REMOTE_PUSH_ENABLED',
+      'EXPO_PUBLIC_EAS_PROJECT_ID',
+    ].includes(key)
   )
     delete env[key];
 if (!env.JAVA_HOME || !(env.ANDROID_HOME || env.ANDROID_SDK_ROOT))

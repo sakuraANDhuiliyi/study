@@ -138,12 +138,18 @@ export function NoteEditor({
   client,
   id,
   registerLeave,
+  personal = false,
 }: {
   client: MobileClient;
   id: string;
   registerLeave(g: LeaveGuard): void;
+  personal?: boolean;
 }) {
-  const q = useResource<NoteDetail>(client, '/mobile/lessons/' + encodeURIComponent(id) + '/note', 30000);
+  const q = useResource<NoteDetail>(
+    client,
+    (personal ? '/mobile/personal/lessons/' : '/mobile/lessons/') + encodeURIComponent(id) + '/note',
+    30000,
+  );
   const [snapshot, setSnapshot] = useState<NoteDetail | null>(null),
     [body, setBody] = useState(''),
     [pinned, setPinned] = useState(false);
@@ -236,7 +242,7 @@ export function NoteEditor({
     void perform(async () => {
       if (!snapshot) return;
       pending.current = { kind: 'save', base: snapshot.note, body: text, pinned };
-      const d = await notesApi.save(client, id, text, pinned, snapshot.note);
+      const d = await notesApi.save(client, id, text, pinned, snapshot.note, personal);
       if (mounted.current) accept(d, '私人笔记已保存');
     });
   };
@@ -250,14 +256,14 @@ export function NoteEditor({
           void perform(async () => {
             if (!snapshot?.note) return;
             pending.current = { kind: 'delete', base: snapshot.note };
-            await notesApi.remove(client, id, snapshot.note);
+            await notesApi.remove(client, id, snapshot.note, personal);
             if (mounted.current) accept({ ...snapshot, note: null }, '私人笔记已删除');
           }),
       },
     ]);
   const check = () =>
     void perform(async () => {
-      const d = await notesApi.read(client, id);
+      const d = await notesApi.read(client, id, personal);
       if (!mounted.current) return;
       if (pending.current) {
         const outcome = reconcileNote(pending.current, d.note);
@@ -284,7 +290,7 @@ export function NoteEditor({
   const load = () => {
     const run = () =>
       void perform(async () => {
-        const d = await notesApi.read(client, id);
+        const d = await notesApi.read(client, id, personal);
         if (mounted.current) {
           accept(d, '已载入服务器最新笔记');
           setLatest(null);

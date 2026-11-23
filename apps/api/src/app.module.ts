@@ -33,7 +33,29 @@ import { PlannerController } from './planner/planner.controller';
 import { LearningActionsController } from './planner/actions.controller';
 import { LearningActionsService } from './planner/actions.service';
 import { NotesService } from './notes/notes.service';
+import { FocusController } from './focus/focus.controller';
 import { MobileAnnouncementsController } from './mobile/mobile-announcements.controller';
+import { MobileAlgorithmLearningController } from './mobile/mobile-algorithm-learning.controller';
+import { MobileAdminControlsController } from './mobile/mobile-admin-controls.controller';
+import { MobilePersonalLearningController } from './mobile/mobile-personal-learning.controller';
+import { MobileSchoolDirectoryController } from './mobile/mobile-school-directory.controller';
+import { MobileAndroidStudioController } from './mobile/mobile-android-studio.controller';
+import {MobilePushGateway} from './mobile/mobile-push.gateway';
+import {MobilePushService} from './mobile/mobile-push.service';
+import {MobilePushController} from './mobile/mobile-push.controller';
+import { MobileAndroidStudioService } from './mobile/mobile-android-studio.service';
+import { MobileProgrammingPreviewController } from './mobile/mobile-programming-preview.controller';
+import { MobileProgrammingController } from './mobile/mobile-programming.controller';
+import { MobileTeachingController } from './mobile/mobile-teaching.controller';
+import { MobileAnalyticsController } from './mobile/mobile-analytics.controller';
+import { MobileAiAuthoringController } from './mobile/mobile-ai-authoring.controller';
+import { MobileAiStudyController } from './mobile/mobile-ai-study.controller';
+import { MobileMessagesController } from './mobile/mobile-messages.controller';
+import { MobileOrganizationController } from './mobile/mobile-organization.controller';
+import { MobileStaffController, MobileStaffGuard } from './mobile/mobile-staff.controller';
+import { MobileAccountsController } from './mobile/mobile-accounts.controller';
+import { MobileAccountsService } from './mobile/mobile-accounts.service';
+import { MobileAcademicsController } from './mobile/mobile-academics.controller';
 import { MobileAlgorithmsController } from './mobile/mobile-algorithms.controller';
 import { MobileDiscussionsController } from './mobile/mobile-discussions.controller';
 import { MobileCollectionsController } from './mobile/mobile-collections.controller';
@@ -155,12 +177,29 @@ class CatalogController {
     PlannerController,
     LearningActionsController,
     NotesController,
+    FocusController,
     MobileNotesController,
     MobilePracticeController,
     MobileCollectionsController,
     MobileAnnouncementsController,
     MobileDiscussionsController,
     MobileAlgorithmsController,
+    MobileAlgorithmLearningController,
+    MobileMessagesController,
+    MobileAiStudyController,
+    MobileAdminControlsController,
+    MobilePersonalLearningController,
+    MobileProgrammingController,
+    MobileSchoolDirectoryController,
+    MobileAndroidStudioController,MobilePushController,
+    MobileProgrammingPreviewController,
+    MobileTeachingController,
+    MobileAnalyticsController,
+    MobileAiAuthoringController,
+    MobileOrganizationController,
+    MobileStaffController,
+    MobileAccountsController,
+    MobileAcademicsController,
     AiStudyController,
     AiAuthoringController,
     AlgorithmsController,
@@ -176,6 +215,11 @@ class CatalogController {
     AlgorithmForumController,
   ],
   providers: [
+    MobileAndroidStudioService,MobilePushService,MobilePushGateway,
+    MobileStaffGuard,
+    MobileAccountsService,
+    AdminController,
+    CoursesController,
     NotesService,
     PrismaService,
     AuthService,

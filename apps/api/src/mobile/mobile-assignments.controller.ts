@@ -97,11 +97,6 @@ export class MobileAssignmentsController {
       q = querySchema.parse(query);
     const before = (await this.auth.courseIds(current)).sort();
     const page = await this.assessment.assignments(current, q);
-    const courseIds = [...new Set(page.items.map((x) => x.courseId))];
-    const courses = await this.db.course.findMany({
-      where: { id: { in: courseIds }, organizationId: a.organizationId },
-      select: { id: true, title: true },
-    });
     const after = await this.current(a);
     if (JSON.stringify(before) !== JSON.stringify((await this.auth.courseIds(after)).sort()))
       throw new ForbiddenException('课程资格已变化，请刷新作业列表');
@@ -112,7 +107,7 @@ export class MobileAssignmentsController {
         id: x.id,
         title: x.title,
         courseId: x.courseId,
-        courseTitle: courses.find((c) => c.id === x.courseId)?.title || '',
+        courseTitle: x.courseTitle || '',
         opensAt: x.opensAt,
         dueAt: x.dueAt,
         totalCents: x.totalCents,

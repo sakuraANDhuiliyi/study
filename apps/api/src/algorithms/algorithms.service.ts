@@ -178,15 +178,44 @@ export class AlgorithmsService {
     return { organizationId: actor.organizationId, userId: actor.id };
   }
   private async access(actor: Actor) {
+    if (actor.clientType === 'MOBILE') {
+      await this.currentMobile(actor, this.auth);
+      return;
+    }
     if (actor.role !== 'STUDENT') throw new ForbiddenException('算法练习仅供学生使用');
     this.auth.require(actor, 'learning.use');
     await this.auth.checkFeature(actor, '/api/algorithms');
   }
   private async freshActor(actor: Actor) {
+    if (actor.clientType === 'MOBILE') {
+      await this.currentMobile(actor, this.auth);
+      return;
+    }
     const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
     if (!fresh || fresh.id !== actor.id || fresh.organizationId !== actor.organizationId)
       throw new ForbiddenException('当前学习会话已失效');
     await this.access(fresh);
+  }
+  private async currentMobile(actor: Actor, auth: AuthService) {
+    const current = actor.sessionId ? await auth.resolveMobileSessionId(actor.sessionId) : null;
+    if (
+      !current ||
+      current.id !== actor.id ||
+      current.organizationId !== actor.organizationId ||
+      current.role !== actor.role ||
+      current.role !== 'STUDENT'
+    )
+      throw new ForbiddenException('当前学习会话已失效');
+    auth.require(current, 'learning.use');
+    await auth.checkFeature(current, '/api/algorithms');
+  }
+  private checkedTransaction<T>(actor: Actor, work: (tx: Tx) => Promise<T>) {
+    return this.db.$transaction(async (tx) => {
+      const result = await work(tx);
+      if (actor.clientType === 'MOBILE')
+        await this.currentMobile(actor, new AuthService(tx as PrismaService));
+      return result;
+    });
   }
   private catalog(id: string) {
     const problem = getAlgorithmProblem(id);
@@ -334,7 +363,7 @@ export class AlgorithmsService {
   async saveDraft(actor: Actor, problemId: string, input: AlgorithmDraftInput) {
     await this.access(actor);
     this.catalog(problemId);
-    return this.db.$transaction(async (tx) => {
+    return this.checkedTransaction(actor, async (tx) => {
       await this.lock(tx, actor);
       const where = { ...this.scope(actor), problemId };
       const current = await tx.algorithmDraft.findFirst({ where });
@@ -353,8 +382,10 @@ export class AlgorithmsService {
       return algorithmDraftDto(await tx.algorithmDraft.findFirstOrThrow({ where }));
     });
   }
-  private async lock(tx: Tx, actor: Actor) {
+  private async lock(tx: Tx, actor: Actor, checkMobile = true) {
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`algorithms:${actor.organizationId}:${actor.id}`}))`;
+    if (checkMobile && actor.clientType === 'MOBILE')
+      await this.currentMobile(actor, new AuthService(tx as PrismaService));
   }
   private async recover(tx: Tx, actor: Actor) {
     const now = new Date();
@@ -379,7 +410,7 @@ export class AlgorithmsService {
     }
   }
   private async recoverPending(actor: Actor) {
-    await this.db.$transaction(async (tx) => {
+    await this.checkedTransaction(actor, async (tx) => {
       await this.lock(tx, actor);
       await this.recover(tx, actor);
     });
@@ -392,7 +423,7 @@ export class AlgorithmsService {
     timeoutMs: number,
     dailyRequests: number,
   ) {
-    return this.db.$transaction(async (tx) => {
+    return this.checkedTransaction(actor, async (tx) => {
       await this.lock(tx, actor);
       await this.recover(tx, actor);
       if (await tx.algorithmOperation.count({ where: { ...this.scope(actor), kind, status: 'pending' } }))
@@ -462,7 +493,7 @@ export class AlgorithmsService {
     submission?: Prisma.AlgorithmSubmissionUpdateManyMutationInput,
     analysis?: Prisma.AlgorithmAnalysisUpdateManyMutationInput,
   ) {
-    await this.db.$transaction(async (tx) => {
+    await this.checkedTransaction(actor, async (tx) => {
       await this.lock(tx, actor);
       const operation = await tx.algorithmOperation.findFirst({
         where: { ...this.scope(actor), id: operationId },
@@ -487,7 +518,9 @@ export class AlgorithmsService {
   }
   private async fail(actor: Actor, operationId: string, message: string) {
     await this.db.$transaction(async (tx) => {
-      await this.lock(tx, actor);
+      // Cleanup must remain possible after revocation. It only fails this owner's
+      // already reserved operation; it never creates work or credits a solution.
+      await this.lock(tx, actor, false);
       const operation = await tx.algorithmOperation.findFirst({
         where: { ...this.scope(actor), id: operationId, status: 'pending' },
       });
@@ -540,8 +573,8 @@ export class AlgorithmsService {
     return {
       id: row.id,
       problemId: row.problemId,
-      mode: row.mode,
       language: row.language,
+      mode: row.mode,
       status: row.status,
       content: row.content,
       error: row.error,

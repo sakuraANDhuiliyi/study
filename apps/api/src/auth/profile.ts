@@ -27,6 +27,12 @@ export async function authProfile(db: PrismaService, actor: Actor) {
     : null;
   if (user.organizationId !== actor.organizationId)
     throw new UnauthorizedException('账号归属已变化，请重新登录');
+  // Expose only the switches used by navigation in this authenticated space.
+  const setting = await db.systemSetting.findUnique({
+    where: { organizationId_key: { organizationId: actor.organizationId, key: 'features' } },
+    select: { value: true },
+  });
+  const flags = setting?.value as { practice?: boolean; communication?: boolean; live?: boolean } | null;
   const { personalOrganizationId, ...publicUser } = user;
   return {
     user: {
@@ -42,6 +48,11 @@ export async function authProfile(db: PrismaService, actor: Actor) {
         .map((x) => x.roleId),
       role: actor.role,
       permissions: actor.permissions,
+      features: {
+        practice: flags?.practice !== false,
+        communication: flags?.communication !== false,
+        live: flags?.live !== false,
+      },
     },
     csrfToken: actor.csrfToken,
   };

@@ -1,3 +1,4 @@
+import { GradingQueueService, queueQuery } from './grading-queue.service';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
@@ -10,7 +11,13 @@ import * as s from './assessment.schemas';
 @UseGuards(AuthGuard)
 @Controller()
 export class AssessmentController {
-  constructor(private readonly service: AssessmentService) {}
+  constructor(
+    private readonly service: AssessmentService,
+    private readonly queue: GradingQueueService,
+  ) {}
+  @Get('grading/queue') gradingQueue(@CurrentActor() a: Actor, @Query() query: unknown) {
+    return this.queue.read(a, queueQuery.parse(query));
+  }
   @Get('questions') @ApiOperation({ summary: 'question.manage：分页查询授权题库' }) questions(
     @CurrentActor() a: Actor,
     @Query() q: unknown,
@@ -109,7 +116,7 @@ export class AssessmentController {
     @Param('id') id: string,
     @Query() q: unknown,
   ) {
-    return this.service.submissions(a, id, s.listSchema.parse(q));
+    return this.service.submissions(a, id, s.recordListSchema.parse(q));
   }
   @Get('assignments/:id/roster') assignmentRoster(
     @CurrentActor() a: Actor,
@@ -284,7 +291,7 @@ export class AssessmentController {
     return this.service.gradeHistory(a, id, s.listSchema.parse(q));
   }
   @Get('appeals') appeals(@CurrentActor() a: Actor, @Query() q: unknown) {
-    return this.service.appeals(a, s.listSchema.parse(q));
+    return this.service.appeals(a, s.recordListSchema.parse(q));
   }
   @Post('appeals/:id/resolve') resolve(
     @CurrentActor() a: Actor,

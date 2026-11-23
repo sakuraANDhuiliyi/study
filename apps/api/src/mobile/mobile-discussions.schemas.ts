@@ -1,3 +1,4 @@
+import { communicationAttachmentIds } from './mobile-communication-files.policy';
 import { z } from 'zod';
 export const discussionId = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 export const discussionPaging = z.object({
@@ -23,8 +24,14 @@ export const mobilePostSchema = z
     title: text.pipe(z.string().max(160)),
     body: text,
     key: discussionId.min(8),
+    attachmentIds: communicationAttachmentIds.optional(),
   })
   .strict();
 export const mobileReplySchema = z
-  .object({ body: text, quoteReplyId: discussionId.optional(), key: discussionId.min(8) })
+  .object({
+    body: text,
+    quoteReplyId: discussionId.optional(),
+    key: discussionId.min(8),
+    attachmentIds: communicationAttachmentIds.optional(),
+  })
   .strict();

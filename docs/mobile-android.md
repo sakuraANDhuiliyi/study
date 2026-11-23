@@ -1,5 +1,17 @@
 # 知学 Android 客户端
 
+## 跨角色 Android 客户端 0.13.0
+
+手机与网站共用账号、课程和数据。普通学生可从登录页点“个人注册”直接学习，也可在“我的 → 所属机构”提交邀请码。教师和管理员从首页进入教学、考务、名册及治理；多身份账号在“我的 → 账号安全与登录设备”切换身份。
+
+使用 `npm run build:preview --prefix apps/mobile` 构建 HTTPS 预览包。登录页可填写已升级后端的 HTTPS 地址。使用 `npm run build:local --prefix apps/mobile` 构建模拟器专用本地包，默认访问设备的 `127.0.0.1:3030`。本机 API 使用 3001 端口时，可运行 `adb reverse tcp:3030 tcp:3001`。两个包都是 arm64 预览包。
+
+启动新版后端前执行 `npm run db:migrate`。Judge0 与 AI 的连接参数保存在本地 `config.yaml`。Android 作品生成使用独立构建服务。学生收件箱的远程通知需配置 Expo 与 Firebase，并由学生在设备上开启。各角色登录后按权限读取教学数据。[推送配置样例](../config/examples/mobile-push.env.example)
+
+需要让学生用手机创建并构建 Android 作品时，先按项目说明准备 Android SDK、Gradle 缓存及 `npm run android:setup` 的 Python 环境。运行 `npm run dev:programming` 会随本地平台启动构建服务。也可在本机 `.env` 中设置 `ANDROID_AGENT_ENABLED=true`，供后续常规开发启动使用。
+
+角色操作、设备验证与后端集成的结果见[0.13.0 功能清单](mobile-migration.md)和[验收记录](verification/mobile-role-parity-20261124.json)。以下按版本记录已有功能。
+
 ## 原生算法学习与复习（0.12.0 / versionCode 12）
 
 首页“算法学习”进入原生题库，可按题号、标题、知识点、难度、正式答题状态、收藏和复习状态筛选。题目与独立题解页包含样例、推导、边界及四语言只读参考代码，不使用网页嵌套代替迁移。
@@ -100,7 +112,7 @@ export DOTENV_CONFIG_PATH=.data/review.env
 node --env-file=.data/review.env --import tsx scripts/verify-mobile-device.ts
 ```
 
-此流程只清空 `cn.huiliyi.study.preview` 的测试数据，不清理其他应用；通过独立随机数据库、API 和媒体服务验证安装、原生登录、课程进度、重启恢复、双向真实 RTP、教师审批、收回权限、后台退出和注销重登。测试结束删除自身数据库、进程和 adb reverse；结果在 `.data/mobile-device-verification/`。测试不访问真实 AI 或收费判题服务。
+此流程只清空 `cn.huiliyi.study.preview` 的测试数据，不清理其他应用；通过独立随机数据库、API 和媒体服务验证安装、原生登录、课程进度、重启恢复、双向真实 RTP、教师审批、收回权限、后台退出和注销重登。测试结束删除自身数据库、进程和 adb reverse；结果在 `.data/mobile-device-verification/`。测试不访问真实 AI 或收费判题服务。 设置 `MOBILE_TEST_SCOPE=roles` 可单独运行学生、教师、机构管理员、平台管理员与个人自助注册的操作验收。
 
 设备验收会从 `tests/android/HierarchyDump.java` 编译界面探针，默认只读取实际 Android 无障碍节点；查找长页面控件时可对真实滚动容器发送前后滚动事件，避免触摸越界误触下拉刷新、清除待检查的冲突提示。点击前核对节点位置已稳定。它避免系统默认转储命令等待持续动画而超时，不模拟页面、点击结果或服务器响应，也不进入 App 安装包。每次读取先删除上次转储，防止把陈旧页面当成当前结果；测试结束清理探针及转储。验收记录保存探针摘要。课程视频、资料、暂停续播和跨设备进度冲突也纳入此流程。
 
@@ -114,19 +126,19 @@ node --env-file=.data/review.env --import tsx scripts/verify-mobile-device.ts
 
 手机 access token 15 分钟，refresh token 单次轮换，总会话期限仍受机构登录策略约束，刷新不延长总期限。每设备最多保留 512 次已消费刷新记录，足够覆盖 72 小时的正常续期；异常高速轮换达到上限后撤销该设备会话，记录随之外键级联删除。数据库仅存摘要；Android SecureStore 通过设备密钥保护会话。系统授权窗口与真正的后台切换分别处理；请求设备权限前暂停已有采集，只有返回前台、课堂仍连接且仍有连麦权限时才恢复。并发刷新由客户端合并；重放已消耗刷新凭据会撤销整个手机会话。网页 cookie 和 CSRF 逻辑继续使用，不通过放宽浏览器 CORS 来接入手机。
 
-原生访问限定在课程读取、进度更新、课堂、学习计划、精确的学生作业与私有附件路径及手机会话接口；管理和其他敏感接口不接受手机 token。媒体 ticket 绑定手机 Session、课堂成员及连接代次。加入、审批和持续连接均复核权限；网页和原生媒体代理不能混用凭据。注销、停用、选课撤销、移出和结束课堂仍由服务端生效。
+手机 bearer 仅能访问许可清单中的方法和路径。教师和管理员通过专用手机接口操作。服务端复核当前身份、机构、授课关系及具体授权。媒体凭据绑定手机会话、课堂成员和连接代次。注销、停用、撤销选课、移出课堂与结束课堂均由服务端生效。
 
 ## 原生依赖审计记录
 
-目前 Expo/React Native 构建链引用的 braces 3.0.3 与 node-forge 1.4.0 尚无包含相应修复的 npm 发布版。不能把原生 `npm audit` 结果表述为零漏洞。原始结果完整保存在 `apps/mobile/.data/dependency-audit.json`，其中多条上层包记录由同一根依赖传递而来。
+预览包构建检查锁定依赖与补丁摘要。本版构建使用 `node-forge@1.4.3`，实际审计输出保存在 `apps/mobile/.data/dependency-audit.json`。可在 `apps/mobile` 运行 `npm run audit:build` 重新生成。
 
-本项目在安装时对固定版本应用可复核的修复：braces 深层模式/AST 增加深度上限；node-forge 按上游 PR 1152 补上嵌套 DigestAlgorithm 长度校验。每个文件验证安装前后 SHA-256，版本或文件不符立即失败；配有恶意输入回归以及 Node/OpenSSL 独立签名对照。原始包版本不会伪造，公告不会从审计输出中移除。仅在修复文件全部匹配且没有其他未处理公告时，此验收项才通过。decode-uri-component 已升级至公告修复版 0.5.0，并为 query-string 7.1.3 增加带文件指纹的 CommonJS/ESM 兼容修复，课程参数跳转单独回归；UUID 使用 11.1.1。后续应跟进上游正式版本并移除本地修复。
+构建脚本核对固定版本和文件摘要，并运行过深模式、无效签名与有效签名的回归。依赖升级后须按锁文件和新版本源码复核这些检查。
 
 上游依据：[braces 公告](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)、[forge 修复](https://github.com/digitalbazaar/forge/pull/1152)、[decode-uri-component 公告](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr)、[Expo 56 文档](https://docs.expo.dev/versions/v56.0.0/)、[LiveKit React Native](https://docs.livekit.io/transport/sdk-platforms/react-native/)。
 
-## 后续迭代依据与顺序
+## 早期版本的迁移规划
 
-参考 [Moodle 官方移动端能力](https://download.moodle.org/mobile) 的课程内容、进度、成绩和离线学习，以及 [Canvas 官方 Android 使用指南](https://community.instructure.com/en/kb/articles/661692-unknown) 的待办、课程日历、通知与成绩。结合本项目已有接口，学习待办、个人计划及学生作业反馈已按轮实现，后续优先完成“视频与课程受控附件阅读 → 原生考试 → 消息通知”，再考虑可撤销的离线缓存和通知。这个顺序是对本项目的实施判断，不代表这些能力已在本版 App 实现。
+早期迁移优先覆盖课程、进度、作业、成绩和离线学习。0.13.0 的可用功能按角色列在[当前迁移清单](mobile-migration.md)。
 
 先扩展清晰的手机接口权限范围，保证课程退出、账号停用、成绩未发布及附件权限仍由服务端控制；离线缓存需要设备加密、过期策略和重新联网后的资格复核。平台管理侧下一步提供设备会话列表与远程撤销，再接入移动端行为事件的去重、前台有效学习时长及保留期限；不把简单点击次数当作真实学习成效。
 

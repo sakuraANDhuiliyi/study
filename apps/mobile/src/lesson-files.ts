@@ -24,19 +24,25 @@ export async function fetchLessonFile(client: MobileClient, id: string, metadata
   const d = new Directory(directory(), randomUUID());
   d.create({ intermediates: true });
   const file = new File(d, safeFileName(metadata.name));
+  const dispose = () => {
+    try {
+      if (d.exists) d.delete();
+    } catch {}
+  };
+  const unsubscribe = client.onSessionInvalidated(dispose);
   try {
     file.create();
     file.write(bytes);
   } catch (e) {
+    unsubscribe();
     if (d.exists) d.delete();
     throw e;
   }
   return {
     uri: file.uri,
     dispose: () => {
-      try {
-        if (d.exists) d.delete();
-      } catch {}
+      dispose();
+      unsubscribe();
     },
   };
 }

@@ -135,12 +135,50 @@ test('真实提交历史组合筛选、分页重置、只读对比与确认恢�
   }
   async function choose(name: string, label: string, filter: Filter) {
     const control = page.getByRole('combobox', { name, exact: true });
+    await control.scrollIntoViewIfNeeded();
     await control.press('ArrowDown');
-    await page
-      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden):visible')
-      .getByTitle(label, { exact: true })
-      .click();
+    await expect(control).toHaveAttribute('aria-expanded', 'true');
+    await expect(control).toHaveAttribute('aria-controls', /^\S+$/);
+    const listId = (await control.getAttribute('aria-controls'))!;
+    const listbox = page.locator(`[role="listbox"][id=${JSON.stringify(listId)}]`);
+    // A previous Select can remain visible during its exit animation. Resolve
+    // this control's own virtual list and portal, never a page-wide active row.
+    await expect(listbox).toHaveCount(1);
+    const dropdown = page.locator('.ant-select-dropdown').filter({ has: listbox });
+    await expect(dropdown).toHaveCount(1);
+    await expect(dropdown).toBeVisible();
+    const active = dropdown.locator('.ant-select-item-option-active');
+    await expect(active).toHaveCount(1);
+    // Virtual rows may exist outside the clipped list viewport. Use the Select's
+    // real keyboard interaction and observe each state transition before Enter.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+    );
+    await expect
+      .poll(() =>
+        dropdown.evaluate((element) =>
+          element
+            .getAnimations()
+            .every((animation) => animation.playState === 'finished' || animation.playState === 'idle'),
+        ),
+      )
+      .toBe(true);
+    for (let step = 0; step < 12; step++) {
+      const previous = await active.getAttribute('title');
+      if (previous === label) break;
+      expect(previous).not.toBeNull();
+      await control.press('ArrowDown');
+      await expect(active).not.toHaveAttribute('title', previous!);
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+      );
+    }
+    await expect(active).toHaveAttribute('title', label);
+    await control.press('Enter');
     await expect(control).toHaveAttribute('aria-expanded', 'false');
+    await expect(dropdown).toBeHidden();
     await assertList(filter);
     // A recently used query may be served from the legitimate 20-second cache.
     // Explicit refresh exercises the real filtered endpoint in either case.

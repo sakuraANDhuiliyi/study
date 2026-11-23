@@ -1,5 +1,12 @@
 import {
   Body,
+  BadRequestException,
+  Delete,
+  Res,
+  Req,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
   Controller,
   ConflictException,
   ForbiddenException,
@@ -12,7 +19,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import { Prisma, type UploadOperation } from '@prisma/client';
+import type { Response } from 'express';
+import { CommunicationService } from '../communication/communication.service';
+import { UploadAdmissionInterceptor } from '../communication/upload-admission.interceptor';
+import { UploadSafetyService } from '../communication/upload-safety.service';
+import { communicationFileEmpty, communicationFilesQuery } from './mobile-communication-files.policy';
+import { recheckPrivateStream } from './private-stream';
 import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
@@ -45,7 +58,11 @@ const postFields = {
 @Controller('mobile/discussions')
 @UseGuards(AuthGuard)
 export class MobileDiscussionsController {
-  constructor(private db: PrismaService) {}
+  constructor(
+    private db: PrismaService,
+    private files: CommunicationService,
+    private uploads: UploadSafetyService,
+  ) {}
   private async current(tx: Prisma.TransactionClient, a: Actor) {
     const auth = new AuthService(tx as PrismaService);
     const actor = a.sessionId ? await auth.resolveMobileSessionId(a.sessionId) : null;
@@ -65,6 +82,11 @@ export class MobileDiscussionsController {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${'mobile-discussions:' + a.id}))`;
       if (postId) await tx.$queryRaw`SELECT "id" FROM "DiscussionPost" WHERE "id"=${postId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id"=${a.id} FOR SHARE`;
+      if (a.sessionId) {
+        await tx.$queryRaw`SELECT "id" FROM "Session" WHERE "id"=${a.sessionId} FOR SHARE`;
+        await tx.$queryRaw`SELECT "sessionId" FROM "MobileCredential" WHERE "sessionId"=${a.sessionId} FOR SHARE`;
+      }
       const auth = new AuthService(tx as PrismaService);
       const current = await this.current(tx, a);
       return run(tx, auth, current);
@@ -193,6 +215,22 @@ export class MobileDiscussionsController {
           },
           select: { id: true, name: true },
         });
+        const fileRows = await tx.attachment.findMany({
+          where: {
+            id: { in: [...row.attachmentIds, ...replies.flatMap((r) => r.attachmentIds)] },
+            organizationId: current.organizationId,
+            courseId: row.courseId,
+            conversationId: null,
+            assignmentId: null,
+            exportJobId: null,
+          },
+          select: { id: true, originalName: true, mime: true, size: true },
+        });
+        const metadata = (ids: string[]) =>
+          ids.flatMap((id) => {
+            const f = fileRows.find((f) => f.id === id);
+            return f ? [{ id: f.id, name: f.originalName, mime: f.mime, size: f.size }] : [];
+          });
         const name = (id: string) => users.find((u) => u.id === id)?.name || '用户';
         let canWrite = true;
         try {
@@ -215,6 +253,7 @@ export class MobileDiscussionsController {
           closed: row.closed,
           canReply: canWrite && !row.closed,
           attachmentCount: row.attachmentIds.length,
+          attachments: metadata(row.attachmentIds),
           replies: replies.map((r) => {
             const quote = quotes.find((v) => v.id === r.quoteReplyId);
             return {
@@ -223,6 +262,7 @@ export class MobileDiscussionsController {
               authorName: name(r.authorId),
               own: r.authorId === current.id,
               attachmentCount: r.attachmentIds.length,
+              attachments: metadata(r.attachmentIds),
               createdAt: r.createdAt,
               quote: quote
                 ? { id: quote.id, authorName: name(quote.authorId), body: plain(quote.body, 300) }
@@ -235,9 +275,151 @@ export class MobileDiscussionsController {
       key,
     );
   }
+  @Get('courses/:courseId/files') async ownFiles(
+    @CurrentActor() a: Actor,
+    @Param('courseId') courseId: string,
+    @Query() input: unknown,
+  ) {
+    id.parse(courseId);
+    const q = communicationFilesQuery.parse(input);
+    const maxUploadBytes = await this.uploads.maximumBytes(a);
+    return this.scope(a, async (tx, auth, current) => {
+      await auth.course(current, courseId);
+      const where = {
+        organizationId: current.organizationId,
+        ownerId: current.id,
+        courseId,
+        conversationId: null,
+        assignmentId: null,
+        exportJobId: null,
+      };
+      const [rows, total] = await Promise.all([
+        tx.attachment.findMany({
+          where,
+          select: { id: true, originalName: true, mime: true, size: true },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          skip: (q.page - 1) * q.pageSize,
+          take: q.pageSize,
+        }),
+        tx.attachment.count({ where }),
+      ]);
+      return {
+        items: rows.map(({ originalName, ...r }) => ({ ...r, name: originalName })),
+        total,
+        ...q,
+        maxUploadBytes,
+      };
+    });
+  }
+  @Post('courses/:courseId/files')
+  @UseInterceptors(UploadAdmissionInterceptor)
+  async upload(
+    @CurrentActor() a: Actor,
+    @Param('courseId') courseId: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() input: unknown,
+    @Req() req: { uploadLease: UploadOperation },
+  ) {
+    id.parse(courseId);
+    communicationFileEmpty.parse(input);
+    const current = await this.scope(a, async (tx, auth, current) => {
+      await this.writable(tx, auth, current, courseId);
+      return current;
+    });
+    return this.files.upload(current, file, { courseId }, req.uploadLease, async (tx, fresh) => {
+      await this.current(tx, fresh);
+      await this.writable(tx, new AuthService(tx as PrismaService), fresh, courseId);
+    });
+  }
+  @Delete('courses/:courseId/files/:fileId') async removeFile(
+    @CurrentActor() a: Actor,
+    @Param('courseId') courseId: string,
+    @Param('fileId') fileId: string,
+  ) {
+    id.parse(courseId);
+    id.parse(fileId);
+    const current = await this.scope(a, async (tx, auth, current) => {
+      await auth.course(current, courseId);
+      if (
+        !(await tx.attachment.findFirst({
+          where: {
+            id: fileId,
+            organizationId: current.organizationId,
+            ownerId: current.id,
+            courseId,
+            conversationId: null,
+            assignmentId: null,
+            exportJobId: null,
+          },
+          select: { id: true },
+        }))
+      )
+        throw new NotFoundException('附件不存在或不属于本课程');
+      return current;
+    });
+    return this.files.removeAttachment(current, fileId);
+  }
+  @Get(':id/files/:fileId') async download(
+    @CurrentActor() a: Actor,
+    @Param('id') postId: string,
+    @Param('fileId') fileId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    id.parse(postId);
+    id.parse(fileId);
+    const check = () =>
+      this.scope(
+        a,
+        async (tx, auth, current) => {
+          const { row } = await this.post(tx, auth, current, postId);
+          if (
+            !row.attachmentIds.includes(fileId) &&
+            !(await tx.discussionReply.findFirst({
+              where: {
+                postId,
+                organizationId: current.organizationId,
+                hidden: false,
+                attachmentIds: { has: fileId },
+              },
+              select: { id: true },
+            }))
+          )
+            throw new NotFoundException('附件未发布或回复已隐藏');
+          const file = await tx.attachment.findFirst({
+            where: {
+              id: fileId,
+              organizationId: current.organizationId,
+              courseId: row.courseId,
+              conversationId: null,
+              assignmentId: null,
+              exportJobId: null,
+            },
+            select: { size: true },
+          });
+          if (!file) throw new NotFoundException('附件不存在');
+          if (file.size > 50 * 1024 * 1024) throw new BadRequestException('附件超过手机下载上限');
+          return current;
+        },
+        postId,
+      );
+    const file = await this.files.download(await check(), fileId);
+    await recheckPrivateStream(file.stream, check);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    return new StreamableFile(file.stream, {
+      type: file.mime,
+      length: file.size,
+      disposition: `attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+    }).setErrorHandler((_error, response) => {
+      if (response.destroyed) return;
+      if (!response.headersSent) response.statusCode = 404;
+      response.end();
+    });
+  }
   @Post() create(@CurrentActor() a: Actor, @Body() input: unknown) {
     const q = mobilePostSchema.parse(input),
-      digest = hash([q.courseId, q.title, q.body]);
+      digest = hash([q.courseId, q.title, q.body, ...(q.attachmentIds?.length ? [q.attachmentIds] : [])]);
     return this.scope(a, async (tx, auth, current) => {
       await auth.course(current, q.courseId);
       const existing = await tx.discussionPost.findUnique({
@@ -250,6 +432,7 @@ export class MobileDiscussionsController {
         return { id: existing.id, postId: existing.id, createdAt: existing.createdAt, replayed: true };
       }
       await this.writable(tx, auth, current, q.courseId);
+      await this.files.attachmentsFor(current, q.attachmentIds || [], { courseId: q.courseId }, tx);
       const row = await tx.discussionPost.create({
         data: {
           organizationId: current.organizationId,
@@ -257,6 +440,7 @@ export class MobileDiscussionsController {
           authorId: current.id,
           title: cleanText(q.title, 160),
           body: cleanText(q.body),
+          attachmentIds: q.attachmentIds || [],
           mobileCreateKey: q.key,
           mobileCreateHash: digest,
         },
@@ -267,7 +451,12 @@ export class MobileDiscussionsController {
   @Post(':id/replies') reply(@CurrentActor() a: Actor, @Param('id') value: string, @Body() input: unknown) {
     const key = id.parse(value),
       q = mobileReplySchema.parse(input),
-      digest = hash([key, q.body, q.quoteReplyId || null]);
+      digest = hash([
+        key,
+        q.body,
+        q.quoteReplyId || null,
+        ...(q.attachmentIds?.length ? [q.attachmentIds] : []),
+      ]);
     return this.scope(
       a,
       async (tx, auth, current) => {
@@ -299,12 +488,14 @@ export class MobileDiscussionsController {
         const fresh = await this.current(tx, current);
         await this.writable(tx, auth, fresh, row.courseId);
         if (row.closed) throw new ConflictException('讨论已关闭，不能继续回复');
+        await this.files.attachmentsFor(fresh, q.attachmentIds || [], { courseId: row.courseId }, tx);
         const reply = await tx.discussionReply.create({
           data: {
             postId: key,
             organizationId: current.organizationId,
             authorId: current.id,
             body: cleanText(q.body),
+            attachmentIds: q.attachmentIds || [],
             quoteReplyId: q.quoteReplyId,
             mobileCreateKey: q.key,
             mobileCreateHash: digest,

@@ -24,6 +24,7 @@ async function login(username: string) {
     .map((x) => x.split(';')[0])
     .join('; ');
   return {
+    request: (path: string) => fetch(base + '/api' + path, { headers: { cookie } }),
     get: async (path: string) => {
       const r = await fetch(base + '/api' + path, { headers: { cookie } });
       assert.equal(r.status, 200, await r.clone().text());
@@ -126,6 +127,20 @@ test('Analytics filters the selected class roster consistently in details, stati
   assert.equal(empty.students.length, 0);
   assert.equal(empty.scoreTrend.length, 0);
   assert.equal(empty.taskSummary.expectedSubmissions, 0);
+  assert.equal(empty.hasExportData, false);
+  const reportPath = path.replace('/analytics?', '/analytics/export?format=report&');
+  assert.equal((await teacher.request(reportPath)).status, 403);
+  const student = await login('student');
+  const own = await student.get(`/analytics/export?format=report&courseId=${course.id}`);
+  const bytes = Buffer.from(await own.arrayBuffer());
+  assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
+  const personalCsv = bytes.toString('utf8');
+  assert.match(personalCsv, /"汇总概览","平均成绩","50"/);
+  assert.match(personalCsv, /"成绩明细","班级成绩-[^"]+","50"/);
+  assert.match(personalCsv, /"知识点掌握度"/);
+  assert(!personalCsv.includes('u-student2'));
+  assert(!personalCsv.includes('应提交作业'));
+  assert.equal((await student.request(`/analytics/export?courseId=${course.id}`)).status, 403);
   const grant = await db.sensitiveGrant.create({
     data: {
       organizationId: 'org-demo',
@@ -141,9 +156,15 @@ test('Analytics filters the selected class roster consistently in details, stati
     assert(csv.includes('u-student'));
     assert(!csv.includes('u-student2'));
     assert.equal(csv.trim().split('\r\n').length, 2);
+    const scoped = await (await teacher.get(reportPath)).text();
+    assert.match(scoped, /"汇总概览","应提交作业","1"/);
+    assert.match(scoped, /"成绩明细","班级成绩-[^"]+","50"/);
+    assert(!scoped.includes('u-student2'));
+    assert.equal((await teacher.request(reportPath.replace(classes[0].id, classes[2].id))).status, 400);
   } finally {
     await db.sensitiveGrant.delete({ where: { id: grant.id } });
   }
+  assert.equal((await teacher.request(reportPath)).status, 403);
 });
 
 test('Dashboard upcoming tasks are not hidden behind more than 100 expired tasks', async () => {

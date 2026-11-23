@@ -6,6 +6,8 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
+  Put,
   Query,
   UnauthorizedException,
   UseGuards,
@@ -17,19 +19,27 @@ import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../common/prisma.service';
 import { algorithmProblems, getAlgorithmProblem } from '../algorithms/algorithms.catalog';
 import { getAlgorithmEditorial } from '../algorithms/algorithms.editorials';
-import { algorithmLearningInput } from '../algorithms/algorithms.schemas';
+import {
+  algorithmDraftInput,
+  algorithmLearningInput,
+  algorithmSubmissionInput,
+} from '../algorithms/algorithms.schemas';
+import { AlgorithmsService, algorithmDraftDto } from '../algorithms/algorithms.service';
 import {
   algorithmLearningDto,
   algorithmPage,
   algorithmSummaries,
   saveAlgorithmLearning,
 } from '../algorithms/algorithms.student';
-import { mobileAlgorithmQuery } from './mobile-algorithms.schemas';
+import { mobileAlgorithmQuery, mobileAlgorithmSubmissionQuery } from './mobile-algorithms.schemas';
 const problemId = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 @Controller('mobile/algorithms')
 @UseGuards(AuthGuard)
 export class MobileAlgorithmsController {
-  constructor(private db: PrismaService) {}
+  constructor(
+    private db: PrismaService,
+    private algorithms: AlgorithmsService,
+  ) {}
   private async current(tx: Prisma.TransactionClient, a: Actor) {
     const auth = new AuthService(tx as PrismaService);
     const current = a.sessionId ? await auth.resolveMobileSessionId(a.sessionId) : null;
@@ -58,6 +68,59 @@ export class MobileAlgorithmsController {
     const p = getAlgorithmProblem(problemId.parse(value));
     if (!p) throw new NotFoundException('算法题不存在');
     return p;
+  }
+  // Never hold a database transaction while the remote judge executes. The shared
+  // service also checks the mobile session inside each reservation/commit transaction.
+  private async delegate<T>(a: Actor, run: () => Promise<T>) {
+    await this.scope(a, async () => undefined);
+    const result = await run();
+    await this.scope(a, async () => undefined);
+    return result;
+  }
+  @Get('status') status(@CurrentActor() a: Actor) {
+    return this.delegate(a, () => this.algorithms.status(a));
+  }
+  @Get('problems/:id/workspace') workspace(@CurrentActor() a: Actor, @Param('id') id: string) {
+    const p = this.catalog(id);
+    return this.scope(a, async (tx, current) => ({
+      problemId: p.id,
+      starterCode: p.starterCode,
+      draft: algorithmDraftDto(
+        await tx.algorithmDraft.findFirst({
+          where: { organizationId: current.organizationId, userId: current.id, problemId: p.id },
+        }),
+      ),
+    }));
+  }
+  @Put('problems/:id/draft') draft(
+    @CurrentActor() a: Actor,
+    @Param('id') id: string,
+    @Body() input: unknown,
+  ) {
+    const p = this.catalog(id),
+      body = algorithmDraftInput.parse(input);
+    return this.delegate(a, () => this.algorithms.saveDraft(a, p.id, body));
+  }
+  @Post('problems/:id/submissions') submit(
+    @CurrentActor() a: Actor,
+    @Param('id') id: string,
+    @Body() input: unknown,
+  ) {
+    const p = this.catalog(id),
+      body = algorithmSubmissionInput.parse(input);
+    return this.delegate(a, () => this.algorithms.submit(a, p.id, body));
+  }
+  @Get('problems/:id/submissions') submissions(
+    @CurrentActor() a: Actor,
+    @Param('id') id: string,
+    @Query() input: unknown,
+  ) {
+    const p = this.catalog(id),
+      q = mobileAlgorithmSubmissionQuery.parse(input);
+    return this.delegate(a, () => this.algorithms.submissions(a, p.id, q));
+  }
+  @Get('submissions/:id') submission(@CurrentActor() a: Actor, @Param('id') id: string) {
+    return this.delegate(a, () => this.algorithms.submission(a, problemId.parse(id)));
   }
   private async summaries(tx: Prisma.TransactionClient, a: Actor) {
     const where = { organizationId: a.organizationId, userId: a.id };

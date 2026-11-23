@@ -13,6 +13,7 @@ import type { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { lockSecurityUser } from '../auth/security-transaction';
 import { PrismaService } from '../common/prisma.service';
+import { assertMobileAcademicActor } from '../mobile/mobile-academics.security';
 import { academicModules, getAcademicModule } from './academics.modules';
 import { moduleSummary } from './academics.types';
 import { evaluateAcademicModule, publicAcademicModule } from './academics.engine';
@@ -70,6 +71,7 @@ export class AcademicsService {
     const verified = await tx.user.findUnique({ where: { id: actor.id } });
     if (!verified) throw new UnauthorizedException('登录已失效，请重新登录');
     await lockSecurityUser(tx, actor, verified);
+    await assertMobileAcademicActor(tx, actor);
     const user = await tx.user.findUniqueOrThrow({ where: { id: actor.id }, include: { roles: true } });
     if (
       !user.roles.some((role) => role.roleId === actor.role) ||
@@ -251,7 +253,11 @@ export class AcademicsService {
     `;
       if (budget.inputBytes > 98304 || budget.resultBytes > 262144)
         throw new BadRequestException('输入或计算结果过大，请减少数据数量或使用合适的数值范围');
-      const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+      const fresh = actor.sessionId
+        ? await (actor.clientType === 'MOBILE'
+            ? this.auth.resolveMobileSessionId(actor.sessionId)
+            : this.auth.resolveSessionId(actor.sessionId))
+        : null;
       if (!fresh || fresh.organizationId !== actor.organizationId || fresh.id !== actor.id)
         throw new ForbiddenException('当前学习会话已失效');
       await this.access(fresh);

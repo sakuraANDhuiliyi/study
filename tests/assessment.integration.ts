@@ -300,6 +300,29 @@ test('Assessment concurrency, confidential question isolation and grading invari
   });
 
   await t.test(
+    'Assignment rows include the authorized course and only the viewer’s individual arrangement',
+    async () => {
+      const title = `已发布作业隔离-${suffix}`;
+      const path = `/assignments?courseId=${course.id}&search=${encodeURIComponent(title)}`;
+      const initial = (await student.call('GET', path)).items[0];
+      assert.equal(initial.courseTitle, course.title);
+      assert.equal(initial.myException, null);
+      const until = new Date(Date.now() + 86400000).toISOString();
+      await teacher.call('POST', `/assignments/${initial.id}/exceptions`, {
+        userId: student.user.id,
+        allowUntil: until,
+        reason: '个人延长补交期限',
+      });
+      const own = (await student.call('GET', path)).items[0];
+      assert.deepEqual(own.myException, { allowUntil: until, exempt: false });
+      assert.equal('exceptions' in own, false);
+      const peer = (await student2.call('GET', path)).items[0];
+      assert.equal(peer.myException, null);
+      assert.equal('exceptions' in peer, false);
+    },
+  );
+
+  await t.test(
     'Concurrent final submissions score once; grading CAS and pending release are enforced',
     async () => {
       const submitted = await Promise.all(

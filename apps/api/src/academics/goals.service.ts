@@ -10,6 +10,7 @@ import type { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { lockSecurityUser } from '../auth/security-transaction';
 import { PrismaService } from '../common/prisma.service';
+import { assertMobileAcademicActor } from '../mobile/mobile-academics.security';
 import { getAcademicModule } from './academics.modules';
 import {
   academicGoalCreate,
@@ -70,6 +71,7 @@ export class AcademicGoalsService {
     const verified = await tx.user.findUnique({ where: { id: actor.id } });
     if (!verified) throw new UnauthorizedException('登录已失效，请重新登录');
     await lockSecurityUser(tx, actor, verified);
+    await assertMobileAcademicActor(tx, actor);
     const user = await tx.user.findUniqueOrThrow({ where: { id: actor.id }, include: { roles: true } });
     if (!user.roles.some((role) => role.roleId === 'STUDENT'))
       throw new UnauthorizedException('账号身份已变化，请重新登录');

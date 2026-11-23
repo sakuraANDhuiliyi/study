@@ -73,6 +73,18 @@ export class AlgorithmTrainingPlansService {
     if (!verified) throw new UnauthorizedException('登录已失效，请重新登录');
     // Sharing the User lock with account changes makes quotas and space changes atomic.
     await lockSecurityUser(tx, actor, verified);
+    if (actor.clientType === 'MOBILE') {
+      const auth = new AuthService(tx as PrismaService);
+      const mobile = actor.sessionId ? await auth.resolveMobileSessionId(actor.sessionId) : null;
+      if (
+        !mobile ||
+        mobile.id !== actor.id ||
+        mobile.organizationId !== actor.organizationId ||
+        mobile.role !== 'STUDENT'
+      )
+        throw new UnauthorizedException('当前手机学习会话已失效');
+      auth.require(mobile, 'learning.use');
+    }
     if (actor.role !== 'STUDENT') throw new ForbiddenException('算法训练计划仅供学生使用');
     const permissions = await tx.$queryRaw<{ permissionId: string }[]>`
       SELECT p."permissionId" FROM "UserRole" u

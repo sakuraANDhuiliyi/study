@@ -10,6 +10,7 @@ import type { Actor } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { lockSecurityUser } from '../auth/security-transaction';
 import { PrismaService } from '../common/prisma.service';
+import { assertMobileAcademicActor } from '../mobile/mobile-academics.security';
 import { getAcademicModule } from './academics.modules';
 import { academicRecordExportInput } from './records-export.schemas';
 import {
@@ -35,7 +36,11 @@ export class AcademicRecordExportService {
     await this.auth.checkFeature(actor, '/api/practice');
   }
   private async fresh(actor: Actor) {
-    const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+    const fresh = actor.sessionId
+      ? await (actor.clientType === 'MOBILE'
+          ? this.auth.resolveMobileSessionId(actor.sessionId)
+          : this.auth.resolveSessionId(actor.sessionId))
+      : null;
     if (!fresh || fresh.id !== actor.id || fresh.organizationId !== actor.organizationId)
       throw new UnauthorizedException('当前学习会话已失效，请重新登录');
     await this.access(fresh);
@@ -45,6 +50,7 @@ export class AcademicRecordExportService {
     const verified = await tx.user.findUnique({ where: { id: actor.id } });
     if (!verified) throw new UnauthorizedException('登录已失效，请重新登录');
     await lockSecurityUser(tx, actor, verified);
+    await assertMobileAcademicActor(tx, actor);
     const user = await tx.user.findUniqueOrThrow({ where: { id: actor.id }, include: { roles: true } });
     if (actor.role !== 'STUDENT' || !user.roles.some((role) => role.roleId === 'STUDENT'))
       throw new UnauthorizedException('账号身份已变化');

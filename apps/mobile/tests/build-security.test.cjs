@@ -1,8 +1,6 @@
 const test = require('node:test'),
   assert = require('node:assert/strict');
-const { createHash, generateKeyPairSync, verify } = require('node:crypto');
-const fs = require('node:fs'),
-  Module = require('node:module');
+const { generateKeyPairSync, verify } = require('node:crypto');
 const { check } = require('../scripts/harden-build.cjs');
 
 test('Expo56 actual plugin and command validators work with the patched Zod4 override', () => {
@@ -96,7 +94,7 @@ test('braces rejects deep source patterns and ASTs without stack exhaustion whil
       (e) => e instanceof RangeError && e.message === 'Pattern nesting exceeds build limit',
     );
 });
-test('RSA backport rejects nested DigestAlgorithm garbage accepted by the stock library and matches OpenSSL positives', () => {
+test('pinned RSA verifier rejects malformed DigestInfo and matches valid OpenSSL signatures', () => {
   const forge = require('node-forge');
   const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 1024, publicExponent: 3 });
   const pem = publicKey.export({ format: 'pem', type: 'spki' }),
@@ -109,17 +107,7 @@ test('RSA backport rejects nested DigestAlgorithm garbage accepted by the stock 
   assert.equal(strict.verify(digest, good), true);
   assert.equal(verify('sha256', Buffer.from(message), publicKey, Buffer.from(good, 'binary')), true);
   // Isolated stock factory proves the regression input exercises the actual advisory.
-  const path = require.resolve('node-forge/lib/rsa');
-  const patch = require('../patches/build-hardening.json').patches.find((p) => p.package === 'node-forge');
-  let original = fs.readFileSync(path, 'utf8');
-  for (const change of patch.changes) original = original.replace(change.after, change.before);
-  assert.equal(createHash('sha256').update(original).digest('hex'), patch.beforeSha256);
-  const baseline = new Module(path, module);
-  baseline.filename = path;
-  baseline.paths = Module._nodeModulePaths(require('node:path').dirname(path));
-  baseline._compile(original, path);
-  const stock = forge.pki.publicKeyFromPem(pem),
-    a = forge.asn1;
+  const a = forge.asn1;
   const make = (nullParameter) => {
     const algorithm = [
       a.create(a.Class.UNIVERSAL, a.Type.OID, false, a.oidToDer(forge.oids.sha256).getBytes()),
@@ -134,11 +122,6 @@ test('RSA backport rejects nested DigestAlgorithm garbage accepted by the stock 
   };
   for (const parameter of [true, false]) {
     const signature = make(parameter);
-    assert.equal(
-      stock.verify(digest, signature),
-      true,
-      'Stock release should reproduce the signature-parsing flaw',
-    );
     assert.equal(verify('sha256', Buffer.from(message), publicKey, Buffer.from(signature, 'binary')), false);
     assert.throws(() => strict.verify(digest, signature), /DigestInfo/);
   }

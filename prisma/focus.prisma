@@ -1,0 +1,18 @@
+model FocusSession {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  title          String   @db.VarChar(120)
+  category       String?
+  mode           String
+  plannedMinutes Int
+  actualSeconds  Int
+  status         String
+  reflection     String?  @db.VarChar(500)
+  startedAt      DateTime @db.Timestamptz(3)
+  endedAt        DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([organizationId, userId, startedAt], map: "FocusSession_owner_start_key")
+  @@index([organizationId, userId, endedAt(sort: Desc), id], map: "FocusSession_owner_history_idx")
+}

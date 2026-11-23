@@ -53,15 +53,28 @@ export function reconcileNote(
 export function definitiveNoteFailure(e: unknown) {
   return e instanceof MobileApiError && [400, 401, 403, 404, 409, 413, 422, 429].includes(e.status);
 }
-const path = (id: string) => '/mobile/lessons/' + encodeURIComponent(id) + '/note';
+const path = (id: string, personal = false) =>
+  (personal ? '/mobile/personal/lessons/' : '/mobile/lessons/') + encodeURIComponent(id) + '/note';
 export const notesApi = {
-  read: (client: MobileClient, id: string) => client.request<NoteDetail>(path(id)),
-  save: (client: MobileClient, id: string, body: string, pinned: boolean, base: LessonNote | null) =>
+  read: (client: MobileClient, id: string, personal = false) =>
+    client.request<NoteDetail>(path(id, personal)),
+  save: (
+    client: MobileClient,
+    id: string,
+    body: string,
+    pinned: boolean,
+    base: LessonNote | null,
+    personal = false,
+  ) =>
     client.request<NoteDetail>(
-      path(id),
+      path(id, personal),
       { body: noteBody(body), pinned, revision: base?.revision || 0, ...(base ? { noteId: base.id } : {}) },
       'PUT',
     ),
-  remove: (client: MobileClient, id: string, base: LessonNote) =>
-    client.request<{ deleted: true }>(path(id), { noteId: base.id, revision: base.revision }, 'DELETE'),
+  remove: (client: MobileClient, id: string, base: LessonNote, personal = false) =>
+    client.request<{ deleted: true }>(
+      path(id, personal),
+      { noteId: base.id, revision: base.revision },
+      'DELETE',
+    ),
 };

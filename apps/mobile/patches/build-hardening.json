@@ -1,5 +1,8 @@
 {
-  "advisories": ["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"],
+  "advisories": [
+    "GHSA-vfj7-8cjw-p6xm",
+    "GHSA-86w9-cpqp-85rv"
+  ],
   "sources": [
     "https://github.com/micromatch/braces/issues/70",
     "https://github.com/digitalbazaar/forge/pull/1152",
@@ -72,10 +75,10 @@
     },
     {
       "package": "node-forge",
-      "version": "1.4.0",
+      "version": "1.4.3",
       "file": "lib/rsa.js",
-      "beforeSha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
-      "afterSha256": "c9b1e3799e230528b6d6815c1f6cd3c6058b9d45975264b55d995abb976589af",
+      "beforeSha256": "6632e195295ce76f6bb9131ee770dcd6cc1ee4ffac7906302208b00faf95a87f",
+      "afterSha256": "b773ec72d650d258ca1ca90385ee2ba6e7b222ccfd2d4c1c5eb80ae2a87a5a10",
       "changes": [
         {
           "before": "obj.value.length !== 2) {",

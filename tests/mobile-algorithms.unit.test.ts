@@ -8,7 +8,7 @@ import {
   reconcileAlgorithmEdit,
   type AlgorithmState,
 } from '../apps/mobile/src/algorithms-model';
-test('native algorithm learning exposes bounded reads and personal learning PATCH only', () => {
+test('native algorithm learning exposes bounded reads and exact personal learning writes', () => {
   for (const p of [
     '/api/mobile/algorithms/problems',
     '/api/mobile/algorithms/problems/sum-of-two',
@@ -17,14 +17,11 @@ test('native algorithm learning exposes bounded reads and personal learning PATC
   ])
     assert.ok(mobileRouteAllowed(p, 'GET'));
   assert.ok(mobileRouteAllowed('/api/mobile/algorithms/problems/a/learning', 'PATCH'));
-  for (const p of [
-    '/api/algorithms/problems',
-    '/api/mobile/algorithms/problems/a/submissions',
-    '/api/mobile/algorithms/problems/a/analysis',
-    '/api/mobile/algorithms/problems/a/draft',
-    '/api/mobile/algorithms/problems/a/editorial',
-  ])
+  for (const p of ['/api/algorithms/problems', '/api/mobile/algorithms/problems/a/editorial'])
     for (const m of ['POST', 'PUT', 'PATCH', 'DELETE']) assert.equal(mobileRouteAllowed(p, m), false);
+  assert.ok(mobileRouteAllowed('/api/mobile/algorithms/problems/a/submissions', 'POST'));
+  assert.ok(mobileRouteAllowed('/api/mobile/algorithms/problems/a/analysis', 'POST'));
+  assert.ok(mobileRouteAllowed('/api/mobile/algorithms/problems/a/draft', 'PUT'));
   for (const q of [
     { pageSize: 21 },
     { page: 0 },

@@ -30,7 +30,7 @@
     "test:communication": "node --import tsx --test tests/communication.integration.ts",
     "test:security": "node --import tsx --test --test-concurrency=1 tests/*.security.integration.ts",
     "test:security-fixes": "node --import tsx --test --test-concurrency=1 tests/auth-fixes.integration.ts tests/upload-security.integration.ts",
-    "test:extensions": "node --import tsx --test --test-concurrency=1 tests/planner.integration.ts tests/notes.integration.ts tests/exam-insights.integration.ts",
+    "test:extensions": "node --import tsx --test --test-concurrency=1 tests/planner.integration.ts tests/notes.integration.ts tests/standalone-notes.integration.ts tests/focus.integration.ts tests/grading-queue.integration.ts tests/exam-insights.integration.ts",
     "test:learning-actions": "node --import tsx --test --test-concurrency=1 tests/learning-actions.integration.ts",
     "test:learning-overview": "node --import tsx --test --test-concurrency=1 tests/learning-overview.integration.ts",
     "test:learning-action-filters": "node --import tsx --test --test-concurrency=1 tests/learning-action-filters.integration.ts",
@@ -106,7 +106,7 @@
   "overrides": {
     "@prisma/config": {
       "deepmerge-ts": "8.0.0",
-      "effect": "3.20.0"
+      "effect": "3.22.1"
     },
     "@nestjs/swagger": {
       "js-yaml": "5.4.3"

@@ -45,12 +45,17 @@ export class AiAuthoringService {
     this.auth.require(actor, 'course.read');
     if (mode === 'paper') this.auth.require(actor, 'assessment.manage');
   }
-  private async freshActor(actor: Actor, mode?: string) {
-    const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+  private async freshActor(actor: Actor, mode?: string, db: Tx | PrismaService = this.db) {
+    const auth = db === this.db ? this.auth : new AuthService(db as PrismaService);
+    const fresh = actor.sessionId
+      ? await (actor.clientType === 'MOBILE'
+          ? auth.resolveMobileSessionId(actor.sessionId)
+          : auth.resolveSessionId(actor.sessionId))
+      : null;
     if (!fresh || fresh.id !== actor.id || fresh.organizationId !== actor.organizationId)
       throw new ForbiddenException('当前教师会话已失效');
     this.requireTeacher(fresh, mode);
-    await this.auth.checkFeature(fresh, '/api/ai-authoring');
+    await auth.checkFeature(fresh, '/api/ai-authoring');
     return { ...fresh, requestId: actor.requestId };
   }
   private async access(
@@ -76,8 +81,9 @@ export class AiAuthoringService {
       limits: { maxQuestions: 10, dailyRequests: status.limits.dailyRequests },
     };
   }
-  private async lock(tx: Tx, actor: Actor) {
+  private async lock(tx: Tx, actor: Actor, checkNative = true) {
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`ai-study:${actor.organizationId}:${actor.id}`}))`;
+    if (checkNative && actor.clientType === 'MOBILE') await this.freshActor(actor, undefined, tx);
   }
   private async recover(tx: Tx, actor: Actor) {
     const now = new Date();
@@ -261,7 +267,7 @@ export class AiAuthoringService {
   }
   private async fail(actor: Actor, draft: AiAuthoringDraft, code: string) {
     await this.db.$transaction(async (tx) => {
-      await this.lock(tx, actor);
+      await this.lock(tx, actor, false);
       const updated = await tx.aiStudyOperation.updateMany({
         where: { id: draft.operationId, status: 'pending' },
         data: { status: 'failed', completedAt: new Date(), errorCode: code },
@@ -284,6 +290,8 @@ export class AiAuthoringService {
     if (!status.available) throw new ServiceUnavailableException(status.reason);
     const draft = await this.reserve(actor, input);
     try {
+      if (actor.clientType === 'MOBILE')
+        await this.access(await this.freshActor(actor, draft.mode), draft, true);
       const generated = await this.gateway.generate(input);
       const fresh = await this.freshActor(actor, draft.mode);
       await this.access(fresh, draft, true);
@@ -322,7 +330,7 @@ export class AiAuthoringService {
       async (tx) => {
         await this.lock(tx, actor);
         await tx.$queryRaw`SELECT id FROM "AiAuthoringDraft" WHERE id = ${id} AND "userId" = ${actor.id} AND "organizationId" = ${actor.organizationId} FOR UPDATE`;
-        const fresh = await this.freshActor(actor);
+        const fresh = await this.freshActor(actor, undefined, tx);
         const draft = await this.owned(fresh, id, true, tx);
         if (draft.status === 'saved') return draft;
         if (draft.status !== 'ready') throw new ConflictException('仅生成完成的草稿可以保存');
@@ -423,7 +431,7 @@ export class AiAuthoringService {
     await this.db.$transaction(async (tx) => {
       await this.lock(tx, actor);
       await this.recover(tx, actor);
-      const fresh = await this.freshActor(actor);
+      const fresh = await this.freshActor(actor, undefined, tx);
       const draft = await this.owned(fresh, id, false, tx);
       if (draft.status === 'pending') throw new ConflictException('生成中的草稿暂不可删除');
       await tx.aiAuthoringDraft.delete({ where: { id } });

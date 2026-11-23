@@ -22,6 +22,46 @@ import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
 import { randomUUID } from 'expo-crypto';
 import { MobileClient, serverOrigin, type MobileUser } from './src/client';
+import { AuthAccess } from './src/AuthAccess';
+import { bindRemoteStudyPush } from './src/remote-push.native';
+import { AccountSecurity } from './src/AccountSecurity';
+import { AcademicGoals } from './src/AcademicGoals';
+import { AcademicRecordsExport } from './src/AcademicRecordsExport';
+import { AiStudyHome, AiStudyReportScreen } from './src/AiStudy';
+import { clearAiStudyTransfers } from './src/ai-study-files';
+import { Programming, ProgrammingProject } from './src/Programming';
+import { Creative } from './src/Creative';
+import { clearProgrammingTransfers } from './src/programming-files';
+import { PersonalNotes, StandaloneNoteEditor } from './src/PersonalNotes';
+import { Focus } from './src/Focus';
+import { AiAuthoringHome, AiAuthoringEditor } from './src/AiAuthoring';
+import { LearningAnalytics } from './src/LearningAnalytics';
+import { TeachingAnnouncement } from './src/TeachingAnnouncement';
+import { ProfileSettings } from './src/ProfileSettings';
+import { LocalStudyReminders } from './src/LocalStudyReminders';
+import { OfflineReview } from './src/OfflineReview';
+import { bindPersonalDeviceLearning } from './src/study-reminders.native';
+import { TeachingOperations } from './src/TeachingOperations';
+import { clearTeachingTransfers } from './src/teaching-files';
+import { clearTeachingOperationTransfers } from './src/teaching-operation-files';
+import { AndroidStudio, AndroidWorkspace, AndroidFileEditor } from './src/AndroidStudio';
+import { NativeProgrammingPreview } from './src/NativeProgrammingPreview';
+import { SchoolDirectoryOperations } from './src/SchoolDirectoryOperations';
+import { clearSchoolDirectoryTransfers } from './src/school-directory-files';
+import { clearCommunicationTransfers } from './src/communication-files.native';
+import { AdminControls } from './src/AdminControls';
+import { AlgorithmForum } from './src/AlgorithmForum';
+import { AlgorithmTrainingPlans } from './src/AlgorithmTrainingPlans';
+import { Messages, MessageConversation } from './src/Messages';
+import { clearMessageTransfers } from './src/message-files';
+import { clearAcademicTransfers } from './src/academic-files';
+import { Organization } from './src/Organization';
+import { GradingDesk } from './src/GradingDesk';
+import { Teach } from './src/Teach';
+import { AdminWorkspace } from './src/AdminWorkspace';
+import { AcademicHome } from './src/Academics';
+import { AcademicWorkbench } from './src/AcademicWorkbench';
+import { AcademicRecords, AcademicRecordDetail } from './src/AcademicRecords';
 import { useResource } from './src/resource';
 import { StudyPlan } from './src/StudyPlan';
 import { Assignments, Assignment, type LeaveGuard } from './src/Assignments';
@@ -119,7 +159,27 @@ type Route =
         | 'home'
         | 'courses'
         | 'live'
+        | 'profile-settings'
+        | 'local-reminders'
+        | 'offline-review'
+        | 'analytics'
+        | 'focus'
+        | 'personal-notes'
+        | 'programming'
+        | 'creative'
+        | 'algorithm-training'
+        | 'admin-controls'
+        | 'messages'
         | 'me'
+        | 'account-security'
+        | 'organization'
+        | 'grading'
+        | 'teaching-operations'
+        | 'school-directory'
+        | 'android-studio'
+        | 'teach'
+        | 'admin'
+        | 'academics'
         | 'planner'
         | 'assignments'
         | 'exams'
@@ -134,6 +194,20 @@ type Route =
         | 'discussionNew';
       courseId?: string;
     }
+  | { name: 'standalone-note'; id?: string }
+  | { name: 'personal-lesson' | 'programming-project'; id: string }
+  | { name: 'ai-authoring'; courseId?: string; tab?: 'new' | 'history' }
+  | { name: 'authoring-draft'; id: string }
+  | { name: 'android-project' | 'website-preview'; id: string }
+  | { name: 'android-source'; id: string; path: string }
+  | { name: 'teaching-announcement'; courseId: string }
+  | { name: 'ai-study'; tab?: 'new' | 'history'; courseId?: string }
+  | { name: 'ai-report'; id: string }
+  | { name: 'algorithm-forum'; problemId?: string }
+  | { name: 'conversation'; id: string; title?: string }
+  | { name: 'academic-module'; id: string; recordId?: string }
+  | { name: 'academic-record'; id: string }
+  | { name: 'academic-records' | 'academic-goals' | 'academic-export'; moduleId?: string; status?: string }
   | { name: 'course'; id: string }
   | { name: 'classroom'; id: string }
   | { name: 'assignment'; id: string }
@@ -144,7 +218,11 @@ type Route =
   | { name: 'practiceSession'; id: string }
   | { name: 'exam' | 'examAttempt' | 'review'; id: string };
 
-const AuthContext = createContext<{ client: MobileClient; user: MobileUser } | null>(null);
+const AuthContext = createContext<{
+  client: MobileClient;
+  user: MobileUser;
+  inboxAction: React.RefObject<(() => void) | null>;
+} | null>(null);
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -157,11 +235,26 @@ function Application() {
   const [client, setClient] = useState<MobileClient | null>(null);
   const active = useRef<MobileClient | null>(null);
   const [user, setUser] = useState<MobileUser | null>(null);
+  const inboxAction = useRef<(() => void) | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     clearAssignmentTransfers();
     clearLessonTransfers();
-  }, [user?.id, client?.origin]);
+    clearTeachingTransfers();
+    clearTeachingOperationTransfers();
+    clearSchoolDirectoryTransfers();
+    clearCommunicationTransfers();
+    clearAcademicTransfers();
+    clearMessageTransfers();
+    clearAiStudyTransfers();
+    clearProgrammingTransfers();
+  }, [user?.id, user?.role, user?.organizationId, client?.origin]);
+  useEffect(() => {
+    if (client && user) return bindPersonalDeviceLearning(client, user);
+  }, [client, user?.id, user?.organizationId, user?.role, user?.accountMode]);
+  useEffect(() => {
+    if (client && user) return bindRemoteStudyPush(client, user, () => inboxAction.current?.());
+  }, [client, user?.id, user?.organizationId, user?.role, user?.accountMode]);
   const [error, setError] = useState('');
   const [server, setServer] = useState(defaultOrigin),
     [username, setUsername] = useState(''),
@@ -171,6 +264,14 @@ function Application() {
     const next = new MobileClient(origin, store, (u) => {
       if (active.current === next) setUser(u);
     });
+    next.onSessionInvalidated(clearProgrammingTransfers);
+    next.onSessionInvalidated(clearAiStudyTransfers);
+    next.onSessionInvalidated(clearMessageTransfers);
+    next.onSessionInvalidated(clearTeachingOperationTransfers);
+    next.onSessionInvalidated(clearTeachingTransfers);
+    next.onSessionInvalidated(clearSchoolDirectoryTransfers);
+    next.onSessionInvalidated(clearCommunicationTransfers);
+    next.onSessionInvalidated(clearAcademicTransfers);
     active.current = next;
     setClient(next);
     return next;
@@ -193,18 +294,23 @@ function Application() {
       mounted = false;
     };
   }, []);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'recover'>('login');
+  async function prepareClient() {
+    const origin = serverOrigin(server, allowLocal);
+    let next = client;
+    if (!next || next.origin !== origin) {
+      if (next) await next.clear();
+      next = create(origin);
+    }
+    await SecureStore.setItemAsync(originKey, origin);
+    return next;
+  }
   async function login() {
     if (busy) return;
     setBusy(true);
     setError('');
     try {
-      const origin = serverOrigin(server, allowLocal);
-      let next = client;
-      if (!next || next.origin !== origin) {
-        if (next) await next.clear();
-        next = create(origin);
-      }
-      await SecureStore.setItemAsync(originKey, origin);
+      const next = await prepareClient();
       await next.login(username, password);
       setPassword('');
     } catch (e) {
@@ -214,8 +320,11 @@ function Application() {
     }
   }
   useEffect(() => {
-    if (!loading && user && client) router.replace('/');
-  }, [loading, user?.id, client?.origin]);
+    if (!loading && user && client) {
+      setAuthMode('login');
+      router.replace('/');
+    }
+  }, [loading, user?.id, user?.role, user?.organizationId, client?.origin]);
   if (loading)
     return (
       <SafeAreaView style={s.center}>
@@ -225,7 +334,10 @@ function Application() {
     );
   if (user && client)
     return (
-      <AuthContext.Provider key={client.origin + user.id} value={{ client, user }}>
+      <AuthContext.Provider
+        key={JSON.stringify([client.origin, user.id, user.role, user.organizationId])}
+        value={{ client, user, inboxAction }}
+      >
         <Slot />
       </AuthContext.Provider>
     );
@@ -239,9 +351,12 @@ function Application() {
           </View>
           <Text style={s.tagline}>把每一次学习，连接起来。</Text>
           <View style={s.card}>
-            <Text style={s.eyebrow}>WELCOME BACK</Text>
-            <Text style={s.title}>登录学习空间</Text>
-            <Text style={s.muted}>使用与网站相同的账号，接续课程和直播。</Text>
+            {authMode === 'login' && (
+              <>
+                <Text style={s.title}>登录学习空间</Text>
+                <Text style={s.muted}>使用与网站相同的账号，接续课程和直播。</Text>
+              </>
+            )}
             <Text style={s.label}>平台地址</Text>
             <TextInput
               accessibilityLabel="平台地址"
@@ -253,40 +368,69 @@ function Application() {
               keyboardType="url"
               editable={!busy}
             />
-            <Text style={s.label}>账号</Text>
-            <TextInput
-              accessibilityLabel="账号"
-              style={s.input}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="username"
-              editable={!busy}
-            />
-            <Text style={s.label}>密码</Text>
-            <TextInput
-              accessibilityLabel="密码"
-              style={s.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="current-password"
-              editable={!busy}
-              onSubmitEditing={() => void login()}
-            />
-            {!!error && (
-              <Text accessibilityRole="alert" style={s.error}>
-                {error}
-              </Text>
+            {authMode !== 'login' ? (
+              <AuthAccess
+                key={authMode}
+                mode={authMode}
+                prepareClient={prepareClient}
+                back={() => setAuthMode('login')}
+              />
+            ) : (
+              <>
+                <Text style={s.label}>账号</Text>
+                <TextInput
+                  accessibilityLabel="账号"
+                  style={s.input}
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="username"
+                  editable={!busy}
+                />
+                <Text style={s.label}>密码</Text>
+                <TextInput
+                  accessibilityLabel="密码"
+                  style={s.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="current-password"
+                  editable={!busy}
+                  onSubmitEditing={() => void login()}
+                />
+                {!!error && (
+                  <Text accessibilityRole="alert" style={s.error}>
+                    {error}
+                  </Text>
+                )}
+                <Button
+                  title={busy ? '正在登录…' : '登录学习平台'}
+                  disabled={busy || !username.trim() || !password}
+                  onPress={() => void login()}
+                />
+                <Button
+                  secondary
+                  title="个人注册"
+                  onPress={() => {
+                    setPassword('');
+                    setError('');
+                    setAuthMode('register');
+                  }}
+                />
+                <Button
+                  secondary
+                  title="使用恢复码找回账号"
+                  onPress={() => {
+                    setPassword('');
+                    setError('');
+                    setAuthMode('recover');
+                  }}
+                />
+              </>
             )}
-            <Button
-              title={busy ? '正在登录…' : '登录学习平台'}
-              disabled={busy || !username.trim() || !password}
-              onPress={() => void login()}
-            />
             <Text style={s.small}>请仅填写你信任的平台地址。密码不会保存在手机中。</Text>
           </View>
           <Text style={s.footer}>课程学习 · 实时互动 · 跨端接续</Text>
@@ -299,76 +443,97 @@ export function Screen({ route }: { route: Route }) {
   const auth = useContext(AuthContext);
   return auth ? <Workspace client={auth.client} user={auth.user} route={route} /> : null;
 }
+function parentRoute(route: Route): Route {
+  if (
+    route.name === 'profile-settings' ||
+    route.name === 'local-reminders' ||
+    route.name === 'offline-review'
+  )
+    return { name: 'me' };
+  if (route.name === 'standalone-note' || route.name === 'personal-lesson') return { name: 'personal-notes' };
+  if (route.name === 'android-source') return { name: 'android-project', id: route.id };
+  if (route.name === 'website-preview') return { name: 'programming-project', id: route.id };
+  if (route.name === 'android-project') return { name: 'android-studio' };
+  if (route.name === 'school-directory') return { name: 'admin' };
+  if (route.name === 'programming-project' || route.name === 'creative') return { name: 'programming' };
+  if (route.name === 'authoring-draft') return { name: 'ai-authoring', tab: 'history' };
+  if (route.name === 'teaching-announcement') return { name: 'course', id: route.courseId };
+  if (route.name === 'ai-report') return { name: 'ai-study', tab: 'history' };
+  if (route.name === 'algorithm-forum' && route.problemId) return { name: 'algorithm', id: route.problemId };
+  if (route.name === 'algorithmSolution') return { name: 'algorithm', id: route.id };
+  if (route.name === 'academic-export')
+    return { name: 'academic-records', moduleId: route.moduleId, status: route.status };
+  const parents: Partial<Record<Route['name'], Route['name']>> = {
+    'algorithm-forum': 'algorithms',
+    'algorithm-training': 'algorithms',
+    'admin-controls': 'admin',
+    conversation: 'messages',
+    'academic-record': 'academic-records',
+    'academic-module': 'academics',
+    'academic-records': 'academics',
+    'academic-goals': 'academics',
+    organization: 'me',
+    'account-security': 'me',
+    algorithm: 'algorithms',
+    discussion: 'discussions',
+    discussionNew: 'discussions',
+    announcement: 'announcements',
+    course: 'courses',
+    classroom: 'live',
+    assignment: 'assignments',
+    exam: 'exams',
+    examAttempt: 'exams',
+    practiceSession: 'practice',
+    note: 'notes',
+    review: 'appeals',
+  };
+  return { name: parents[route.name] || 'home' } as Route;
+}
 function Workspace({ client, user, route }: { client: MobileClient; user: MobileUser; route: Route }) {
+  const { inboxAction } = useContext(AuthContext)!;
   const [logoutBusy, setLogoutBusy] = useState(false);
   const leaveGuard = useRef<LeaveGuard>(null);
   const registerLeave = (guard: LeaveGuard) => {
     leaveGuard.current = guard;
   };
   const moveRoute = (next: Route) => {
-    const pathname =
-      next.name === 'algorithm'
-        ? '/algorithms/[id]'
-        : next.name === 'algorithmSolution'
-          ? '/algorithm-editorials/[id]'
-          : next.name === 'home'
-            ? '/'
-            : next.name === 'discussionNew'
-              ? '/discussions/new'
-              : next.name === 'discussion'
-                ? '/discussions/[id]'
-                : next.name === 'announcement'
-                  ? '/announcements/[id]'
-                  : next.name === 'practiceSession'
-                    ? '/practice/[id]'
-                    : next.name === 'note'
-                      ? '/notes/[id]'
-                      : next.name === 'course'
-                        ? '/courses/[id]'
-                        : next.name === 'assignment'
-                          ? '/assignments/[id]'
-                          : next.name === 'exam'
-                            ? '/exams/[id]'
-                            : next.name === 'review'
-                              ? '/reviews/[id]'
-                              : next.name === 'examAttempt'
-                                ? '/exam-attempts/[id]'
-                                : next.name === 'classroom'
-                                  ? '/live/[id]'
-                                  : '/' + next.name;
-    const params = [
-      'course',
-      'classroom',
-      'assignment',
-      'exam',
-      'examAttempt',
-      'review',
-      'note',
-      'practiceSession',
-      'announcement',
-      'discussion',
-      'algorithm',
-      'algorithmSolution',
-    ].includes(next.name)
-      ? { id: (next as { id: string }).id }
-      : (next.name === 'live' ||
-            next.name === 'assignments' ||
-            next.name === 'exams' ||
-            next.name === 'notes' ||
-            next.name === 'practice' ||
-            next.name === 'collections' ||
-            next.name === 'announcements' ||
-            next.name === 'discussions' ||
-            next.name === 'discussionNew') &&
-          next.courseId
-        ? { courseId: next.courseId }
-        : {};
-    router.replace({ pathname, params } as never);
+    const { name, ...params } = next;
+    const pathnames: Partial<Record<Route['name'], string>> = {
+      home: '/',
+      'authoring-draft': '/ai-authoring/drafts/[id]',
+      conversation: '/messages/[id]',
+      'ai-report': '/ai-study/reports/[id]',
+      'academic-module': '/academics/modules/[id]',
+      'academic-record': '/academic-records/[id]',
+      'programming-project': '/programming/[id]',
+      'personal-lesson': '/personal-lessons/[id]',
+      algorithm: '/algorithms/[id]',
+      algorithmSolution: '/algorithm-editorials/[id]',
+      discussionNew: '/discussions/new',
+      discussion: '/discussions/[id]',
+      announcement: '/announcements/[id]',
+      practiceSession: '/practice/[id]',
+      note: '/notes/[id]',
+      course: '/courses/[id]',
+      assignment: '/assignments/[id]',
+      exam: '/exams/[id]',
+      review: '/reviews/[id]',
+      examAttempt: '/exam-attempts/[id]',
+      classroom: '/live/[id]',
+    };
+    router.replace({ pathname: pathnames[name] || '/' + name, params } as never);
   };
   const setRoute = (next: Route) => {
     if (leaveGuard.current) leaveGuard.current(() => moveRoute(next));
     else moveRoute(next);
   };
+  useEffect(() => {
+    const openInbox = () => setRoute({ name: 'notifications' });
+    inboxAction.current = openInbox;
+    return () => {
+      if (inboxAction.current === openInbox) inboxAction.current = null;
+    };
+  });
   const canLive = user.accountMode !== 'PERSONAL';
   const selected = (name: string) =>
     route.name === name ||
@@ -393,44 +558,8 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
         Keyboard.dismiss();
         return true;
       }
-      if (route.name === 'algorithmSolution') {
-        setRoute({ name: 'algorithm', id: route.id });
-        return true;
-      }
-      if (route.name === 'algorithm') {
-        setRoute({ name: 'algorithms' });
-        return true;
-      }
-      if (route.name === 'discussion' || route.name === 'discussionNew') {
-        setRoute({ name: 'discussions' });
-        return true;
-      }
-      if (route.name === 'practiceSession') {
-        setRoute({ name: 'practice' });
-        return true;
-      }
-      if (route.name === 'note') {
-        setRoute({ name: 'notes' });
-        return true;
-      }
-      if (route.name === 'review') {
-        setRoute({ name: 'appeals' });
-        return true;
-      }
-      if (route.name === 'exam' || route.name === 'examAttempt') {
-        setRoute({ name: 'exams' });
-        return true;
-      }
-      if (route.name === 'assignment') {
-        setRoute({ name: 'assignments' });
-        return true;
-      }
-      if (route.name === 'course' || route.name === 'classroom') {
-        setRoute({ name: route.name === 'course' ? 'courses' : 'live' });
-        return true;
-      }
       if (route.name !== 'home') {
-        setRoute({ name: 'home' });
+        setRoute(parentRoute(route));
         return true;
       }
       return false;
@@ -440,8 +569,49 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
       subscription.remove();
     };
   }, [route]);
+  const extraHeadings: Partial<Record<Route['name'], string>> = {
+    'profile-settings': '个人资料',
+    'local-reminders': '本机提醒',
+    'offline-review': '离线复习',
+    analytics: '学习统计',
+    'teaching-announcement': '发布课程公告',
+    'ai-authoring': 'AI 出题',
+    'authoring-draft': '审核题目草稿',
+    focus: '专注计时',
+    'personal-notes': '个人笔记',
+    'personal-lesson': '课时笔记',
+    'standalone-note': '独立笔记',
+    programming: '编程工作区',
+    'programming-project': '编程项目',
+    creative: '创意作品',
+    'ai-study': 'AI 错题学习',
+    'ai-report': '错题分析报告',
+    'algorithm-forum': '算法论坛',
+    'algorithm-training': '算法训练计划',
+    'admin-controls': '机构治理',
+    messages: '课程消息',
+    conversation: '会话',
+    'academic-goals': '学习目标',
+    'academic-export': '导出记录',
+    organization: '所属机构',
+    grading: '批阅中心',
+    'academic-records': '学习记录',
+    'academic-record': '记录详情',
+    'academic-module': '专业实验',
+    academics: '专业学习',
+    admin: '机构管理',
+    'teaching-operations': '课程与考务管理',
+    'school-directory': '教务名册',
+    'android-studio': 'Android 作品',
+    'android-project': 'Android 项目',
+    'android-source': '源文件',
+    'website-preview': '作品预览',
+    teach: '教学工作台',
+    'account-security': '账号安全',
+  };
   const heading =
-    route.name === 'home'
+    extraHeadings[route.name] ??
+    (route.name === 'home'
       ? '学习工作台'
       : route.name === 'courses' || route.name === 'course'
         ? '我的课程'
@@ -471,78 +641,15 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                             ? '教学公告'
                             : route.name === 'notifications'
                               ? '学习通知'
-                              : '我的空间';
+                              : '我的空间');
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
         <Pressable
-          accessibilityLabel={
-            [
-              'course',
-              'classroom',
-              'assignment',
-              'exam',
-              'examAttempt',
-              'review',
-              'note',
-              'practiceSession',
-              'announcement',
-              'discussion',
-              'discussionNew',
-              'algorithm',
-              'algorithmSolution',
-            ].includes(route.name)
-              ? '返回列表'
-              : '知学首页'
-          }
-          onPress={() =>
-            route.name === 'algorithmSolution'
-              ? setRoute({ name: 'algorithm', id: route.id })
-              : setRoute({
-                  name:
-                    route.name === 'algorithm'
-                      ? 'algorithms'
-                      : route.name === 'discussion' || route.name === 'discussionNew'
-                        ? 'discussions'
-                        : route.name === 'announcement'
-                          ? 'announcements'
-                          : route.name === 'course'
-                            ? 'courses'
-                            : route.name === 'classroom'
-                              ? 'live'
-                              : route.name === 'assignment'
-                                ? 'assignments'
-                                : route.name === 'exam' || route.name === 'examAttempt'
-                                  ? 'exams'
-                                  : route.name === 'practiceSession'
-                                    ? 'practice'
-                                    : route.name === 'note'
-                                      ? 'notes'
-                                      : route.name === 'review'
-                                        ? 'appeals'
-                                        : 'home',
-                })
-          }
+          accessibilityLabel={parentRoute(route).name === 'home' ? '知学首页' : '返回列表'}
+          onPress={() => setRoute(parentRoute(route))}
         >
-          <Text style={s.headerLogo}>
-            {[
-              'course',
-              'classroom',
-              'assignment',
-              'exam',
-              'examAttempt',
-              'review',
-              'note',
-              'practiceSession',
-              'announcement',
-              'discussion',
-              'discussionNew',
-              'algorithm',
-              'algorithmSolution',
-            ].includes(route.name)
-              ? '‹'
-              : '知'}
-          </Text>
+          <Text style={s.headerLogo}>{parentRoute(route).name === 'home' ? '知' : '‹'}</Text>
         </Pressable>
         <Text style={s.headerTitle}>{heading}</Text>
         <Pressable
@@ -635,10 +742,17 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
           <Discussion key={route.id} client={client} id={route.id} registerLeave={registerLeave} />
         )}
         {route.name === 'algorithms' && (
-          <Algorithms client={client} open={(id) => setRoute({ name: 'algorithm', id })} />
+          <Algorithms
+            training={() => setRoute({ name: 'algorithm-training' })}
+            forum={() => setRoute({ name: 'algorithm-forum' })}
+            client={client}
+            open={(id) => setRoute({ name: 'algorithm', id })}
+          />
         )}
         {route.name === 'algorithm' && (
           <Algorithm
+            training={() => setRoute({ name: 'algorithm-training' })}
+            forum={(problemId) => setRoute({ name: 'algorithm-forum', problemId })}
             key={route.id}
             client={client}
             id={route.id}
@@ -653,6 +767,212 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             client={client}
             id={route.id}
             open={(id) => setRoute({ name: 'algorithm', id })}
+          />
+        )}
+        {route.name === 'profile-settings' && <ProfileSettings client={client} user={user} />}
+        {route.name === 'local-reminders' && <LocalStudyReminders client={client} user={user} />}
+        {route.name === 'offline-review' && <OfflineReview client={client} user={user} />}
+        {route.name === 'analytics' && (
+          <LearningAnalytics client={client} user={user} registerLeave={registerLeave} />
+        )}
+        {route.name === 'ai-authoring' && (
+          <AiAuthoringHome
+            client={client}
+            initialTab={route.tab}
+            courseId={route.courseId}
+            openDraft={(id) => setRoute({ name: 'authoring-draft', id })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'authoring-draft' && (
+          <AiAuthoringEditor
+            client={client}
+            id={route.id}
+            openHistory={() => setRoute({ name: 'ai-authoring', tab: 'history' })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'teaching-announcement' && (
+          <TeachingAnnouncement
+            client={client}
+            courseId={route.courseId}
+            openCourse={() => setRoute({ name: 'course', id: route.courseId })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'focus' && <Focus client={client} registerLeave={registerLeave} />}
+        {route.name === 'personal-notes' && (
+          <PersonalNotes
+            client={client}
+            create={() => setRoute({ name: 'standalone-note' })}
+            openNote={(id) => setRoute({ name: 'standalone-note', id })}
+            openLesson={(id) => setRoute({ name: 'personal-lesson', id })}
+          />
+        )}
+        {route.name === 'standalone-note' && (
+          <StandaloneNoteEditor
+            key={route.id || 'new'}
+            id={route.id}
+            client={client}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'personal-lesson' && (
+          <NoteEditor personal client={client} id={route.id} registerLeave={registerLeave} />
+        )}
+        {route.name === 'programming' && (
+          <Programming
+            client={client}
+            open={(id) => setRoute({ name: 'programming-project', id })}
+            openCreative={() => setRoute({ name: 'creative' })}
+          />
+        )}
+        {route.name === 'creative' && (
+          <Creative client={client} openProject={(id) => setRoute({ name: 'programming-project', id })} />
+        )}
+        {route.name === 'school-directory' && (
+          <SchoolDirectoryOperations client={client} user={user} registerLeave={registerLeave} />
+        )}
+        {route.name === 'android-studio' && (
+          <AndroidStudio
+            client={client}
+            openProject={(id) => setRoute({ name: 'android-project', id })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'android-project' && (
+          <AndroidWorkspace
+            key={route.id}
+            id={route.id}
+            client={client}
+            openFile={(path) => setRoute({ name: 'android-source', id: route.id, path })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'android-source' && (
+          <AndroidFileEditor
+            key={route.id + ':' + route.path}
+            id={route.id}
+            path={route.path}
+            client={client}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'website-preview' && (
+          <NativeProgrammingPreview client={client} id={route.id} registerLeave={registerLeave} />
+        )}
+        {route.name === 'programming-project' && (
+          <ProgrammingProject
+            openPreview={() => setRoute({ name: 'website-preview', id: route.id })}
+            key={route.id}
+            client={client}
+            id={route.id}
+            registerLeave={registerLeave}
+            openProject={(id) => setRoute({ name: 'programming-project', id })}
+            removed={() => setRoute({ name: 'programming' })}
+          />
+        )}
+        {route.name === 'ai-study' && (
+          <AiStudyHome
+            client={client}
+            courseId={route.courseId}
+            initialTab={route.tab}
+            registerLeave={registerLeave}
+            openReport={(id) => setRoute({ name: 'ai-report', id })}
+          />
+        )}
+        {route.name === 'ai-report' && (
+          <AiStudyReportScreen
+            client={client}
+            id={route.id}
+            registerLeave={registerLeave}
+            openHistory={() => setRoute({ name: 'ai-study', tab: 'history' })}
+          />
+        )}
+        {route.name === 'admin-controls' && <AdminControls client={client} user={user} />}
+        {route.name === 'algorithm-training' && (
+          <AlgorithmTrainingPlans
+            client={client}
+            open={(id) => setRoute({ name: 'algorithm', id })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'algorithm-forum' && (
+          <AlgorithmForum client={client} problemId={route.problemId} registerLeave={registerLeave} />
+        )}
+        {route.name === 'messages' && (
+          <Messages client={client} open={(id, title) => setRoute({ name: 'conversation', id, title })} />
+        )}
+        {route.name === 'conversation' && (
+          <MessageConversation
+            client={client}
+            user={user}
+            id={route.id}
+            title={route.title}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'academic-goals' && (
+          <AcademicGoals
+            client={client}
+            moduleId={route.moduleId}
+            openModule={(id) => setRoute({ name: 'academic-module', id })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'academic-export' && (
+          <AcademicRecordsExport
+            client={client}
+            moduleId={route.moduleId}
+            status={route.status}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'organization' && <Organization client={client} />}
+        {route.name === 'grading' && <GradingDesk client={client} />}
+        {route.name === 'teaching-operations' && (
+          <TeachingOperations client={client} user={user} registerLeave={registerLeave} />
+        )}
+        {route.name === 'teach' && <Teach client={client} user={user} />}
+        {route.name === 'admin' && <AdminWorkspace client={client} user={user} />}
+        {route.name === 'account-security' && <AccountSecurity client={client} user={user} />}
+        {route.name === 'academics' && (
+          <AcademicHome
+            client={client}
+            openModule={(id) => setRoute({ name: 'academic-module', id })}
+            openRecords={() => setRoute({ name: 'academic-records' })}
+            openGoals={() => setRoute({ name: 'academic-goals' })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'academic-module' && (
+          <AcademicWorkbench
+            key={route.id + ':' + (route.recordId || '')}
+            id={route.id}
+            recordId={route.recordId}
+            client={client}
+            openRecord={(id) => setRoute({ name: 'academic-record', id })}
+            openRecords={() => setRoute({ name: 'academic-records', moduleId: route.id })}
+            openGoals={(moduleId) => setRoute({ name: 'academic-goals', moduleId })}
+            openAlgorithms={() => setRoute({ name: 'algorithms' })}
+            registerLeave={registerLeave}
+          />
+        )}
+        {route.name === 'academic-records' && (
+          <AcademicRecords
+            client={client}
+            openExport={(moduleId, status) => setRoute({ name: 'academic-export', moduleId, status })}
+            moduleId={route.moduleId}
+            openRecord={(id) => setRoute({ name: 'academic-record', id })}
+          />
+        )}
+        {route.name === 'academic-record' && (
+          <AcademicRecordDetail
+            client={client}
+            id={route.id}
+            registerLeave={registerLeave}
+            openRecords={() => setRoute({ name: 'academic-records' })}
+            openModule={(id, recordId) => setRoute({ name: 'academic-module', id, recordId })}
           />
         )}
         {route.name === 'notifications' && <Inbox client={client} open={setRoute} />}
@@ -688,6 +1008,31 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
             </View>
             <View style={s.card}>
               <Text style={s.sectionTitle}>账号信息</Text>
+              {user.role === 'STUDENT' && (
+                <Button
+                  secondary
+                  title="所属机构与加入申请"
+                  onPress={() => setRoute({ name: 'organization' })}
+                />
+              )}
+              <Button
+                secondary
+                title="个人资料与密码"
+                onPress={() => setRoute({ name: 'profile-settings' })}
+              />
+              <Button secondary title="本机学习提醒" onPress={() => setRoute({ name: 'local-reminders' })} />
+              {user.role === 'STUDENT' && user.accountMode === 'PERSONAL' && (
+                <Button
+                  secondary
+                  title="离线复习个人笔记"
+                  onPress={() => setRoute({ name: 'offline-review' })}
+                />
+              )}
+              <Button
+                secondary
+                title="账号安全与登录设备"
+                onPress={() => setRoute({ name: 'account-security' })}
+              />
               <Text style={s.body}>账号：{user.username}</Text>
               <Text style={s.body}>当前平台：{client.origin}</Text>
               <Text style={s.small}>学习资料与网站同步。手机端会话独立，退出不会登出其他设备。</Text>
@@ -704,7 +1049,7 @@ function Workspace({ client, user, route }: { client: MobileClient; user: Mobile
                 }}
               />
             </View>
-            <Text style={s.small}>知学 Android · 预览版 0.8.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
+            <Text style={s.small}>知学 Android · 预览版 0.13.0{allowLocal ? ' · 本地测试环境' : ''}</Text>
           </ScrollView>
         )}
       </View>
@@ -769,11 +1114,28 @@ function Home({
       refreshControl={<RefreshControl refreshing={false} onRefresh={q.reload} />}
     >
       <View style={s.hero}>
-        <Text style={s.heroEyebrow}>YOUR LEARNING SPACE</Text>
+        <Text style={s.heroEyebrow}>
+          {user.role === 'TEACHER'
+            ? '教师工作台'
+            : user.role === 'SUPER_ADMIN'
+              ? '平台管理工作台'
+              : user.role === 'ADMIN'
+                ? '机构管理工作台'
+                : '学习空间'}
+        </Text>
         <Text style={s.heroTitle}>你好，{user.name}</Text>
-        <Text style={s.heroText}>从一节课程、一个问题开始，继续今天的学习。</Text>
+        <Text style={s.heroText}>
+          {user.role === 'STUDENT'
+            ? '从一节课程、一个问题开始，继续今天的学习。'
+            : user.role === 'TEACHER'
+              ? '管理授课课程、发布任务并批阅学生作答。'
+              : '管理机构账号、教务名册与授权。'}
+        </Text>
         <View style={s.heroPill}>
-          <Text style={s.heroPillText}>已加入 {q.data?.total ?? '—'} 门课程</Text>
+          <Text style={s.heroPillText}>
+            {user.role === 'STUDENT' ? '已加入' : user.role === 'TEACHER' ? '授课' : '可见'}{' '}
+            {q.data?.total ?? '—'} 门课程
+          </Text>
         </View>
       </View>
       <View style={s.quickRow}>
@@ -873,6 +1235,127 @@ function Home({
           onPress={() => navigate({ name: 'algorithms' })}
         />
       )}
+      {user.accountMode !== 'PERSONAL' && user.permissions.includes('communication.read') && (
+        <Shortcut
+          title="课程消息"
+          caption="联系师生、参与班级会话"
+          icon="✉"
+          onPress={() => navigate({ name: 'messages' })}
+        />
+      )}
+      {(user.role === 'STUDENT' || user.permissions.includes('analysis.read')) && (
+        <Shortcut
+          title="学习统计"
+          caption="课程完成情况、已发布成绩和学习报告"
+          icon="▥"
+          onPress={() => navigate({ name: 'analytics' })}
+        />
+      )}
+      {user.role === 'TEACHER' && user.permissions.includes('question.manage') && (
+        <Shortcut
+          title="AI 出题"
+          caption="生成并逐题审核私人草稿"
+          icon="✎"
+          onPress={() => navigate({ name: 'ai-authoring' })}
+        />
+      )}
+      {user.role === 'STUDENT' && user.permissions.includes('learning.use') && (
+        <>
+          <Shortcut
+            title="专注计时"
+            caption="计时、休息与专注记录"
+            icon="◷"
+            onPress={() => navigate({ name: 'focus' })}
+          />
+          <Shortcut
+            title="编程与创意"
+            caption="创建项目、编辑源文件与导出作品"
+            icon="⌨"
+            onPress={() => navigate({ name: 'programming' })}
+          />
+        </>
+      )}
+      {['STUDENT', 'TEACHER'].includes(user.role) && (
+        <Shortcut
+          title="个人笔记"
+          caption="独立笔记与课时笔记"
+          icon="✎"
+          onPress={() => navigate({ name: 'personal-notes' })}
+        />
+      )}
+      {user.role === 'STUDENT' && user.permissions.includes('learning.use') && (
+        <Shortcut
+          title="AI 错题学习"
+          caption="分析错题、核对来源并导出报告"
+          icon="✧"
+          onPress={() => navigate({ name: 'ai-study' })}
+        />
+      )}
+      {user.role === 'STUDENT' && (
+        <Shortcut
+          title="专业学习"
+          caption="选择模块、完成实验并保存笔记"
+          icon="◇"
+          onPress={() => navigate({ name: 'academics' })}
+        />
+      )}
+      {user.role !== 'STUDENT' && user.permissions.includes('question.manage') && (
+        <Shortcut
+          title="课程与考务管理"
+          caption="题库修订、试卷、考试资格与课件"
+          icon="▦"
+          onPress={() => navigate({ name: 'teaching-operations' })}
+        />
+      )}
+      {user.role !== 'STUDENT' &&
+        (user.permissions.includes('course.manage') || user.permissions.includes('course.admin')) && (
+          <Shortcut
+            title="教学工作台"
+            caption="课程、题库、作业、考试与直播预约"
+            icon="▤"
+            onPress={() => navigate({ name: 'teach' })}
+          />
+        )}
+      {user.role !== 'STUDENT' && user.permissions.includes('assessment.grade') && (
+        <Shortcut
+          title="批阅中心"
+          caption="作业、考试及成绩复核"
+          icon="✓"
+          onPress={() => navigate({ name: 'grading' })}
+        />
+      )}
+      {['ADMIN', 'SUPER_ADMIN'].includes(user.role) && (
+        <Shortcut
+          title="机构管理"
+          caption="账号与专业、班级、学期及加入申请"
+          icon="◎"
+          onPress={() => navigate({ name: 'admin' })}
+        />
+      )}
+      {['ADMIN', 'SUPER_ADMIN'].includes(user.role) && (
+        <Shortcut
+          title="治理与设置"
+          caption="举报、审计记录和机构配置"
+          icon="⚙"
+          onPress={() => navigate({ name: 'admin-controls' })}
+        />
+      )}
+      {user.role === 'STUDENT' && user.permissions.includes('learning.use') && (
+        <Shortcut
+          title="Android 作品"
+          caption="创建应用、修改源文件和下载构建"
+          icon="▣"
+          onPress={() => navigate({ name: 'android-studio' })}
+        />
+      )}
+      {['ADMIN', 'SUPER_ADMIN'].includes(user.role) && user.permissions.includes('users.manage') && (
+        <Shortcut
+          title="教务名册"
+          caption="批量导入、导出、角色和班课关联"
+          icon="▦"
+          onPress={() => navigate({ name: 'school-directory' })}
+        />
+      )}
       <Section title="继续学习" action="全部课程 →" onPress={() => navigate({ name: 'courses' })} />
       <Query state={q} />
       {q.data?.items.map((course) => (
@@ -886,7 +1369,7 @@ function Home({
         <Empty
           text={
             user.accountMode === 'PERSONAL'
-              ? '当前还没有机构课程，可以在手机网页使用个人专业学习功能。'
+              ? '可在「专业学习」选择感兴趣的模块。'
               : '暂无已加入课程，请联系教师或管理员安排选课。'
           }
         />
@@ -994,12 +1477,24 @@ function CourseDetail({
               onPress={() => navigate({ name: 'discussions', courseId: id })}
             />
           )}
+          {user.role === 'TEACHER' && (
+            <Button
+              title="发布课程公告"
+              secondary
+              onPress={() => navigate({ name: 'teaching-announcement', courseId: id })}
+            />
+          )}
           <Button title="查看课程直播" secondary onPress={() => navigate({ name: 'live', courseId: id })} />
           {user.role === 'STUDENT' && (
             <Button title="课程错题与收藏" onPress={() => navigate({ name: 'collections', courseId: id })} />
           )}
-          {lesson && user.role === 'STUDENT' && (
-            <Button title="本课时私人笔记" onPress={() => navigate({ name: 'note', id: lesson.id })} />
+          {lesson && ['STUDENT', 'TEACHER'].includes(user.role) && (
+            <Button
+              title="本课时私人笔记"
+              onPress={() =>
+                navigate({ name: user.role === 'TEACHER' ? 'personal-lesson' : 'note', id: lesson.id })
+              }
+            />
           )}
           {lesson &&
             (user.role === 'STUDENT' ? (
@@ -1283,6 +1778,19 @@ function Classroom({ client, id }: { client: MobileClient; id: string }) {
           )}
           <View style={s.card}>
             <Section title="课堂成员" />
+            {c.canManage && c.status === 'LIVE' && (
+              <Button
+                title="全员下麦"
+                secondary
+                disabled={busy}
+                onPress={() =>
+                  Alert.alert('全员下麦', '收回本场所有学员的连麦资格？', [
+                    { text: '取消', style: 'cancel' },
+                    { text: '确认下麦', onPress: () => void action('revoke-all') },
+                  ])
+                }
+              />
+            )}
             <Text style={s.small}>当前在线 {c.members.filter((m) => m.online).length} 人</Text>
             {c.members.map((m) => (
               <View key={m.id} style={s.member}>
@@ -1310,6 +1818,35 @@ function Classroom({ client, id }: { client: MobileClient; id: string }) {
                           action: m.approved ? 'revoke' : 'approve',
                           revision: m.revision,
                         })
+                      }
+                    />
+                    <Button
+                      small
+                      secondary
+                      disabled={busy}
+                      title={m.chatMuted ? '解除禁言' : '禁言'}
+                      onPress={() =>
+                        void action('members/' + m.id, {
+                          action: m.chatMuted ? 'unmute-chat' : 'mute-chat',
+                          revision: m.revision,
+                        })
+                      }
+                    />
+                    <Button
+                      small
+                      secondary
+                      disabled={busy}
+                      title="移出课堂"
+                      onPress={() =>
+                        Alert.alert('移出课堂', m.name, [
+                          { text: '取消', style: 'cancel' },
+                          {
+                            text: '确认移出',
+                            style: 'destructive',
+                            onPress: () =>
+                              void action('members/' + m.id, { action: 'remove', revision: m.revision }),
+                          },
+                        ])
                       }
                     />
                   </View>

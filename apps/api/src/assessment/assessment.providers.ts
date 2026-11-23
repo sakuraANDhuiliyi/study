@@ -1,3 +1,4 @@
+import { GradingQueueService } from './grading-queue.service';
 import { AssessmentContext } from './assessment-context';
 import { AssessmentService } from './assessment.service';
 import { AssignmentsService } from './assignments.service';
@@ -14,6 +15,7 @@ import { QuestionSelectionService } from './question-selection.service';
 // Register once: the deadline worker and every request share the same attempt service.
 export const assessmentProviders = [
   AssessmentContext,
+  GradingQueueService,
   QuestionSelectionService,
   QuestionBankService,
   AssignmentsService,

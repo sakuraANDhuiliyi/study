@@ -82,7 +82,7 @@ export class AssessmentService {
   async submitAssignment(actor: Actor, id: string, input: z.infer<typeof schema.submissionSchema>) {
     return this.assignmentsService.submitAssignment(actor, id, input);
   }
-  async submissions(actor: Actor, id: string, query: z.infer<typeof schema.listSchema>) {
+  async submissions(actor: Actor, id: string, query: z.infer<typeof schema.recordListSchema>) {
     return this.assignmentsService.submissions(actor, id, query);
   }
   async assignmentRoster(actor: Actor, id: string, query: z.infer<typeof schema.listSchema>) {
@@ -193,7 +193,7 @@ export class AssessmentService {
   async appeal(actor: Actor, id: string, reason: string) {
     return this.appealsService.appeal(actor, id, reason);
   }
-  async appeals(actor: Actor, query: z.infer<typeof schema.listSchema>) {
+  async appeals(actor: Actor, query: z.infer<typeof schema.recordListSchema>) {
     return this.appealsService.appeals(actor, query);
   }
   async resolveAppeal(actor: Actor, id: string, input: z.infer<typeof schema.resolveSchema>) {

@@ -20,7 +20,52 @@ export interface Actor {
   requestId?: string;
   clientType?: 'WEB' | 'MOBILE';
 }
+import { mobilePersonalLearningRouteAllowed } from '../mobile/mobile-personal-learning.policy';
+import {mobileLessonMediaRouteAllowed} from '../mobile/mobile-lesson-media.policy';
+import { mobileCommunicationFilesRouteAllowed } from '../mobile/mobile-communication-files.policy';
+import { mobileAndroidStudioRouteAllowed } from '../mobile/mobile-android-studio.policy';
+import { mobileSchoolDirectoryRouteAllowed } from '../mobile/mobile-school-directory.policy';
+import { mobileProgrammingPreviewRouteAllowed } from '../mobile/mobile-programming-preview.policy';
+import {mobilePushRouteAllowed} from '../mobile/mobile-push.schemas';
+import { mobileProgrammingRouteAllowed } from '../mobile/mobile-programming.policy';
+import { mobileTeachingRouteAllowed } from '../mobile/mobile-teaching.policy';
+import { mobileTeachingToolsRouteAllowed } from '../mobile/mobile-teaching-tools.policy';
+import { mobileAiStudyRouteAllowed } from '../mobile/mobile-ai-study.policy';
+import { mobileAdminControlsRouteAllowed } from '../mobile/mobile-admin-controls.policy';
+import { mobileMessagesRouteAllowed } from '../mobile/mobile-messages.policy';
+import { mobileStaffRouteAllowed } from '../mobile/mobile-staff.policy';
+import { mobileAccountRouteAllowed } from '../mobile/mobile-account.schemas';
+import { mobileAcademicRouteAllowed } from '../mobile/mobile-academics.policy';
+import { mobileAlgorithmExecutionRouteAllowed } from '../mobile/mobile-algorithms.policy';
 export function mobileRouteAllowed(path: string, method: string) {
+  if (method === 'GET' && /^\/api\/mobile\/organization(?:\/requests)?\/?$/.test(path)) return true;
+  if (
+    method === 'POST' &&
+    /^\/api\/mobile\/organization\/(?:leave|requests(?:\/[a-zA-Z0-9_-]+\/cancel)?)\/?$/.test(path)
+  )
+    return true;
+  if (path === '/api/mobile/organization/profile') return method === 'PATCH';
+  if (path === '/api/mobile/organization/password') return method === 'POST';
+  if (
+    [
+      mobileTeachingRouteAllowed,
+      mobileTeachingToolsRouteAllowed,
+      mobileProgrammingRouteAllowed,mobilePushRouteAllowed,
+      mobileSchoolDirectoryRouteAllowed,
+      mobileAndroidStudioRouteAllowed,
+      mobileProgrammingPreviewRouteAllowed,
+      mobileCommunicationFilesRouteAllowed,mobileLessonMediaRouteAllowed,
+      mobilePersonalLearningRouteAllowed,
+      mobileAiStudyRouteAllowed,
+      mobileAdminControlsRouteAllowed,
+      mobileMessagesRouteAllowed,
+      mobileStaffRouteAllowed,
+      mobileAccountRouteAllowed,
+      mobileAcademicRouteAllowed,
+      mobileAlgorithmExecutionRouteAllowed,
+    ].some((check) => check(path, method))
+  )
+    return true;
   if (
     method === 'GET' &&
     /^\/api\/mobile\/algorithms\/problems(?:\/[^/]+(?:\/(?:learning|editorial))?)?\/?$/.test(path)

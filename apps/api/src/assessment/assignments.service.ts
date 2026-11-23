@@ -56,7 +56,8 @@ export class AssignmentsService {
   }
 
   async assignments(actor: Actor, query: z.infer<typeof schema.listSchema>) {
-    this.context.require(actor, this.context.student(actor) ? 'learning.use' : 'assessment.manage');
+    const student = this.context.student(actor);
+    this.context.require(actor, student ? 'learning.use' : 'assessment.manage');
     const ids = await this.context.auth.courseIds(actor);
     if (query.courseId) await this.context.scoped(actor, query.courseId);
     const p = paginate(query);
@@ -64,7 +65,7 @@ export class AssignmentsService {
       organizationId: actor.organizationId,
       courseId: query.courseId ?? { in: ids },
       ...(query.search ? { title: { contains: query.search } } : {}),
-      ...(this.context.student(actor)
+      ...(student
         ? { status: 'published', audience: { some: { userId: actor.id } } }
         : query.status
           ? { status: query.status }
@@ -74,9 +75,13 @@ export class AssignmentsService {
       this.context.db.assignment.findMany({
         where,
         include: {
+          exceptions: student && {
+            where: { userId: actor.id },
+            select: { allowUntil: true, exempt: true },
+          },
           submissions: {
-            where: this.context.student(actor) ? { userId: actor.id } : undefined,
-            orderBy: { submittedAt: 'desc' },
+            where: student ? { userId: actor.id } : undefined,
+            orderBy: [{ submittedAt: 'desc' }, { id: 'desc' }],
             take: 1,
           },
           _count: { select: { audience: true, submissions: true } },
@@ -87,12 +92,25 @@ export class AssignmentsService {
       }),
       this.context.db.assignment.count({ where }),
     ]);
+    const courses =
+      student && items.length
+        ? await this.context.db.course.findMany({
+            where: {
+              organizationId: actor.organizationId,
+              id: { in: [...new Set(items.map((row) => row.courseId))] },
+            },
+            select: { id: true, title: true },
+          })
+        : [];
+    const titles = new Map(courses.map((course) => [course.id, course.title]));
     return {
-      items: items.map((assignment) => ({
+      items: items.map(({ exceptions, ...assignment }) => ({
         ...assignment,
-        submissions: assignment.submissions.map((submission) =>
-          this.submissionView(submission, this.context.student(actor)),
-        ),
+        ...(student && {
+          courseTitle: titles.get(assignment.courseId) || '',
+          myException: exceptions?.[0] ?? null,
+        }),
+        submissions: assignment.submissions.map((submission) => this.submissionView(submission, student)),
       })),
       total,
       page: p.page,
@@ -436,10 +454,11 @@ export class AssignmentsService {
     return this.submissionView(submission, this.context.student(actor));
   }
 
-  async submissions(actor: Actor, id: string, query: z.infer<typeof schema.listSchema>) {
+  async submissions(actor: Actor, id: string, query: z.infer<typeof schema.recordListSchema>) {
     await this.assignmentAccess(actor, id);
     const p = paginate(query);
     const where = {
+      ...(query.recordId ? { id: query.recordId } : {}),
       assignmentId: id,
       ...(this.context.student(actor) ? { userId: actor.id } : {}),
       ...(query.status ? { gradingStatus: query.status } : {}),

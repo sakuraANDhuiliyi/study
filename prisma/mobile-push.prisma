@@ -1,0 +1,34 @@
+model MobilePushDevice {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  sessionId String @unique
+  role String
+  accountMode String
+  tokenHash String @unique
+  tokenCiphertext String
+  active Boolean @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([organizationId,userId,active])
+}
+model MobilePushDelivery {
+  id String @id @default(cuid())
+  deviceId String
+  notificationId String
+  organizationId String
+  userId String
+  status String @default("PENDING")
+  attempts Int @default(0)
+  receiptAttempts Int @default(0)
+  ticketId String?
+  claimId String?
+  lastErrorCode String?
+  nextAttemptAt DateTime @default(now()) @db.Timestamptz(3)
+  leaseExpiresAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([deviceId,notificationId])
+  @@index([status,nextAttemptAt])
+  @@index([organizationId,userId])
+}

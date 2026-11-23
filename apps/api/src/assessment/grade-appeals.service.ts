@@ -124,12 +124,13 @@ export class GradeAppealsService {
     });
   }
 
-  async appeals(actor: Actor, query: z.infer<typeof schema.listSchema>) {
+  async appeals(actor: Actor, query: z.infer<typeof schema.recordListSchema>) {
     this.context.require(actor, this.context.student(actor) ? 'learning.use' : 'assessment.grade');
     const ids = await this.context.auth.courseIds(actor);
     if (query.courseId) await this.context.scoped(actor, query.courseId);
     const p = paginate(query);
     const where = {
+      ...(query.recordId ? { id: query.recordId } : {}),
       ...(this.context.student(actor) ? { userId: actor.id } : {}),
       ...(query.status ? { status: query.status } : {}),
       attempt: {

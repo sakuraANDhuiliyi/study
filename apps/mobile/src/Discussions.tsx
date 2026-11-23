@@ -1,3 +1,5 @@
+import { CommunicationAttachmentPicker, DiscussionAttachments } from './CommunicationAttachmentPicker';
+import { communicationFileIds, type CommunicationFile } from './communication-files-model';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -17,6 +19,7 @@ import { useResource } from './resource';
 import { a, AButton } from './assignment-ui';
 import { decodeText } from './assignment-model';
 import { formatPlanTime } from './planner-model';
+import { ContentReport } from './Messages';
 import {
   discussionsApi,
   discussionText,
@@ -174,7 +177,9 @@ function Composer({
     [title, setTitle] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
-    [uncertain, setUncertain] = useState(false);
+    [uncertain, setUncertain] = useState(false),
+    [files, setFiles] = useState<CommunicationFile[]>([]),
+    [fileBusy, setFileBusy] = useState(false);
   const pending = useRef<DiscussionWrite | null>(null),
     flight = useRef(false),
     mounted = useRef(true);
@@ -185,13 +190,13 @@ function Composer({
     };
   }, []);
   useEffect(() => {
-    lockChange?.(busy || uncertain);
-  }, [busy, uncertain]);
+    lockChange?.(busy || uncertain || fileBusy || files.length > 0);
+  }, [busy, uncertain, fileBusy, files.length]);
   useEffect(() => {
     registerLeave(
-      body || title || quoteId || busy || uncertain
+      body || title || quoteId || busy || uncertain || fileBusy || files.length
         ? (proceed) => {
-            if (flight.current) {
+            if (flight.current || fileBusy) {
               Alert.alert('正在发布', '请等待本次请求结束后再离开。');
               return;
             }
@@ -209,12 +214,13 @@ function Composer({
         : null,
     );
     return () => registerLeave(null);
-  }, [body, title, quoteId, busy, uncertain]);
+  }, [body, title, quoteId, busy, uncertain, fileBusy, files.length]);
   const accepted = (r: DiscussionReceipt) => {
     pending.current = null;
     setUncertain(false);
     setBody('');
     setTitle('');
+    setFiles([]);
     clearQuote?.();
     registerLeave(null);
     done(r);
@@ -254,14 +260,20 @@ function Composer({
     }
   };
   const confirm = () => {
-    if (flight.current || pending.current || disabled) return;
+    if (flight.current || fileBusy || pending.current || disabled) return;
     try {
-      const value = discussionText(body);
+      const value = discussionText(body),
+        attachmentIds = communicationFileIds(files);
       const input: DiscussionWrite = postId
         ? {
             kind: 'reply',
             postId,
-            input: { body: value, ...(quoteId ? { quoteReplyId: quoteId } : {}), key: randomUUID() },
+            input: {
+              body: value,
+              ...(quoteId ? { quoteReplyId: quoteId } : {}),
+              key: randomUUID(),
+              ...(attachmentIds.length ? { attachmentIds } : {}),
+            },
           }
         : {
             kind: 'post',
@@ -270,6 +282,7 @@ function Composer({
               body: value,
               courseId: courseId || '',
               key: randomUUID(),
+              ...(attachmentIds.length ? { attachmentIds } : {}),
             },
           };
       if (input.kind === 'post' && !input.input.courseId) throw new Error('请先选择课程。');
@@ -293,11 +306,13 @@ function Composer({
       setError((e as Error).message);
     }
   };
-  const locked = busy || uncertain || disabled;
+  const locked = busy || uncertain || disabled || fileBusy;
   return (
     <View style={a.card}>
       <Text style={a.subtitle}>{postId ? '发表回复' : '新建文字话题'}</Text>
-      <Text style={a.muted}>纯文字，正文最多10000字。附件、关联资源和管理操作请使用网站。</Text>
+      <Text style={a.muted}>
+        正文最多10000字，可附上当前课程本人上传的文件。关联资源和管理操作请使用网站。
+      </Text>
       {!postId && (
         <TextInput
           accessibilityLabel="话题标题"
@@ -330,6 +345,17 @@ function Composer({
         onChangeText={setBody}
         editable={!locked}
       />
+      {courseId && (
+        <CommunicationAttachmentPicker
+          key={courseId}
+          client={client}
+          scope={{ kind: 'course', id: courseId }}
+          files={files}
+          onChange={setFiles}
+          locked={busy || uncertain || disabled}
+          onBusy={setFileBusy}
+        />
+      )}
       {error && (
         <Text accessibilityRole="alert" style={a.error}>
           {error}
@@ -483,9 +509,12 @@ export function Discussion({
               <Text selectable style={a.body}>
                 {decodeText(q.data.body)}
               </Text>
-              {q.data.attachmentCount > 0 && (
-                <Text style={a.muted}>此话题有 {q.data.attachmentCount} 个附件，请在网站查看。</Text>
-              )}
+              <ContentReport
+                client={client}
+                target={{ targetType: 'post', targetId: id }}
+                label="举报此话题"
+              />
+              <DiscussionAttachments client={client} postId={id} files={q.data.attachments || []} />
               <Text style={a.notice}>
                 {q.data.closed ? '讨论已关闭' : q.data.canReply ? '讨论开放，可回复' : '当前仅允许阅读'}
               </Text>
@@ -507,9 +536,12 @@ export function Discussion({
                 <Text selectable style={a.body}>
                   {decodeText(r.body)}
                 </Text>
-                {r.attachmentCount > 0 && (
-                  <Text style={a.muted}>回复有 {r.attachmentCount} 个附件，请在网站查看。</Text>
-                )}
+                <ContentReport
+                  client={client}
+                  target={{ targetType: 'reply', targetId: r.id }}
+                  label={'举报第 ' + (i + 1) + ' 条回复'}
+                />
+                <DiscussionAttachments client={client} postId={id} files={r.attachments || []} />
                 <AButton
                   title={'引用第 ' + (i + 1) + ' 条回复'}
                   secondary
@@ -535,6 +567,7 @@ export function Discussion({
         <Composer
           client={client}
           postId={id}
+          courseId={q.data?.courseId}
           quoteId={quote}
           clearQuote={() => setQuote(undefined)}
           disabled={!!q.error || !q.data?.canReply}

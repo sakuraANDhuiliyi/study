@@ -47,7 +47,7 @@ test(
         other = await mobile(f.users.student2.username),
         foreign = await mobile(f.users.outsider.username);
       await t.test(
-        'only native student sessions can access strict learning routes, never execution or AI',
+        'only native student sessions can access strict learning routes; execution requires its exact schema',
         async () => {
           assert.equal((await fetch(f.origin + '/api' + root)).status, 401);
           await f.call(f.clients.student, root, 'GET', undefined, 403);
@@ -62,7 +62,9 @@ test(
             '?tag=' + 'x'.repeat(61),
           ])
             await denied(student.request(root + q), 400);
-          for (const endpoint of ['submissions', 'analysis', 'draft'])
+          await denied(student.request(base + '/submissions', {}, 'POST'), 400);
+          await denied(student.request(base + '/analysis', {}, 'POST'), 400);
+          for (const endpoint of ['draft'])
             await denied(student.request(base + '/' + endpoint, {}, 'POST'), 404);
           await denied(
             student.request(base + '/learning', { revision: 0, note: 'x', userId: 'other' }, 'PATCH'),

@@ -20,6 +20,45 @@ export type SessionStorage = {
   set(value: string): Promise<void>;
   remove(): Promise<void>;
 };
+export type MobileBinary = { bytes: Uint8Array; contentType: string; filename: string };
+type MobileTransfer = {
+  multipart?: boolean;
+  binary?: boolean;
+  metadata?: boolean;
+  maxBytes?: number;
+  signal?: AbortSignal;
+};
+function transferSignal(timeout: AbortSignal, external?: AbortSignal) {
+  if (!external) return timeout;
+  const controller = new AbortController();
+  const abort = () => {
+    controller.abort();
+    timeout.removeEventListener('abort', abort);
+    external.removeEventListener('abort', abort);
+  };
+  if (timeout.aborted || external.aborted) abort();
+  else {
+    timeout.addEventListener('abort', abort, { once: true });
+    external.addEventListener('abort', abort, { once: true });
+  }
+  return controller.signal;
+}
+export function mobileDownloadFilename(disposition: string | null) {
+  const encoded = disposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const raw = disposition?.match(/filename="([^"\r\n]*)"|filename=([^;\r\n]+)/i);
+  let name = raw?.[1] || raw?.[2] || 'download.bin';
+  if (encoded) {
+    try {
+      name = decodeURIComponent(encoded);
+    } catch {}
+  }
+  name = name
+    .replace(/[\x00-\x1f\x7f/\\:*?"<>|]/g, '_')
+    .replace(/^\.+/, '')
+    .trim()
+    .slice(0, 180);
+  return name || 'download.bin';
+}
 export class MobileApiError extends Error {
   constructor(
     public status: number,
@@ -73,6 +112,7 @@ export class MobileClient {
   }
   private generation = 0;
   private refreshWork: Promise<void> | null = null;
+  private accessListeners = new Set<() => void>();
   private storageWork: Promise<void> = Promise.resolve();
   constructor(
     readonly origin: string,
@@ -96,7 +136,7 @@ export class MobileClient {
     body?: unknown,
     method = 'GET',
     token?: string,
-    transfer?: { multipart?: boolean; binary?: boolean },
+    transfer?: MobileTransfer,
   ) {
     if (!/^\/[a-zA-Z0-9][^\\]*$/.test(path) || path.startsWith('//') || path.includes('://'))
       throw new Error('请求路径无效');
@@ -114,7 +154,25 @@ export class MobileClient {
         ...(body !== undefined
           ? { body: transfer?.multipart ? (body as FormData) : JSON.stringify(body) }
           : {}),
-        signal: AbortSignal.timeout(transfer ? 60000 : 20000),
+        signal: transferSignal(
+          AbortSignal.timeout(
+            method === 'POST' &&
+              /^\/mobile\/algorithms\/problems\/[A-Za-z0-9_-]{1,100}\/submissions$/.test(path)
+              ? 75000
+              : method === 'POST' &&
+                  /^\/mobile\/algorithms\/problems\/[A-Za-z0-9_-]{1,100}\/analysis$/.test(path)
+                ? 195000
+                : method === 'POST' &&
+                    (path === '/mobile/ai-authoring/drafts' ||
+                      /^\/mobile\/ai-study\/reports(?:\/[A-Za-z0-9_-]{1,100}\/search)?$/.test(path) ||
+                      /^\/mobile\/programming\/projects\/[A-Za-z0-9_-]{1,100}\/ai-drafts$/.test(path))
+                  ? 195000
+                  : transfer
+                    ? 60000
+                    : 20000,
+          ),
+          transfer?.signal,
+        ),
       });
     } catch {
       throw new MobileApiError(0, '无法连接平台，请检查地址、网络及服务器状态。');
@@ -125,11 +183,19 @@ export class MobileClient {
         !response.headers.has('content-length') ||
         !Number.isSafeInteger(length) ||
         length < 0 ||
-        length > 50 * 1024 * 1024
+        length > Math.min(50 * 1024 * 1024, transfer.maxBytes ?? 50 * 1024 * 1024)
       )
         throw new MobileApiError(502, '文件长度无效或超过手机端下载上限。');
       const bytes = new Uint8Array(await response.arrayBuffer());
       if (bytes.byteLength !== length) throw new MobileApiError(502, '文件接收不完整，请重新下载。');
+      if (transfer.metadata)
+        return {
+          bytes,
+          contentType:
+            response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ||
+            'application/octet-stream',
+          filename: mobileDownloadFilename(response.headers.get('content-disposition')),
+        } satisfies MobileBinary;
       return bytes;
     }
     const data = await response.json().catch(() => null);
@@ -163,16 +229,58 @@ export class MobileClient {
     }
   }
   async login(username: string, password: string) {
+    return this.authenticate('/mobile/auth/login', {
+      username: username.trim(),
+      password,
+      deviceName: '知学 Android',
+    });
+  }
+  async refreshProfile() {
+    const generation = this.generation;
+    const { user } = await this.request<{ user: MobileUser }>('/mobile/auth/me');
+    if (generation !== this.generation || !this.session) return;
+    const prior = this.session.user;
+    if (
+      !user ||
+      prior.id !== user.id ||
+      prior.organizationId !== user.organizationId ||
+      prior.role !== user.role ||
+      prior.accountMode !== user.accountMode
+    ) {
+      await this.clear();
+      throw new MobileApiError(401, '账号身份已变化，请重新登录');
+    }
+    this.session = { ...this.session, user };
+    await this.save(this.session, generation);
+    if (generation === this.generation) this.changed(user);
+  }
+  async register(input: { username: string; password: string; name: string }) {
+    return this.authenticate('/mobile/auth/register', {
+      username: input.username.trim(),
+      name: input.name.trim(),
+      password: input.password,
+      deviceName: '知学 Android',
+    });
+  }
+  async recover(input: { username: string; code: string; newPassword: string }) {
+    const generation = this.generation;
+    const result = await this.wire(
+      '/mobile/auth/recover',
+      { username: input.username.trim(), code: input.code.trim(), newPassword: input.newPassword },
+      'POST',
+    );
+    if (generation !== this.generation) throw new MobileApiError(409, '登录身份已变化');
+    if (result?.ok !== true || result?.loginRequired !== true)
+      throw new MobileApiError(502, '服务器恢复响应格式无效');
+    await this.clear();
+  }
+  private async authenticate(path: string, body: unknown) {
     this.invalidateResources();
     const generation = ++this.generation;
     this.session = null;
     this.changed(null);
     await this.save(null, generation);
-    const data = await this.wire(
-      '/mobile/auth/login',
-      { username: username.trim(), password, deviceName: '知学 Android' },
-      'POST',
-    );
+    const data = await this.wire(path, body, 'POST');
     if (generation !== this.generation) throw new MobileApiError(409, '登录状态已变化，请重试');
     if (!validSession(data)) throw new MobileApiError(502, '服务器登录响应格式无效');
     this.session = data;
@@ -184,6 +292,28 @@ export class MobileClient {
     }
     if (generation === this.generation) this.changed(data.user);
   }
+  async switchRole(role: string) {
+    const generation = this.generation;
+    const data = await this.request('/mobile/auth/role', { role }, 'POST');
+    if (generation !== this.generation) throw new MobileApiError(409, '登录身份已变化');
+    if (
+      !validSession(data) ||
+      data.user.role !== role ||
+      data.user.id !== this.session?.user.id ||
+      data.user.organizationId !== this.session.user.organizationId
+    )
+      throw new MobileApiError(502, '服务器身份响应格式无效，请重新登录');
+    this.invalidateResources();
+    const next = ++this.generation;
+    this.session = data;
+    try {
+      await this.save(data, next);
+    } catch {
+      await this.clear();
+      throw new Error('无法安全保存新身份，请重新登录。');
+    }
+    if (next === this.generation) this.changed(data.user);
+  }
   private async refresh(generation: number) {
     if (this.refreshWork) return this.refreshWork;
     const session = this.session;
@@ -194,6 +324,12 @@ export class MobileClient {
       if (!validSession(data)) throw new MobileApiError(502, '服务器续期响应格式无效');
       this.session = data;
       await this.save(data, generation);
+      if (generation === this.generation)
+        for (const callback of this.accessListeners) {
+          try {
+            callback();
+          } catch {}
+        }
     })();
     this.refreshWork = work;
     try {
@@ -206,7 +342,7 @@ export class MobileClient {
     path: string,
     body?: unknown,
     method = 'GET',
-    transfer?: { multipart?: boolean; binary?: boolean },
+    transfer?: MobileTransfer,
   ): Promise<T> {
     const generation = this.generation;
     if (!this.session) throw new MobileApiError(401, '请先登录');
@@ -233,6 +369,12 @@ export class MobileClient {
   sessionEpoch() {
     return this.generation;
   }
+  onAccessTokenChanged(callback: () => void) {
+    this.accessListeners.add(callback);
+    return () => {
+      this.accessListeners.delete(callback);
+    };
+  }
   ownsSession(epoch: number) {
     return epoch === this.generation && this.session !== null;
   }
@@ -251,6 +393,47 @@ export class MobileClient {
       'GET',
       { binary: true },
     );
+  }
+  download(path: string, options: { body?: unknown; method?: 'GET' | 'POST'; maxBytes?: number } = {}) {
+    if (
+      options.maxBytes !== undefined &&
+      (!Number.isSafeInteger(options.maxBytes) || options.maxBytes < 1 || options.maxBytes > 50 * 1024 * 1024)
+    )
+      throw new Error('下载大小上限无效');
+    return this.request<MobileBinary>(path, options.body, options.method || 'GET', {
+      binary: true,
+      metadata: true,
+      maxBytes: options.maxBytes,
+    });
+  }
+  async lessonVideoSource(lessonId: string, fileId: string) {
+    if (![lessonId, fileId].every((id) => /^[A-Za-z0-9_-]{1,100}$/.test(id))) throw new Error('视频标识无效');
+    const generation = this.generation;
+    const lesson = await this.request<{
+      type: string;
+      attachmentId: string | null;
+      files: { id: string; mime: string }[];
+    }>('/mobile/lessons/' + lessonId);
+    if (
+      lesson.type !== 'VIDEO' ||
+      lesson.attachmentId !== fileId ||
+      !lesson.files.some((file) => file.id === fileId && file.mime === 'video/mp4')
+    )
+      throw new Error('当前课时没有可播放的 MP4 视频');
+    try {
+      if (this.session && Date.parse(this.session.accessExpiresAt) <= Date.now() + 5 * 60000)
+        await this.refresh(generation);
+    } catch (e) {
+      if (generation === this.generation && e instanceof MobileApiError && e.status === 401)
+        await this.clear();
+      throw e;
+    }
+    if (!this.ownsSession(generation)) throw new Error('登录身份已变化');
+    return {
+      uri: this.origin + '/api/mobile/lessons/' + lessonId + '/media/' + fileId,
+      headers: { Authorization: 'Bearer ' + this.session!.accessToken },
+      useCaching: false,
+    };
   }
   async logout() {
     await this.request('/mobile/auth/logout', {}, 'POST');

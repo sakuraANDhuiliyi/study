@@ -21,6 +21,11 @@ export function publicResource(value: string | null) {
     return null;
   }
 }
+/** Public URLs are never combined with the platform authorization headers. */
+export function publicLessonVideo(value: string | null) {
+  const uri = publicResource(value);
+  return uri ? { uri, useCaching: false } : null;
+}
 /** One in-flight write and a coalesced latest position; never replay over a conflict. */
 export class LessonProgressWriter {
   private work: Promise<void> | null = null;

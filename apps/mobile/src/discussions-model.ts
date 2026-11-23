@@ -1,3 +1,4 @@
+import type { CommunicationFile } from './communication-files-model';
 import type { MobileClient } from './client';
 export type DiscussionSummary = {
   id: string;
@@ -20,19 +21,28 @@ export type DiscussionReply = {
   createdAt: string;
   own: boolean;
   attachmentCount: number;
+  attachments: CommunicationFile[];
   quote: { id: string; authorName: string; body: string } | null;
 };
 export type DiscussionDetail = Omit<DiscussionSummary, 'replyCount'> & {
   body: string;
   attachmentCount: number;
+  attachments: CommunicationFile[];
   canReply: boolean;
   replies: DiscussionReply[];
   replyPage: { total: number; page: number; pageSize: number };
 };
 export type DiscussionReceipt = { id: string; postId: string; createdAt: string };
 export type DiscussionWrite =
-  | { kind: 'post'; input: { courseId: string; title: string; body: string; key: string } }
-  | { kind: 'reply'; postId: string; input: { body: string; quoteReplyId?: string; key: string } };
+  | {
+      kind: 'post';
+      input: { courseId: string; title: string; body: string; key: string; attachmentIds?: string[] };
+    }
+  | {
+      kind: 'reply';
+      postId: string;
+      input: { body: string; quoteReplyId?: string; key: string; attachmentIds?: string[] };
+    };
 export function discussionText(value: string, max = 10000) {
   const text = value.trim();
   if (!text || text.length > max || text.includes('\0'))

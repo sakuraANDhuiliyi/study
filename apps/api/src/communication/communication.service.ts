@@ -84,19 +84,22 @@ export class CommunicationService {
     if (write) await this.assertNotMuted(actor, id);
     return course;
   }
-  private async attachmentsFor(
+  async attachmentsFor(
     actor: Actor,
     ids: string[],
     scope: { courseId?: string; conversationId?: string },
+    db: Prisma.TransactionClient = this.db,
   ) {
     if (!ids.length) return;
     if (new Set(ids).size !== ids.length) throw new BadRequestException('附件不能重复');
-    const attachments = await this.db.attachment.findMany({
+    await db.$queryRaw`SELECT "id" FROM "Attachment" WHERE "id" IN (${Prisma.join(ids)}) AND "organizationId"=${actor.organizationId} AND "ownerId"=${actor.id} ORDER BY "id" FOR SHARE`;
+    const attachments = await db.attachment.findMany({
       where: {
         id: { in: ids },
         organizationId: actor.organizationId,
         ownerId: actor.id,
         assignmentId: null,
+        exportJobId: null,
         courseId: scope.courseId || null,
         conversationId: scope.conversationId || null,
       },
@@ -720,6 +723,11 @@ export class CommunicationService {
     let message: Message;
     try {
       message = await this.db.$transaction(async (tx) => {
+        if (actor.clientType === 'MOBILE') {
+          const fresh = await this.mobileCurrent(tx, actor);
+          await this.scoped(tx).conversationAccess(fresh, id, true);
+          await this.attachmentsFor(fresh, input.attachmentIds, { conversationId: id }, tx);
+        }
         const item = await tx.message.create({
           data: { ...key, body, attachmentIds: input.attachmentIds, organizationId: actor.organizationId },
         });
@@ -1172,13 +1180,18 @@ export class CommunicationService {
   }
 
   async readNotification(actor: Actor, id?: string) {
-    const where = { userId: actor.id, organizationId: actor.organizationId, ...(id ? { id } : {}) };
-    if (id && !(await this.db.notification.findFirst({ where }))) throw new NotFoundException('通知不存在');
-    await this.db.notification.updateMany({
-      where: { ...where, readAt: null, createdAt: { lte: new Date() } },
-      data: { readAt: new Date() },
+    const owner = { userId: actor.id, organizationId: actor.organizationId };
+    const readAt = new Date();
+    return this.db.$transaction(async (tx) => {
+      if (id && !(await tx.notification.findFirst({ where: { ...owner, id }, select: { id: true } })))
+        throw new NotFoundException('通知不存在');
+      await tx.notification.updateMany({
+        where: { ...owner, ...(id ? { id } : {}), readAt: null, createdAt: { lte: readAt } },
+        data: { readAt },
+      });
+      const unreadCount = await tx.notification.count({ where: { ...owner, readAt: null } });
+      return { success: true, unreadCount };
     });
-    return { success: true };
   }
 
   private async assignmentAttachmentScope(
@@ -1215,11 +1228,56 @@ export class CommunicationService {
     return assignment;
   }
 
+  private scoped(tx: Prisma.TransactionClient) {
+    return new CommunicationService(
+      tx as PrismaService,
+      new AuthService(tx as PrismaService),
+      this.audit,
+      this.gateway,
+      this.storage,
+      this.uploadSafety,
+    );
+  }
+  /** Revalidate a native upload/write on its commit connection after the user lock. */
+  private async mobileCurrent(tx: Prisma.TransactionClient, actor: Actor) {
+    await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id"=${actor.id} FOR SHARE`;
+    if (actor.sessionId) {
+      await tx.$queryRaw`SELECT "id" FROM "Session" WHERE "id"=${actor.sessionId} FOR SHARE`;
+      await tx.$queryRaw`SELECT "sessionId" FROM "MobileCredential" WHERE "sessionId"=${actor.sessionId} FOR SHARE`;
+    }
+    const auth = new AuthService(tx as PrismaService);
+    const current = actor.sessionId ? await auth.resolveMobileSessionId(actor.sessionId) : null;
+    if (
+      !current ||
+      current.id !== actor.id ||
+      current.organizationId !== actor.organizationId ||
+      current.role !== actor.role
+    )
+      throw new ForbiddenException('上传或发送期间手机身份已变化');
+    return current;
+  }
+  async conversationAccess(actor: Actor, id: string, write = false) {
+    const row = await this.conversation(actor, id);
+    if (write) {
+      this.auth.require(actor, 'communication.write');
+      await this.assertNotMuted(actor, undefined, row.classId || undefined);
+      if (row.kind === 'direct') {
+        const recipients = await this.conversationRecipients(row);
+        await this.assertNotBlocked(
+          actor,
+          recipients.find((id) => id !== actor.id)!,
+        );
+      }
+    }
+    return row;
+  }
+
   async upload(
     actor: Actor,
     file: Express.Multer.File | undefined,
     input: AttachmentInput,
     lease: UploadOperation,
+    validateMobile?: (tx: Prisma.TransactionClient, current: Actor) => Promise<void>,
   ) {
     this.auth.require(actor, 'file.upload');
     if (!file) throw new BadRequestException('请选择文件');
@@ -1249,7 +1307,11 @@ export class CommunicationService {
       )
     )
       throw new ForbiddenException('机构配置不允许上传此文件类型');
-    const current = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+    const current = actor.sessionId
+      ? await (actor.clientType === 'MOBILE'
+          ? this.auth.resolveMobileSessionId(actor.sessionId)
+          : this.auth.resolveSessionId(actor.sessionId))
+      : null;
     if (
       !current ||
       current.id !== actor.id ||
@@ -1267,16 +1329,32 @@ export class CommunicationService {
     const storageKey = lease.storageKey;
     await this.storage.put(storageKey, file.buffer);
     try {
-      const attachment = await this.uploadSafety.finish(actor, lease, {
-        organizationId: actor.organizationId,
-        ownerId: actor.id,
-        ...input,
-        originalName: inspected.name,
-        mime: inspected.mime,
-        size: file.buffer.length,
-        storageKey,
-        sha256: createHash('sha256').update(file.buffer).digest('hex'),
-      });
+      const attachment = await this.uploadSafety.finish(
+        actor,
+        lease,
+        {
+          organizationId: actor.organizationId,
+          ownerId: actor.id,
+          ...input,
+          originalName: inspected.name,
+          mime: inspected.mime,
+          size: file.buffer.length,
+          storageKey,
+          sha256: createHash('sha256').update(file.buffer).digest('hex'),
+        },
+        actor.clientType === 'MOBILE'
+          ? async (tx) => {
+              const fresh = await this.mobileCurrent(tx, actor),
+                scoped = this.scoped(tx);
+              scoped.auth.require(fresh, 'file.upload');
+              if (input.courseId) await scoped.auth.course(fresh, input.courseId);
+              if (input.conversationId) await scoped.conversationAccess(fresh, input.conversationId, true);
+              if (input.assignmentId)
+                await scoped.assignmentAttachmentScope(fresh, input.assignmentId, fresh.id, true);
+              if (validateMobile) await validateMobile(tx, fresh);
+            }
+          : undefined,
+      );
       return {
         id: attachment.id,
         name: attachment.originalName,

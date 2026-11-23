@@ -1,11 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppState, Linking, Text, View } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { useVideoPlayer, VideoView, type VideoSource } from 'expo-video';
 import type { MobileClient } from './client';
 import { useResource } from './resource';
 import { a, AButton, RichText } from './assignment-ui';
 import { fetchLessonFile, openLessonFile } from './lesson-files';
-import { LessonProgressWriter, lessonPosition, publicResource, type LessonDetail } from './lesson-model';
+import {
+  LessonProgressWriter,
+  lessonPosition,
+  publicResource,
+  publicLessonVideo,
+  type LessonDetail,
+} from './lesson-model';
 export function Lesson({ client, id, onSaved }: { client: MobileClient; id: string; onSaved(): void }) {
   const q = useResource<LessonDetail>(client, '/mobile/lessons/' + encodeURIComponent(id));
   const [version, setVersion] = useState(0);
@@ -52,7 +58,7 @@ function LessonBody({
   onSaved(): void;
   reload(): void;
 }) {
-  const [uri, setUri] = useState<string | null>(null),
+  const [source, setSource] = useState<VideoSource | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [saved, setSaved] = useState(false);
@@ -91,7 +97,7 @@ function LessonBody({
     mounted.current = true;
     const clear = client.onSessionInvalidated(() => {
       release.current?.();
-      setUri(null);
+      setSource(null);
     });
     return () => {
       mounted.current = false;
@@ -100,21 +106,69 @@ function LessonBody({
     };
   }, [client]);
   const external = publicResource(lesson.resourceUrl);
+  const privateVideo = lesson.type === 'VIDEO' && resource?.mime === 'video/mp4';
+  useEffect(() => {
+    if (!source || !privateVideo || !resource) return;
+    let active = true,
+      inFlight = false;
+    const renew = async () => {
+      if (inFlight || AppState.currentState !== 'active') return;
+      inFlight = true;
+      try {
+        const next = await client.lessonVideoSource(lesson.id, resource.id);
+        if (active && mounted.current && client.ownsSession(epoch)) setSource(next);
+      } catch (e) {
+        if (active && mounted.current) {
+          setSource(null);
+          setError((e as Error).message);
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+    const timer = setInterval(() => void renew(), 4 * 60000),
+      subscription = AppState.addEventListener('change', (state) => {
+        if (state === 'active') void renew();
+      }),
+      stopToken = client.onAccessTokenChanged(() => void renew());
+    return () => {
+      active = false;
+      clearInterval(timer);
+      subscription.remove();
+      stopToken();
+    };
+  }, [client, lesson.id, resource, privateVideo, !!source, epoch]);
   return (
     <View style={a.card}>
       <Text style={a.subtitle}>{lesson.title}</Text>
       <RichText html={lesson.content || '本课时暂无文字内容。'} />
-      {lesson.type === 'VIDEO' && resource && !uri && (
+      {lesson.type === 'VIDEO' && resource && !source && (
         <>
           <Text style={a.muted}>
-            下载到私有临时缓存后播放，退出课时即清理。单次上限50 MiB，大文件请在网页查看。
+            {privateVideo
+              ? '按需分段加载课程 MP4，可前后跳转并继续上次播放位置；每次加载均核验当前课程权限。'
+              : '此格式使用私有临时缓存播放，单次上限 50 MiB；也可下载后使用设备兼容应用打开。'}
           </Text>
           <AButton
             title={busy ? '正在准备视频…' : '加载课程视频'}
-            disabled={busy || resource.size > 50 * 1024 * 1024}
+            disabled={busy || (!privateVideo && resource.size > 50 * 1024 * 1024)}
             onPress={() => {
               setBusy(true);
               setError('');
+              if (privateVideo) {
+                void client
+                  .lessonVideoSource(lesson.id, resource.id)
+                  .then((next) => {
+                    if (mounted.current && client.ownsSession(epoch)) setSource(next);
+                  })
+                  .catch((e) => {
+                    if (mounted.current) setError(e.message);
+                  })
+                  .finally(() => {
+                    if (mounted.current) setBusy(false);
+                  });
+                return;
+              }
               void fetchLessonFile(client, lesson.id, resource)
                 .then((f) => {
                   if (!mounted.current) {
@@ -123,7 +177,7 @@ function LessonBody({
                   }
                   release.current?.();
                   release.current = f.dispose;
-                  setUri(f.uri);
+                  setSource({ uri: f.uri, useCaching: false });
                 })
                 .catch((e) => {
                   if (mounted.current) setError(e.message);
@@ -135,9 +189,23 @@ function LessonBody({
           />
         </>
       )}
-      {uri && (
+      {lesson.type === 'VIDEO' && !resource && external && !source && (
+        <>
+          <Text style={a.muted}>
+            公开外部 HTTPS 视频由原生播放器直接加载，不发送学习平台登录凭据。网页型资源可使用下方浏览器入口。
+          </Text>
+          <AButton
+            title="播放公开课程视频"
+            onPress={() => {
+              setError('');
+              setSource(publicLessonVideo(external));
+            }}
+          />
+        </>
+      )}
+      {source && (
         <LessonVideo
-          uri={uri}
+          source={source}
           initial={lesson.progress?.positionSeconds || 0}
           position={position}
           save={() => saveRef.current()}
@@ -155,13 +223,13 @@ function LessonBody({
         <Text style={a.muted}>此资源链接不能在安全手机环境中打开，请联系教师改用HTTPS。</Text>
       )}
       {lesson.files
-        .filter((f) => lesson.type !== 'VIDEO' || f.id !== lesson.attachmentId)
+        .filter((f) => lesson.type !== 'VIDEO' || f.id !== lesson.attachmentId || f.mime !== 'video/mp4')
         .map((f) => (
           <AButton
             key={f.id}
             secondary
             disabled={busy}
-            title={'下载资料：' + f.name}
+            title={'打开或保存资料：' + f.name}
             onPress={() => {
               setBusy(true);
               void openLessonFile(client, lesson.id, f)
@@ -174,6 +242,13 @@ function LessonBody({
             }}
           />
         ))}
+      {!!lesson.files.length && (
+        <Text style={a.muted}>
+          文档由 Android
+          系统交给本机兼容应用打开或保存，平台不上传给第三方在线查看器。如未出现可用阅读器，可先保存文件再用
+          PDF、Office 等本机应用打开。
+        </Text>
+      )}
       {error ? (
         <>
           <Text style={a.error}>{error}</Text>
@@ -217,13 +292,13 @@ function LessonBody({
   );
 }
 function LessonVideo({
-  uri,
+  source,
   initial,
   position,
   save,
   blocked,
 }: {
-  uri: string;
+  source: VideoSource;
   initial: number;
   position: React.MutableRefObject<number>;
   save(): Promise<void>;
@@ -239,15 +314,30 @@ function LessonVideo({
     p.loop = false;
   });
   const callback = useRef(save);
+  const resumeAfterReplace = useRef(false);
   callback.current = save;
-  useEffect(() => {
+  // Expo releases its native player in a passive cleanup. Detach this source's
+  // listeners during layout cleanup, while that same player is still valid.
+  useLayoutEffect(() => {
+    let active = true;
     let loaded = false;
+    const savePlayback = () =>
+      void callback.current().catch(() => {
+        if (active) player.pause();
+      });
+    const start = lessonPosition(position.current),
+      resume = resumeAfterReplace.current;
+    resumeAfterReplace.current = false;
+    player.pause();
+    setReady(false);
+    setError('');
     const load = player.addListener('sourceLoad', (e) => {
       if (!loaded) {
         loaded = true;
-        player.currentTime = Math.min(lessonPosition(initial), Math.max(0, e.duration - 1));
-        setTime(Math.min(lessonPosition(initial), Math.max(0, e.duration - 1)));
+        player.currentTime = Math.min(start, Math.max(0, e.duration - 1));
+        setTime(Math.min(start, Math.max(0, e.duration - 1)));
         setReady(true);
+        if (resume && AppState.currentState === 'active') player.play();
       }
     });
     const tick = player.addListener('timeUpdate', (e) => {
@@ -258,18 +348,18 @@ function LessonVideo({
     const status = player.addListener('statusChange', (e) => {
       if (e.status === 'error') {
         player.pause();
-        setError('视频无法播放，请检查资源格式，或在网页中查看。');
+        setError('视频暂时无法播放。请重新加载课时核对权限与格式；外部网页型资源可用浏览器打开。');
       }
     });
     const change = player.addListener('playingChange', (e) => {
       setPlaying(e.isPlaying);
     });
-    const end = player.addListener('playToEnd', () => {
-      void callback.current().catch(() => player.pause());
+    const end = player.addListener('playToEnd', savePlayback);
+    void player.replaceAsync(source).catch(() => {
+      if (active) setError('视频加载失败，请重新打开课时。');
     });
-    void player.replaceAsync(uri).catch(() => setError('视频加载失败，请重新打开课时。'));
     const timer = setInterval(() => {
-      if (AppState.currentState === 'active' && loaded) void callback.current().catch(() => player.pause());
+      if (AppState.currentState === 'active' && loaded) savePlayback();
     }, 15000);
     const state = AppState.addEventListener('change', (v) => {
       if (v !== 'active') {
@@ -278,6 +368,7 @@ function LessonVideo({
       }
     });
     return () => {
+      active = false;
       load.remove();
       tick.remove();
       status.remove();
@@ -285,9 +376,11 @@ function LessonVideo({
       end.remove();
       state.remove();
       clearInterval(timer);
+      resumeAfterReplace.current = player.playing;
+      player.pause();
       void callback.current().catch(() => {});
     };
-  }, [player, initial, position, uri]);
+  }, [player, initial, position, source]);
   useEffect(() => {
     if (blocked) player.pause();
   }, [blocked, player]);

@@ -26,6 +26,7 @@ export const listSchema = z.object({
   knowledgePoint: text(100).optional(),
   chapterId: id.optional(),
 });
+export const recordListSchema = listSchema.extend({ recordId: id.optional() });
 
 const content = z.object({
   type: z.enum(['single', 'multiple', 'boolean', 'blank', 'short', 'composite']),

@@ -25,13 +25,13 @@ test('discussion composer validates the actual trimmed Unicode length and refuse
     assert.throws(() => discussionText(value));
   assert.throws(() => discussionText('题'.repeat(161), 160));
 });
-test('native discussion write schemas reject forged authors, attachments, moderation and invalid request identity', () => {
+test('native discussion write schemas reject forged authors, duplicate attachments, moderation and invalid request identity', () => {
   const p = { courseId: 'course', title: 'Title', body: 'Body', key: 'a'.repeat(8) };
   assert.ok(mobilePostSchema.safeParse(p).success);
   for (const input of [
     { ...p, authorId: 'teacher' },
     { ...p, pinned: true },
-    { ...p, attachmentIds: [] },
+    { ...p, attachmentIds: ['same', 'same'] },
     { ...p, key: '../invalid/key' },
     { ...p, key: 'short' },
     { ...p, body: 'a\0b' },

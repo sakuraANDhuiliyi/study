@@ -145,6 +145,7 @@ type Snapshot = {
   organizationId: string;
   userId: string;
   sessionId: string;
+  clientType?: string;
   createdAt: number;
   expiresAt: number;
   nonce: string;
@@ -272,7 +273,11 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
   ) {
     if (!this.ready) throw new ServiceUnavailableException(this.status().reason);
     const checked = programmingFilesSchema.parse(files);
-    const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+    const fresh = actor.sessionId
+      ? actor.clientType === 'MOBILE'
+        ? await this.auth.resolveMobileSessionId(actor.sessionId)
+        : await this.auth.resolveSessionId(actor.sessionId)
+      : null;
     if (
       !fresh ||
       fresh.id !== actor.id ||
@@ -307,6 +312,7 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
       organizationId: fresh.organizationId,
       userId: fresh.id,
       sessionId: fresh.sessionId!,
+      clientType: fresh.clientType,
       files: checked.map((file) => ({ ...file })),
       createdAt: Date.now(),
       expiresAt,
@@ -386,7 +392,10 @@ export class ProgrammingPreviewService implements OnModuleInit, OnModuleDestroy 
       userId = snapshot.userId;
       this.active++;
       this.activeUsers.set(userId, activeUser + 1);
-      const actor = await this.auth.resolveSessionId(snapshot.sessionId);
+      const actor =
+        snapshot.clientType === 'MOBILE'
+          ? await this.auth.resolveMobileSessionId(snapshot.sessionId)
+          : await this.auth.resolveSessionId(snapshot.sessionId);
       if (
         !actor ||
         actor.id !== snapshot.userId ||

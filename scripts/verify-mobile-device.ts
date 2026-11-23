@@ -4,8 +4,10 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
+import { connect, createServer as createTcpServer, type Server as TcpServer, type Socket } from 'node:net';
 import { resolve } from 'node:path';
 import { chromium, expect } from '@playwright/test';
+import { verifyMobileRoles } from './mobile-role-acceptance';
 import { prepareMobileHierarchy } from './mobile-hierarchy';
 import { createLiveFixture, liveWait, runFixtureJobs } from '../tests/live.fixture';
 import { attachLogin, installMedia, inbound } from '../tests/live-browser.fixture';
@@ -201,6 +203,9 @@ async function main() {
   const reverse: string[] = [];
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   let discussionProxy: Server | undefined;
+  let rolesProxy: TcpServer | undefined;
+  let rolesConnected = true;
+  const rolesSockets = new Set<Socket>();
   const checks: string[] = [];
   const passed = (name: string) => {
     checks.push(name);
@@ -278,8 +283,43 @@ async function main() {
       maxParticipants: 10,
     });
 
+    let deviceApiPort = Number(new URL(f.origin).port);
+    if (process.env.MOBILE_TEST_SCOPE === 'roles') {
+      const apiPort = deviceApiPort;
+      // ADB removing a reverse listener leaves existing keep-alive connections alive.
+      // Forward real bytes from the first login, then sever this fixture's sockets to go offline.
+      rolesProxy = createTcpServer((downstream) => {
+        if (!rolesConnected) {
+          downstream.destroy();
+          return;
+        }
+        const upstream = connect({ host: '127.0.0.1', port: apiPort });
+        const close = () => {
+          downstream.destroy();
+          upstream.destroy();
+        };
+        for (const socket of [downstream, upstream]) {
+          rolesSockets.add(socket);
+          socket.once('close', () => {
+            rolesSockets.delete(socket);
+            close();
+          });
+          socket.once('error', close);
+        }
+        downstream.pipe(upstream);
+        upstream.pipe(downstream);
+      });
+      await new Promise<void>((done, reject) => {
+        rolesProxy!.once('error', reject);
+        rolesProxy!.listen(0, '127.0.0.1', () => {
+          rolesProxy!.removeListener('error', reject);
+          done();
+        });
+      });
+      deviceApiPort = (rolesProxy.address() as { port: number }).port;
+    }
     for (const [device, host] of [
-      [3030, Number(new URL(f.origin).port)],
+      [3030, deviceApiPort],
       [f.rtcTcp, f.rtcTcp],
     ]) {
       const key = 'tcp:' + device;
@@ -313,6 +353,34 @@ async function main() {
     await find('你好，学生甲');
     screenshot('android-home');
     passed('install, native login and learning home');
+    if (process.env.MOBILE_TEST_SCOPE === 'roles') {
+      await verifyMobileRoles(f, {
+        tap: (label) => (label === '首页' ? click(label) : scroll(label)),
+        find,
+        type,
+        screenshot,
+        passed,
+        resetToLogin: () => {
+          run('shell', 'pm', 'clear', pkg);
+          run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+        },
+        setApiConnected: (connected) => {
+          assert.ok(rolesProxy?.listening, 'Offline verification requires the owned TCP gate');
+          rolesConnected = connected;
+          if (!connected) for (const socket of rolesSockets) socket.destroy();
+        },
+        resetLogin: async (username, password, name) => {
+          run('shell', 'pm', 'clear', pkg);
+          run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
+          await type('账号', username);
+          await type('密码', password);
+          await scroll('登录学习平台');
+          await find('你好，' + name);
+        },
+      });
+      writeFileSync(resolve(output, 'roles-report.json'), JSON.stringify({ apkSha256, checks }, null, 2));
+      return;
+    }
     await click('课程');
     await click(f.course.title);
     await scroll(lesson.title);
@@ -376,7 +444,7 @@ async function main() {
     run('shell', 'am', 'start', '-n', pkg + '/.MainActivity');
     await find('播放视频');
     passed('backgrounding pauses native playback without automatically restarting audio');
-    await scroll('下载资料：native-course-notes.txt');
+    await scroll('打开或保存资料：native-course-notes.txt');
     await poll(
       nodes,
       (ns) =>
@@ -1037,6 +1105,10 @@ async function main() {
     await inboxScroll('学习通知');
     await find('我的学习通知');
     await find('未读 12 条通知');
+    assert.ok(!nodes().some((node) => match(node, '系统远程通知')));
+    await inboxScroll('系统通知设置');
+    await inboxScroll('系统远程通知');
+    await inboxScroll('收起系统通知设置');
     assert.ok(!nodes().some((n) => /INBOX-PRIVATE|OTHER-STUDENT-NOTICE/.test(n.text || '')));
     screenshot('android-inbox');
     passed(
@@ -1080,7 +1152,7 @@ async function main() {
       },
     });
     await click('确认本页已读');
-    await find('未读 2 条通知');
+    await inboxScroll('未读 2 条通知');
     assert.equal(
       (await f.db.notification.findUniqueOrThrow({ where: { id: newestNotice.id } })).readAt,
       null,
@@ -1842,7 +1914,7 @@ async function main() {
     await type('练习题目数量', '6');
     await practiceScroll('开始本次练习');
     await find('自主练习与复盘');
-    let practice = (await f.call(f.clients.student, '/practice?pageSize=1')).body.items[0];
+    const practice = (await f.call(f.clients.student, '/practice?pageSize=1')).body.items[0];
     let practiceDetail = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
     assert.equal(practiceDetail.items.length, 6);
     assert.equal(practiceDetail.answers.length, 0);
@@ -1889,7 +1961,7 @@ async function main() {
     await practiceScroll('练习位置与标记已保存');
     await practiceScroll('下一道练习题');
     await practiceScroll('练习第 2 / 6 题');
-    let savedPractice = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
+    const savedPractice = (await f.call(f.clients.student, '/practice/' + practice.id)).body;
     assert.equal(savedPractice.currentPosition, 1);
     assert.deepEqual(savedPractice.flags, [practiceDetail.items[0].id]);
     run('shell', 'am', 'force-stop', pkg);
@@ -2319,6 +2391,11 @@ async function main() {
     );
     throw new Error(f.safe((error as Error).message));
   } finally {
+    if (rolesProxy) {
+      rolesConnected = false;
+      for (const socket of rolesSockets) socket.destroy();
+      await new Promise<void>((done) => rolesProxy!.close(() => done()));
+    }
     if (discussionProxy) {
       discussionProxy.closeAllConnections();
       await new Promise<void>((done) => discussionProxy!.close(() => done()));

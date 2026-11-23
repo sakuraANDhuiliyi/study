@@ -1,4 +1,13 @@
-import { Controller, Get, Query, UseGuards, Res, ForbiddenException } from '@nestjs/common';
+import { GradingQueueService, gradingAllowed } from '../assessment/grading-queue.service';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Res,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { PrismaService } from '../common/prisma.service';
 import { AuthService } from '../auth/auth.service';
@@ -7,6 +16,7 @@ import { AuditService } from '../common/audit.service';
 import { CoursesController } from '../courses/courses.controller';
 import { csvCell } from '../common/utils';
 import { StudentOverviewService } from './student-overview.service';
+import { analyticsReportCsv } from './analytics-report-csv';
 import type { Response } from 'express';
 @ApiTags('工作台与学习分析')
 @ApiCookieAuth()
@@ -18,6 +28,7 @@ export class AnalyticsController {
     private auth: AuthService,
     private audit: AuditService,
     private overview: StudentOverviewService,
+    private gradingQueue: GradingQueueService,
   ) {}
   @Get('dashboard') async dashboard(@CurrentActor() a: Actor) {
     if (a.role === 'STUDENT') this.overview.requireStudent(a);
@@ -26,50 +37,54 @@ export class AnalyticsController {
     const courseController = new CoursesController(this.db, this.auth, this.audit);
     const courses = (await courseController.list(a, { pageSize: '6' })).items;
     const [assignments, exams, progress, unread, announcements, logs] = await Promise.all([
-      this.db.assignment.findMany({
-        where: {
-          courseId: { in: courseIds },
-          dueAt: { gt: now },
-          ...(a.role === 'STUDENT'
-            ? {
-                organizationId: a.organizationId,
-                status: 'published',
-                opensAt: { lte: now },
-                audience: { some: { userId: a.id } },
-                exceptions: { none: { userId: a.id, exempt: true } },
-              }
-            : {}),
-        },
-        orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
-        take: 100,
-        include: {
-          submissions: {
-            where: a.role === 'STUDENT' ? { userId: a.id, status: 'submitted' } : {},
-            select: { id: true, userId: true, gradingStatus: true },
-          },
-        },
-      }),
-      this.db.exam.findMany({
-        where: {
-          courseId: { in: courseIds },
-          endsAt: { gt: now },
-          ...(a.role === 'STUDENT'
-            ? {
-                organizationId: a.organizationId,
-                status: 'published',
-                audience: { some: { userId: a.id, eligible: true } },
-              }
-            : {}),
-        },
-        orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
-        take: 100,
-        include: {
-          attempts: {
-            where: a.role === 'STUDENT' ? { userId: a.id } : {},
-            select: { id: true, userId: true, status: true, gradingStatus: true },
-          },
-        },
-      }),
+      a.role === 'TEACHER'
+        ? []
+        : this.db.assignment.findMany({
+            where: {
+              courseId: { in: courseIds },
+              dueAt: { gt: now },
+              ...(a.role === 'STUDENT'
+                ? {
+                    organizationId: a.organizationId,
+                    status: 'published',
+                    opensAt: { lte: now },
+                    audience: { some: { userId: a.id } },
+                    exceptions: { none: { userId: a.id, exempt: true } },
+                  }
+                : {}),
+            },
+            orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
+            take: 100,
+            include: {
+              submissions: {
+                where: a.role === 'STUDENT' ? { userId: a.id, status: 'submitted' } : {},
+                select: { id: true, userId: true, gradingStatus: true },
+              },
+            },
+          }),
+      a.role === 'TEACHER'
+        ? []
+        : this.db.exam.findMany({
+            where: {
+              courseId: { in: courseIds },
+              endsAt: { gt: now },
+              ...(a.role === 'STUDENT'
+                ? {
+                    organizationId: a.organizationId,
+                    status: 'published',
+                    audience: { some: { userId: a.id, eligible: true } },
+                  }
+                : {}),
+            },
+            orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+            take: 100,
+            include: {
+              attempts: {
+                where: a.role === 'STUDENT' ? { userId: a.id } : {},
+                select: { id: true, userId: true, status: true, gradingStatus: true },
+              },
+            },
+          }),
       this.db.learningProgress.findMany({
         where: { courseId: { in: courseIds }, ...(a.role === 'STUDENT' ? { userId: a.id } : {}) },
         orderBy: { updatedAt: 'desc' },
@@ -90,7 +105,7 @@ export class AnalyticsController {
         take: 500,
       }),
     ]);
-    const [completedCount, pendingCount, upcomingCount, gradingCount, examGradingCount] = await Promise.all([
+    const [completedCount, pendingCount, upcomingCount, grading] = await Promise.all([
       this.db.learningProgress.count({
         where: {
           userId: a.id,
@@ -129,16 +144,9 @@ export class AnalyticsController {
               audience: { some: { userId: a.id, eligible: true } },
             },
           }),
-      this.db.assignmentSubmission.count({
-        where: { assignment: { courseId: { in: courseIds } }, status: 'submitted', gradingStatus: 'pending' },
-      }),
-      this.db.examAttempt.count({
-        where: {
-          exam: { courseId: { in: courseIds } },
-          status: { in: ['submitted', 'timed_out'] },
-          gradingStatus: 'pending',
-        },
-      }),
+      a.role === 'TEACHER' && gradingAllowed(a)
+        ? this.gradingQueue.read(a, { type: 'all', page: 1, pageSize: 5 })
+        : undefined,
     ]);
     const taskCourses = await this.db.course.findMany({
       where: { id: { in: [...new Set([...assignments, ...exams].map((x) => x.courseId))] } },
@@ -183,8 +191,18 @@ export class AnalyticsController {
     else if (a.role === 'TEACHER')
       metrics = [
         { label: '授课课程', value: courseIds.length, detail: '当前授课关系', path: '/courses' },
-        { label: '待批改作业', value: gradingCount, detail: '包含待人工批阅提交', path: '/assignments' },
-        { label: '待阅卷答卷', value: examGradingCount, detail: '正式成绩尚未完成', path: '/exams' },
+        {
+          label: '待批改作业',
+          value: grading?.pendingAssignments ?? 0,
+          detail: '待人工批阅的已提交版本',
+          path: grading ? '/grading?type=assignment' : '/assignments',
+        },
+        {
+          label: '待阅卷答卷',
+          value: grading?.pendingExams ?? 0,
+          detail: '授权范围内待阅的答卷',
+          path: grading ? '/grading?type=exam' : '/exams',
+        },
         { label: '未读通知', value: unread, detail: '教学与交流提醒', path: '/notifications' },
       ];
     else {
@@ -252,7 +270,17 @@ export class AnalyticsController {
       metrics,
       ...(learningOverview ? { learningOverview } : {}),
       courses,
-      tasks,
+      ...(grading ? { gradingQueue: grading } : {}),
+      tasks: grading
+        ? grading.items.map((row) => ({
+            id: row.id,
+            title: row.title,
+            type: row.type,
+            courseTitle: row.courseTitle,
+            path: row.targetPath,
+            submittedAt: row.submittedAt,
+          }))
+        : tasks,
       unread,
       announcements,
       activity: progress.slice(0, 5).map((p) => ({
@@ -323,6 +351,7 @@ export class AnalyticsController {
         }),
       ]);
       return {
+        hasExportData: false,
         metrics: [
           { label: '机构账号', value: users, detail: '包含停用账号' },
           { label: '课程', value: courses, detail: '当前筛选范围' },
@@ -598,6 +627,8 @@ export class AnalyticsController {
     });
     const eligiblePractice = practice.filter((x) => x.correct !== null);
     return {
+      hasExportData:
+        scores.length > 0 || eligiblePractice.length > 0 || (a.role !== 'STUDENT' && expectedSubmissions > 0),
       taskSummary,
       questionStats,
       classComparison,
@@ -649,13 +680,25 @@ export class AnalyticsController {
     @Query() q: Record<string, string>,
     @Res() res: Response,
   ) {
-    this.auth.require(a, 'data.export');
+    const completeReport = q.format === 'report';
+    if (completeReport && a.role === 'STUDENT') this.overview.requireStudent(a);
+    else this.auth.require(a, 'data.export');
     if (['ADMIN', 'SUPER_ADMIN'].includes(a.role) && !a.permissions.includes('analysis.sensitive'))
       throw new ForbiddenException('未获教学统计敏感授权');
     const report = await this.analytics(a, q);
+    if (completeReport && !report.hasExportData) throw new BadRequestException('当前筛选暂无可导出数据');
     await this.audit.record(a, 'analytics.export', 'Course', q.courseId || 'all', {
       count: report.scoreTrend.length,
+      ...(completeReport ? { format: 'report', knowledgePointCount: report.knowledgePoints.length } : {}),
     });
+    res.set('Cache-Control', 'private, no-store');
+    if (completeReport) {
+      res
+        .type('text/csv; charset=utf-8')
+        .attachment('learning-analysis.csv')
+        .send(analyticsReportCsv(report, a.role !== 'STUDENT'));
+      return;
+    }
     const rows = [
       ['任务', '百分制成绩', '时间', '学生ID'],
       ...report.scoreTrend.map((s: any) => [s.name, s.score, s.date, s.userId]),

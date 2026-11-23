@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Actor, AuthGuard, CurrentActor } from '../auth/auth.guard';
 import { NotesService } from './notes.service';
@@ -11,7 +11,27 @@ export class NotesController {
   constructor(private readonly notes: NotesService) {}
   @Get('notes')
   list(@CurrentActor() actor: Actor, @Query() query: Record<string, string>) {
-    return this.notes.list(actor, query);
+    return 'source' in query ? this.notes.listCombined(actor, query) : this.notes.list(actor, query);
+  }
+  @Get('notes/standalone')
+  listStandalone(@CurrentActor() actor: Actor, @Query() query: Record<string, string>) {
+    return this.notes.listCombined(actor, { ...query, source: 'standalone' });
+  }
+  @Post('notes/standalone')
+  createStandalone(@CurrentActor() actor: Actor, @Body() body: unknown) {
+    return this.notes.createStandalone(actor, body);
+  }
+  @Get('notes/standalone/:id')
+  readStandalone(@CurrentActor() actor: Actor, @Param('id') id: string) {
+    return this.notes.readStandalone(actor, id);
+  }
+  @Patch('notes/standalone/:id')
+  updateStandalone(@CurrentActor() actor: Actor, @Param('id') id: string, @Body() body: unknown) {
+    return this.notes.updateStandalone(actor, id, body);
+  }
+  @Delete('notes/standalone/:id')
+  removeStandalone(@CurrentActor() actor: Actor, @Param('id') id: string, @Body() body: unknown) {
+    return this.notes.removeStandalone(actor, id, body);
   }
   @Get('lessons/:id/note')
   read(@CurrentActor() actor: Actor, @Param('id') id: string) {

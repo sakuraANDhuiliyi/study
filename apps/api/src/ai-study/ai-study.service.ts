@@ -54,7 +54,11 @@ export class AiStudyService {
     this.auth.require(actor, 'course.read');
   }
   private async freshActor(actor: Actor) {
-    const fresh = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+    const fresh = actor.sessionId
+      ? await (actor.clientType === 'MOBILE'
+          ? this.auth.resolveMobileSessionId(actor.sessionId)
+          : this.auth.resolveSessionId(actor.sessionId))
+      : null;
     if (!fresh || fresh.id !== actor.id || fresh.organizationId !== actor.organizationId)
       throw new ForbiddenException('当前学习会话已失效');
     this.requireStudent(fresh);
@@ -155,8 +159,22 @@ export class AiStudyService {
     }
     return { mistakes, sources };
   }
-  private async lock(tx: Tx, actor: Actor) {
+  private async lock(tx: Tx, actor: Actor, checkNative = true) {
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`ai-study:${actor.organizationId}:${actor.id}`}))`;
+    if (checkNative && actor.clientType === 'MOBILE') {
+      const auth = new AuthService(tx as PrismaService);
+      const current = actor.sessionId ? await auth.resolveMobileSessionId(actor.sessionId) : null;
+      if (
+        !current ||
+        current.id !== actor.id ||
+        current.organizationId !== actor.organizationId ||
+        current.role !== actor.role ||
+        current.accountMode !== actor.accountMode
+      )
+        throw new ForbiddenException('当前手机学习会话已失效');
+      this.requireStudent(current);
+      await auth.checkFeature(current, '/api/ai-study');
+    }
   }
   private async recover(tx: Tx, actor: Actor) {
     const now = new Date();
@@ -268,7 +286,7 @@ export class AiStudyService {
   private async fail(actor: Actor, operationId: string, code: string) {
     const message = safeErrors[code] || FAILED;
     await this.db.$transaction(async (tx) => {
-      await this.lock(tx, actor);
+      await this.lock(tx, actor, false);
       const operation = await tx.aiStudyOperation.findUnique({ where: { id: operationId } });
       if (!operation || operation.status !== 'pending') return;
       await tx.aiStudyOperation.update({
@@ -385,6 +403,7 @@ export class AiStudyService {
       reflection: input.reflection,
     });
     try {
+      if (actor.clientType === 'MOBILE') await this.owned(await this.freshActor(actor), operation.reportId!);
       const analysis = await this.gateway.analyze(selected.mistakes, input.reflection);
       const fresh = await this.freshActor(actor);
       await this.owned(fresh, operation.reportId!);
@@ -405,6 +424,7 @@ export class AiStudyService {
       throw new ServiceUnavailableException(this.gateway.getStatus().search.reason);
     const operation = await this.reserve(actor, 'search', id);
     try {
+      if (actor.clientType === 'MOBILE') await this.owned(await this.freshActor(actor), id);
       const result = await this.gateway.search(query);
       const fresh = await this.freshActor(actor);
       await this.owned(fresh, id);
@@ -504,6 +524,7 @@ export class AiStudyService {
     const limits = this.gateway.getLimits(),
       operation = await this.reserve(actor, 'download', id);
     try {
+      if (actor.clientType === 'MOBILE') await this.owned(await this.freshActor(actor), id);
       const result = await downloadStudySource(source.url, {
         maxBytes: limits.maxDownloadMb * 1024 * 1024,
         timeoutMs: limits.downloadTimeoutMs,

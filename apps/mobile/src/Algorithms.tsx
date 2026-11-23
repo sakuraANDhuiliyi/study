@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
 import type { MobileClient } from './client';
 import { MobileApiError } from './client';
 import type { LeaveGuard } from './Assignments';
 import { useResource } from './resource';
 import { a, AButton } from './assignment-ui';
+import { AlgorithmWorkspace } from './AlgorithmWorkspace';
 import {
   algorithmNote,
   algorithmsApi,
@@ -18,7 +19,17 @@ import {
 } from './algorithms-model';
 const difficulty = { easy: '入门', medium: '进阶', hard: '挑战' };
 const review = { none: '未标记', review: '待复习', mastered: '已掌握' };
-export function Algorithms({ client, open }: { client: MobileClient; open(id: string): void }) {
+export function Algorithms({
+  client,
+  open,
+  training,
+  forum,
+}: {
+  client: MobileClient;
+  open(id: string): void;
+  training?(): void;
+  forum?(): void;
+}) {
   const [search, setSearch] = useState(''),
     [tag, setTag] = useState(''),
     [query, setQuery] = useState({ q: '', tag: '' }),
@@ -44,8 +55,12 @@ export function Algorithms({ client, open }: { client: MobileClient; open(id: st
   return (
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={a.page}>
       <Text style={a.title}>算法学习与复习</Text>
+      <View style={a.row}>
+        {training && <AButton title="私人算法训练计划" secondary onPress={training} />}
+        {forum && <AButton title="算法论坛" secondary onPress={forum} />}
+      </View>
       <Text style={a.muted}>
-        阅读题目与题解，保存本人的收藏、复习状态和私人笔记。代码编辑、运行判题、训练计划和论坛请使用网站。
+        阅读题目与题解，编辑代码、运行样例并正式提交，保存本人的草稿、收藏、复习状态和私人笔记。
       </Text>
       <TextInput
         accessibilityLabel="搜索算法题"
@@ -180,12 +195,16 @@ export function Algorithm({
   open,
   editorial,
   registerLeave,
+  training,
+  forum,
 }: {
   client: MobileClient;
   id: string;
   open(id: string): void;
   editorial(id: string): void;
   registerLeave(g: LeaveGuard): void;
+  training?(): void;
+  forum?(problemId: string): void;
 }) {
   const q = useResource<AlgorithmDetail>(
     client,
@@ -202,6 +221,19 @@ export function Algorithm({
   const flight = useRef(false),
     mounted = useRef(true),
     pending = useRef<{ base: AlgorithmState; intent: AlgorithmEdit } | null>(null);
+  const codeLeave = useRef<LeaveGuard>(null),
+    learningLeave = useRef<LeaveGuard>(null);
+  const registerCodeLeave = useCallback((guard: LeaveGuard) => {
+    codeLeave.current = guard;
+  }, []);
+  useEffect(() => {
+    registerLeave((proceed) => {
+      const next = () => (learningLeave.current ? learningLeave.current(proceed) : proceed());
+      if (codeLeave.current) codeLeave.current(next);
+      else next();
+    });
+    return () => registerLeave(null);
+  }, [registerLeave]);
   const dirty = Boolean(snapshot && !sameAlgorithmEdit(snapshot, edit));
   const accept = (state: AlgorithmState, notice = '') => {
     setSnapshot(state);
@@ -231,7 +263,7 @@ export function Algorithm({
     } else if (!latest) setBlocked(false);
   }, [q.data, q.error]);
   useEffect(() => {
-    registerLeave(
+    learningLeave.current =
       dirty || busy || uncertain
         ? (proceed) => {
             if (flight.current) {
@@ -249,9 +281,10 @@ export function Algorithm({
               ],
             );
           }
-        : null,
-    );
-    return () => registerLeave(null);
+        : null;
+    return () => {
+      learningLeave.current = null;
+    };
   }, [dirty, busy, uncertain]);
   const save = async () => {
     if (!snapshot || flight.current || blocked || q.error) return;
@@ -333,11 +366,17 @@ export function Algorithm({
       { text: '舍弃并加载', style: 'destructive', onPress: () => accept(latest, '已加载服务器最新学习记录') },
     ]);
   };
-  const data = q.error ? undefined : q.data,
+  // A temporary background read failure must not unmount and discard unsaved code.
+  // Session invalidation still clears the workspace through the client's identity hook.
+  const data = q.data,
     disabled = busy || blocked || uncertain || !snapshot || Boolean(q.error);
   return (
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={a.page}>
       <Text style={a.title}>算法题目与学习记录</Text>
+      <View style={a.row}>
+        {training && <AButton title="私人算法训练计划" secondary onPress={training} />}
+        {forum && <AButton title="本题算法讨论" secondary onPress={() => forum(id)} />}
+      </View>
       <AButton title="刷新算法题目" secondary disabled={busy} onPress={q.reload} />
       {q.loading && <Text style={a.muted}>正在核对题目与本人学习记录…</Text>}
       {q.error && <Text style={a.error}>{q.error}</Text>}
@@ -394,6 +433,7 @@ export function Algorithm({
               onPress={() => editorial(id)}
             />
           </View>
+          <AlgorithmWorkspace key={id} client={client} problemId={id} registerLeave={registerCodeLeave} />
           <View style={a.card}>
             <Text style={a.subtitle}>本人算法学习记录</Text>
             <Text style={a.muted}>

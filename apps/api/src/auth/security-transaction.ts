@@ -33,6 +33,9 @@ export async function lockSecurityUser(
       where: {
         id: actor.sessionId,
         userId: actor.id,
+        ...(actor.clientType === 'MOBILE'
+          ? { clientType: 'MOBILE' as const, mobileCredential: { isNot: null } }
+          : {}),
         authVersion: current.authVersion,
         expiresAt: { gt: new Date() },
       },

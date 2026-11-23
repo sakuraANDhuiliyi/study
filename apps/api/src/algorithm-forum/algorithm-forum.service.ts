@@ -70,6 +70,18 @@ export class AlgorithmForumService {
     const user = await tx.user.findUnique({ where: { id: actor.id } });
     if (!user) throw new UnauthorizedException('登录已失效');
     await lockSecurityUser(tx, actor, user);
+    if (actor.clientType === 'MOBILE') {
+      const auth = new AuthService(tx as PrismaService);
+      const mobile = actor.sessionId ? await auth.resolveMobileSessionId(actor.sessionId) : null;
+      if (
+        !mobile ||
+        mobile.id !== actor.id ||
+        mobile.organizationId !== actor.organizationId ||
+        mobile.role !== 'STUDENT'
+      )
+        throw new UnauthorizedException('当前手机学习会话已失效');
+      auth.require(mobile, 'learning.use');
+    }
     const session =
       actor.sessionId && (await tx.session.findFirst({ where: { id: actor.sessionId, role: actor.role } }));
     if (!session) throw new UnauthorizedException('当前身份已变化，请重新登录');

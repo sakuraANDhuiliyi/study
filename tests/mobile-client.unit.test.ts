@@ -46,6 +46,36 @@ const later = <T>() => {
   return { promise, resolve };
 };
 const tick = () => new Promise((r) => setTimeout(r, 0));
+test('renaming the current profile preserves device bindings and a stale profile cannot replace another login', async () => {
+  const local = storage();
+  const delayed = later<Response>();
+  let reads = 0;
+  let lastName: string | undefined;
+  const client = new MobileClient(
+    origin,
+    local,
+    (user) => {
+      lastName = user?.name;
+    },
+    async (url, init) => {
+      if (String(url).endsWith('/login')) return response(session(JSON.parse(String(init?.body)).username));
+      if (++reads === 1) return response({ user: { ...session('a').user, name: '新姓名' } });
+      return delayed.promise;
+    },
+  );
+  await client.login('a', 'test');
+  const epoch = client.sessionEpoch();
+  await client.refreshProfile();
+  assert.equal(client.sessionEpoch(), epoch);
+  assert.equal(lastName, '新姓名');
+  assert.equal(JSON.parse(local.value()!).session.user.name, '新姓名');
+  const stale = client.refreshProfile();
+  await client.login('b', 'test');
+  delayed.resolve(response({ user: session('a').user }));
+  await stale.catch((error: MobileApiError) => assert.equal(error.status, 409));
+  assert.equal(JSON.parse(local.value()!).session.user.id, 'b');
+  assert.equal(lastName, session('b').user.name);
+});
 test('mobile origins require HTTPS and explicit local-preview opt-in', () => {
   assert.equal(serverOrigin(origin + '/api'), origin);
   for (const s of [

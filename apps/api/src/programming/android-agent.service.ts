@@ -77,7 +77,11 @@ export class AndroidAgentService implements OnModuleInit, OnModuleDestroy {
     this.child?.kill('SIGTERM');
   }
   async access(actor: Actor) {
-    const current = actor.sessionId ? await this.auth.resolveSessionId(actor.sessionId) : null;
+    const current = actor.sessionId
+      ? actor.clientType === 'MOBILE'
+        ? await this.auth.resolveMobileSessionId(actor.sessionId)
+        : await this.auth.resolveSessionId(actor.sessionId)
+      : null;
     if (
       !current ||
       current.id !== actor.id ||
